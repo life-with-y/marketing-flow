@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/hm-config</title>
+<style>
+:root {
+  --ink: #191715; --paper: #ffffff; --mute: #6e6a64; --soft: #f4f2ee; --faint: #c9c5bd;
+  --hair: 1px solid #191715;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16.5px/1.7 var(--serif);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.sc { font-variant-caps: small-caps; letter-spacing: .08em; }
+.mute { color: var(--mute); } .it { font-style: italic; }
+
+.hd { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  padding: 20px 32px 0; }
+.hd-title { font-size: 17px; font-weight: 600; }
+.hd-meta { font-size: 13.5px; font-style: italic; color: var(--mute); }
+.tabs { display: flex; gap: 0; padding: 14px 32px 0; border-bottom: 2px solid var(--ink); }
+.tabs button { font: 15px var(--serif); font-variant-caps: small-caps; letter-spacing: .08em;
+  background: none; border: none; border-bottom: 3px solid transparent; padding: 6px 18px 8px; margin-bottom: -2px;
+  color: var(--mute); cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.tabs button small { font-variant-caps: normal; letter-spacing: 0; font-style: italic; font-weight: 400; margin-left: 6px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 66ch) minmax(0, 40ch); justify-content: center; min-height: calc(100vh - 110px); }
+@media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } .doc { border-right: none !important; border-bottom: var(--hair); } }
+.doc { padding: 30px 44px 60px; border-right: var(--hair); min-width: 0; }
+.side { padding: 30px 28px; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+@media (max-width: 600px) { .hd, .tabs, .doc, .side { padding-left: 16px; padding-right: 16px; } }
+.panel[hidden] { display: none; }
+
+h2 { font-size: 16px; font-weight: 600; font-variant-caps: small-caps; letter-spacing: .07em; margin: 30px 0 10px;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+h2:first-child { margin-top: 0; }
+h2 small, summary small { font-weight: 400; font-style: italic; font-variant-caps: normal; letter-spacing: 0; color: var(--mute); font-size: 13.5px; }
+p { margin: 8px 0; }
+.hint { font-size: 13.5px; color: var(--mute); font-style: italic; }
+
+/* today */
+.slots { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; }
+@media (max-width: 600px) { .slots { grid-template-columns: minmax(0,1fr); } }
+.slot { border: 2px solid var(--ink); padding: 14px 16px; min-width: 0; }
+.slot-h { display: flex; justify-content: space-between; align-items: baseline; }
+.slot-h b { font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.slot ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: 14.5px; }
+.slot li { padding: 2px 0; display: flex; justify-content: space-between; gap: 8px; }
+.slot li span:last-child { color: var(--mute); font-style: italic; white-space: nowrap; }
+
+/* groups */
+.grp { border-top: 1px dotted var(--mute); }
+.grp:last-of-type { border-bottom: 1px dotted var(--mute); }
+.grp summary { list-style: none; cursor: pointer; display: grid;
+  grid-template-columns: 18px minmax(0,1fr) auto; gap: 10px; align-items: baseline; padding: 8px 2px; }
+.grp summary::-webkit-details-marker { display: none; }
+.grp summary::before { content: "▸"; font-size: 12px; color: var(--mute); transition: transform .15s; }
+.grp[open] summary::before { transform: rotate(90deg); }
+.grp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grp-meta { font-size: 14px; color: var(--mute); font-style: italic; white-space: nowrap; }
+.grp.off .grp-name { color: var(--mute); text-decoration: line-through; }
+.grp-body { padding: 0 2px 12px 28px; }
+.state { display: inline-block; border: var(--hair); padding: 0 7px; font-size: 12.5px; line-height: 1.6; white-space: nowrap; font-style: normal; color: var(--ink); }
+.state.on { background: var(--ink); color: var(--paper); }
+.today-mark { font-size: 12.5px; font-style: italic; color: var(--ink); }
+.filter { display: flex; gap: 6px; }
+.filter button { font: 13.5px var(--serif); background: var(--paper); border: var(--hair); padding: 1px 10px; cursor: pointer; color: var(--ink); }
+.filter button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+dl.kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 2px 16px; margin: 0; font-size: 15px; }
+dl.kv dt { color: var(--mute); font-style: italic; }
+dl.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { dl.kv { grid-template-columns: minmax(0, 1fr); } dl.kv dd { margin-bottom: 6px; } }
+
+/* collapsible sections (profile tab + pending) */
+details.sec { border-top: var(--hair); padding: 4px 0; }
+details.sec:last-of-type { border-bottom: var(--hair); }
+details.sec > summary { list-style: none; cursor: pointer; padding: 10px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  font-size: 16px; font-weight: 600; font-variant-caps: small-caps; letter-spacing: .07em; }
+details.sec > summary::-webkit-details-marker { display: none; }
+details.sec > summary::after { content: "+"; font-weight: 400; color: var(--mute); }
+details.sec[open] > summary::after { content: "–"; }
+details.sec > .body { padding: 0 0 16px; }
+
+blockquote { margin: 6px 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--ink); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-top: 10px; }
+@media (max-width: 600px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.cols ul { margin: 4px 0 0; padding-left: 18px; font-size: 15px; }
+.ct { padding: 8px 0; border-bottom: 1px dotted var(--mute); }
+.ct:last-child { border-bottom: none; }
+.ct-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.ct p { font-size: 15px; margin: 2px 0 0; }
+
+.pend { border: 1px dashed var(--ink); padding: 8px 14px; margin-top: 26px; font-size: 14.5px; }
+.pend summary { cursor: pointer; }
+
+/* side */
+.box { border: var(--hair); padding: 18px 20px; }
+.box h3 { font-size: 15px; font-weight: 600; font-variant-caps: small-caps; letter-spacing: .08em; margin: 0 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.chips button { font: 13.5px var(--serif); background: var(--paper); color: var(--ink); border: var(--hair); padding: 3px 10px; cursor: pointer; }
+.chips button:hover { background: var(--soft); }
+textarea { width: 100%; border: var(--hair); background: var(--paper); color: var(--ink);
+  font: 15px/1.6 var(--serif); padding: 10px 12px; resize: vertical; min-height: 84px; }
+textarea::placeholder { color: var(--mute); font-style: italic; }
+.btn { font: 15px var(--serif); font-variant-caps: small-caps; letter-spacing: .08em;
+  background: var(--ink); color: var(--paper); border: var(--hair); padding: 10px 16px; cursor: pointer; width: 100%; margin-top: 10px; }
+.btn.ghost { background: var(--paper); color: var(--ink); }
+.btn:disabled { background: var(--paper); color: var(--mute); cursor: not-allowed; }
+.queue { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14.5px; }
+.queue li { padding: 6px 0; border-top: 1px dotted var(--mute); display: flex; justify-content: space-between; gap: 10px; }
+.queue li button { font: 13px var(--serif); background: none; border: none; color: var(--mute); cursor: pointer; text-decoration: underline; }
+details.box > summary { list-style: none; cursor: pointer; font-size: 15px; font-weight: 600; font-variant-caps: small-caps; letter-spacing: .08em;
+  display: flex; justify-content: space-between; }
+details.box > summary::-webkit-details-marker { display: none; }
+details.box > summary::after { content: "+"; font-weight: 400; color: var(--mute); }
+details.box[open] > summary::after { content: "–"; }
+.log { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14.5px; }
+.log li { padding: 5px 0; border-top: 1px dotted var(--mute); }
+.log code { font-family: inherit; font-style: italic; }
+.note { font-size: 13.5px; font-style: italic; color: var(--mute); margin: 8px 0 0; }
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="hd-title sc">/hm-config</div>
+  <div class="hd-meta">{{HEADER_META}}</div>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="daily" onclick="tab('daily')">Hằng ngày</button>
+  <button role="tab" aria-selected="false" data-tab="profile" onclick="tab('profile')">Hồ sơ <small>ít sửa</small></button>
+</nav>
+
+<main class="main">
+<section class="doc">
+{{ERRORS}}
+  <div class="panel" id="p-daily">
+    <h2>Hôm nay sẽ soạn <small>{{TODAY_COUNT}}</small></h2>
+    <div class="slots">{{SLOTS}}</div>
+
+    <h2>Nhóm <small>{{GROUP_COUNTS}}</small></h2>
+    <div class="filter" style="margin:-2px 0 10px">
+      <button aria-pressed="true" onclick="flt(this,'today')">Hôm nay</button>
+      <button aria-pressed="false" onclick="flt(this,'all')">Tất cả</button>
+    </div>
+    <div id="groups">{{GROUPS}}</div>
+    <p class="hint" id="more" hidden>{{MORE}}</p>
+
+    <h2>Số bài mỗi khung <small>ngoài nhóm</small></h2>
+    {{PERSLOT}}
+{{PENDING}}
+  </div>
+
+  <div class="panel" id="p-profile" hidden>
+{{PROFILE}}
+  </div>
+</section>
+
+<aside class="side">
+  <div class="box" id="ask">
+    <h3>Muốn đổi gì?</h3>
+    <div class="chips">
+      <button type="button" onclick="seed('Tạm ngừng nhóm ')">Tạm ngừng nhóm</button>
+      <button type="button" onclick="seed('Bật lại nhóm ')">Bật lại nhóm</button>
+      <button type="button" onclick="seed('Thêm nhóm: &lt;tên&gt; &lt;link&gt;, đăng bằng , quận ')">Thêm nhóm</button>
+      <button type="button" onclick="seed('Hôm nay không đăng ')">Hôm nay bỏ…</button>
+    </div>
+    <textarea id="req" placeholder="Gõ bằng lời thường, vd: “nhóm Expats chỉ đăng cuối tuần”"></textarea>
+    <button type="button" class="btn ghost" onclick="queueReq()">Thêm vào danh sách</button>
+    <ul class="queue" id="queue"></ul>
+    <button type="button" class="btn" id="send" disabled onclick="sendAll()">Gửi cho Claude sửa</button>
+    <p class="note">Claude sửa ngay, lưu bản cũ, rồi dựng lại trang.</p>
+  </div>
+
+{{LAST_CHANGE}}
+
+  {{FEEDBACK}}
+  <p class="note" style="margin-top:-12px">Không cần tài khoản GitHub. Owner gom góp ý thành issue.</p>
+</aside>
+</main>
+
+<script>
+const UNDO_LABEL = {{UNDO_LABEL_JSON}};
+function tab(id){
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === id)));
+  document.getElementById('p-daily').hidden = id !== 'daily';
+  document.getElementById('p-profile').hidden = id !== 'profile';
+}
+function flt(btn, mode){
+  document.querySelectorAll('.filter button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+  document.querySelectorAll('#groups .grp').forEach(g => { g.hidden = mode === 'today' && g.dataset.today !== '1'; });
+  document.getElementById('more').hidden = mode === 'today';
+}
+flt(document.querySelector('.filter button'), 'today');
+const items = [];
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function seed(t){ const r = document.getElementById('req'); r.value = t; r.focus(); }
+function render(){
+  document.getElementById('queue').innerHTML = items.map((t,i) =>
+    '<li><span>' + esc(t) + '</span><button type="button" onclick="drop(' + i + ')">bỏ</button></li>').join('');
+  document.getElementById('send').disabled = items.length === 0;
+}
+function drop(i){ items.splice(i,1); render(); }
+function queueReq(){
+  const r = document.getElementById('req'); const t = r.value.trim(); if(!t) return;
+  items.push(t); r.value = '';
+  window.lavish?.queuePrompt?.('Cập nhật config: ' + t, { tag:'hm-config', queueKey:'req-'+Date.now(), text:t, element:document.getElementById('ask') });
+  render();
+}
+function sendAll(){
+  window.lavish?.sendQueuedPrompts?.();
+  const b = document.getElementById('send'); b.disabled = true; b.textContent = 'Đã gửi — Claude đang sửa';
+}
+function undo(){
+  window.lavish?.queuePrompt?.('Hoàn tác lần sửa gần nhất (' + UNDO_LABEL + ').', { tag:'hm-config', queueKey:'undo', text:'Hoàn tác lần sửa ' + UNDO_LABEL, element:document.querySelector('.log') });
+  window.lavish?.sendQueuedPrompts?.();
+}
+</script>
+</body>
+</html>
