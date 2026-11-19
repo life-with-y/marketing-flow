@@ -18,3 +18,9 @@ Nội dung phải dán được nguyên lên Facebook/Threads:
 - Được dùng: chữ thường, xuống dòng, emoji, gạch đầu dòng bằng ký tự `•`.
 - Không dùng markdown: `**…**`, `__…__`, `_…_`, dòng tiêu đề bắt đầu bằng `#`.
 - Không dùng chữ "đậm/nghiêng" giả bằng ký tự Unicode (khối U+1D400–U+1D7FF, vd 𝗽𝗵𝗼̀𝗻𝗴, 𝘱𝘩𝘰̀𝘯𝘨).
+
+## Giá và mã tin (build.mjs kiểm tra)
+
+- Giá chép đúng `priceText` (vd `3,5 triệu`); bài tiếng Anh được dùng thêm `3.5 million VND` hoặc `3,500,000 VND`. Không viết `tr`, không viết giá nào khác.
+- Ngay sau giá không đặt số hay chữ đọc giá (`5`, `rưỡi`, `một`, `tư`, `lẻ`…). Viết `3 triệu/tháng`, không viết `3 triệu một tháng`.
+- Chỉ ghi mã T… của tin có trong bài. Bài thương hiệu không ghi giá thuê, không ghi mã tin.

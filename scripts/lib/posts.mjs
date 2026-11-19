@@ -23,7 +23,16 @@ function findHomematchUrls(text) {
 
 const normUrl = (s) => stripSlash(/^https?:\/\//i.test(s) ? s : `https://${s}`);
 
-// Khớp nguyên văn, có chặn biên: trước không phải số/,/. ; sau (cách tùy ý) không phải số, "rưỡi", hay ,/. + số.
+// Đuôi đọc giá sau một giá ("3 triệu 5", "3 triệu rưỡi", "4 triệu tư"...): không phân biệt hoa thường, nguyên từ.
+const SPOKEN = 'một|mốt|hai|ba|bốn|tư|năm|lăm|sáu|bảy|tám|chín|rưỡi|lẻ';
+const TRAIL_RE = new RegExp(`^\\s*(?:[0-9]|[,.][0-9]|(?:${SPOKEN})(?![\\p{L}\\p{M}\\p{N}]))`, 'iu');
+const hasTrail = (after) => TRAIL_RE.test(after);
+
+// Mọi số kèm đơn vị tiền thuê; "tr" viết tắt cũng bắt (không bao giờ hợp lệ). Không quét "k", "đ".
+const PRICE_TOKEN_RE = /(?<!\p{N})\d+(?:[.,]\d+)*\s*(?:triệu|tr(?![\p{L}\p{M}])|million(?:\s*vnd(?![\p{L}\p{N}]))?|vnd(?![\p{L}\p{N}]))/giu;
+const CODE_RE = /\bT\d{3,}\b/g;
+
+// Khớp nguyên văn, có chặn biên: trước không phải số/,/. ; sau không phải số, ,/. + số, hay đuôi đọc giá.
 function appearsExact(text, needle) {
   let from = 0;
   for (;;) {
@@ -31,8 +40,7 @@ function appearsExact(text, needle) {
     if (i < 0) return false;
     from = i + 1;
     if (i > 0 && /[0-9,.]/.test(text[i - 1])) continue;
-    const after = text.slice(i + needle.length);
-    if (/^\s*(?:[0-9]|rưỡi|[,.][0-9])/u.test(after)) continue;
+    if (hasTrail(text.slice(i + needle.length))) continue;
     return true;
   }
 }
@@ -47,7 +55,7 @@ function englishForms(price) {
 function priceForms(room, language) {
   const f = [room.priceText];
   if (language === 'en') f.push(...englishForms(room.price));
-  return f.filter(Boolean);
+  return f.filter((x) => typeof x === 'string' && x).map((x) => x.normalize('NFC'));
 }
 
 export function validatePosts(posts, input) {
@@ -113,7 +121,7 @@ export function validatePosts(posts, input) {
       const vk = `${label}, bản ${v.key ?? KEYS[vi] ?? vi + 1}`;
 
       // 5. văn bản
-      const text = typeof v.text === 'string' ? v.text : null;
+      const text = typeof v.text === 'string' ? v.text.normalize('NFC') : null;
       if (text === null) {
         err(pi, `${vk}: thiếu văn bản "text".`);
       } else {
@@ -133,6 +141,21 @@ export function validatePosts(posts, input) {
             if (!ok) {
               err(pi, `${vk}: tin ${l.code} không có giá nào đúng nguyên văn trong bài (cần một trong: ${(l.rooms || []).map((r) => r.priceText).join('; ')}).`);
             }
+          }
+        }
+
+        // 6b. mọi giá ghi trong bài phải là giá thật của tin trong bài (bài thương hiệu: không có giá)
+        if (Array.isArray(post.postCodes)) {
+          const allowed = new Set(used.flatMap((l) => (l.rooms || []).flatMap((r) => priceForms(r, target?.language))));
+          for (const m of text.matchAll(PRICE_TOKEN_RE)) {
+            const tok = m[0];
+            if (isBrand) err(pi, `${vk}: bài thương hiệu không được ghi giá thuê ("${tok}").`);
+            else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
+            else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
+          }
+          // 6c. mọi mã tin trong bài phải nằm trong postCodes
+          for (const m of new Set(text.match(CODE_RE) || [])) {
+            if (!codes.includes(m)) err(pi, `${vk}: mã tin ${m} không nằm trong postCodes của bài.`);
           }
         }
 

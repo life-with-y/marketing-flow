@@ -194,3 +194,48 @@ test('R13: # chỉ là tiêu đề markdown', () => {
   assert.ok(has(mk({}, { text: '## Tiêu đề\n' + goodText }), /tiêu đề markdown/));
   assert.ok(has(mk({}, { text: '# Tiêu đề\n' + goodText }), /tiêu đề markdown/));
 });
+
+test('R24: giá sai, mã sai, đuôi đọc giá đều bị chặn', () => {
+  const four = { ...fake('TF', 3, '4 triệu'), code: 'TF' };
+  const inp = { ...input, listings: [...input.listings, four] };
+  const run = (text, codes = ['TF'], tid = 'wall:1') => validatePosts({ posts: [{ targetId: tid, type: 't', postCodes: codes,
+    variants: [{ key: 'A', text, images: codes.length ? fi('TF', 3) : fi('F1', 3) }] }] }, inp).errors;
+  const link = 'https://homematch.vn/p/TF';
+  // giá thật vẫn qua
+  assert.deepEqual(run(`phòng 4 triệu ${link}`), []);
+  assert.deepEqual(run(`phòng 4 triệu, điện 4k/số, nước 100k ${link}`), []);
+  // giá sai đứng cạnh giá thật hoặc thay giá thật
+  assert.ok(run(`phòng 101 giá 3,5 triệu, phòng 102 giá 3,8 triệu ${link}`).length > 0);
+  assert.ok(run(`phòng 101 giá 4 triệu, phòng 102 giá 3,8 triệu ${link}`).some((e) => /3,8 triệu/.test(e.message)));
+  // "tr" không bao giờ hợp lệ
+  assert.ok(run(`phòng 4 triệu (3,5tr) ${link}`).some((e) => /3,5tr/.test(e.message)));
+  assert.ok(run(`phòng 4 triệu, 4tr ${link}`).length > 0);
+  assert.ok(run(`phòng 4 triệu, giá3,5 triệu ${link}`).length > 0);
+  // đuôi đọc giá, không phân biệt hoa thường
+  assert.ok(run(`phòng 4 triệu Rưỡi ${link}`).length > 0);
+  assert.ok(run(`phòng 4 triệu RƯỠI ${link}`).length > 0);
+  for (const w of ['một', 'mốt', 'hai', 'ba', 'bốn', 'tư', 'năm', 'lăm', 'sáu', 'bảy', 'tám', 'chín', 'lẻ', 'Tư', 'NĂM']) {
+    assert.ok(run(`phòng 4 triệu ${w} ${link}`).length > 0, w);
+  }
+  assert.deepEqual(run(`phòng 4 triệu bao gồm phí ${link}`), []);
+  // NFD vẫn được chuẩn hoá trước khi so
+  assert.deepEqual(run(`phòng ${'4 triệu'.normalize('NFD')} ${link}`), []);
+  assert.ok(run(`phòng 4 triệu ${'rưỡi'.normalize('NFD')} ${link}`).length > 0);
+  // mã tin lạ
+  assert.ok(has(mk({}, { text: `${goodText} Comment mã T1320` }), /T1320/));
+  assert.deepEqual(msgs(mk({}, { text: `${goodText} Comment mã T1302` })), []);
+  // bài thương hiệu không được có giá thuê hay mã tin
+  assert.ok(run('Phòng đẹp chỉ 3,5 triệu', []).length > 0);
+  assert.ok(run('Xem mã T1302 nhé', []).length > 0);
+  assert.deepEqual(run('Điện 4k/số, Homematch tìm phòng miễn phí', []), []);
+});
+
+test('R24: tiếng Anh chỉ nhận dạng chuẩn', () => {
+  const en = { ...fake('EN2', 3, '3,5 triệu'), rooms: [{ room: '1', price: 3500000, priceText: '3,5 triệu', status: 'AVAILABLE', label: '' }] };
+  const inp = { targets: [{ id: 'wall:1', kind: 'wall', name: 'W', variants: 1, language: 'en' }], listings: [en] };
+  const run = (text) => validatePosts({ posts: [{ targetId: 'wall:1', type: 't', postCodes: ['EN2'],
+    variants: [{ key: 'A', text: `${text} https://homematch.vn/p/EN2`, images: fi('EN2', 3) }] }] }, inp).errors;
+  assert.deepEqual(run('Room 3.5 million VND, also 3,500,000 VND'), []);
+  assert.ok(run('Room 3.5 million VND, other 3.8 million VND').length > 0);
+  assert.ok(run('Room 3.5 million VND, other 4,000,000 VND').length > 0);
+});
