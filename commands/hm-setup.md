@@ -2,7 +2,7 @@
 description: Thiết lập HomeMatch marketing lần đầu (token API, lịch soạn bài, quyền, persona, Page); chạy lại để đổi phần nào đó
 ---
 
-<!-- TODO: các rule quyền ở bước 3 sẽ được xác nhận lại trong Task 0 spike (đúng cú pháp, scheduled task chạy không hỏi quyền). -->
+<!-- TODO: các rule quyền ở bước 3 (scripts/setup-permissions.mjs) sẽ được xác nhận lại trong Task 0 spike (đúng cú pháp, scheduled task chạy không hỏi quyền). -->
 
 Thiết lập HomeMatch marketing. Mọi chữ hiển thị cho người dùng bằng tiếng Việt, mỗi lượt một câu hỏi ngắn.
 
@@ -20,11 +20,19 @@ Nếu `~/.homematch-marketing/config.json` đã có: hỏi "Bạn muốn đổi 
 
 1. Hỏi `apiBaseUrl` (địa chỉ API HomeMatch).
 2. Bảo người dùng dán token vào chat, và hỏi một tên gọi cho token (vd `Token của Lan`). Token chỉ đọc, của chính người dùng.
-3. Chạy, thay `<token>` bằng token vừa nhận (token qua stdin, không đưa vào tham số dòng lệnh):
+3. Kiểm tra trước khi chạy: token không được chứa xuống dòng hoặc chuỗi `HM_EOF`; `apiBaseUrl` và tên token không được chứa dấu nháy đơn `'`. Vi phạm thì bảo người dùng nhập lại, không chạy.
+4. Chạy (heredoc có nháy, token qua stdin, không nằm trong tham số dòng lệnh):
    ```
-   printf '%s' '<token>' | node "${CLAUDE_PLUGIN_ROOT}/scripts/check-api.mjs" --base <apiBaseUrl> --save --label "<tên token>"
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/check-api.mjs" --base '<apiBaseUrl>' --save --label '<tên token>' <<'HM_EOF'
+   <token>
+   HM_EOF
    ```
-4. Mã `0` (in `OK: <n> tin đang hiển thị`): nói `Đã lưu token <tên token>` và số tin. Mã `2`: in nguyên văn dòng thông báo của script, cho người dùng thử lại (không lưu gì).
+5. Mã thoát:
+   | Mã | Ý nghĩa |
+   |---|---|
+   | `0` | OK, in `OK: <n> tin đang hiển thị`: nói `Đã lưu token <tên token>` và số tin |
+   | `2` | Gọi API không được hoặc đầu vào sai: in nguyên văn dòng thông báo, cho thử lại; chưa lưu gì |
+   | `3` | Lưu thất bại (`Không lưu được: …`): in nguyên văn; không có gì bị đổi, secrets cũ còn nguyên |
 
 `--save` đã ghi `secrets.json` (quyền `600`) và `apiBaseUrl` vào `config.json`.
 
@@ -36,23 +44,15 @@ Nếu `~/.homematch-marketing/config.json` đã có: hỏi "Bạn muốn đổi 
 
 ## Bước 3: Quyền
 
-Lấy `outputDir` (config.json, không có thì config.default.json), mở rộng `~` thành đường dẫn tuyệt đối. `<root>` là đường dẫn tuyệt đối của `${CLAUDE_PLUGIN_ROOT}`. Hiện cho người dùng đúng các rule sau, hỏi "Thêm các quyền này vào ~/.claude/settings.json? (có/không)":
+Lấy `outputDir` (config.json, không có thì config.default.json). Chạy dry run:
 
 ```
-Bash(node <root>/scripts/prepare.mjs:*)
-Bash(node <root>/scripts/build.mjs:*)
-Bash(node <root>/scripts/config-cli.mjs:*)
-Read(~/.homematch-marketing/**)
-Write(~/.homematch-marketing/**)
-Edit(~/.homematch-marketing/**)
-Write(<outputDir>/**)
+node "${CLAUDE_PLUGIN_ROOT}/scripts/setup-permissions.mjs" --output-dir '<outputDir>'
 ```
 
-Chỉ khi người dùng đồng ý rõ ràng:
+Script in JSON gồm `allow` và `deny` (không sửa gì). Hiện đúng các rule đó cho người dùng, hỏi "Thêm các quyền này vào ~/.claude/settings.json? (có/không)". Mã `2` (thư mục đầu ra bị từ chối, settings.json sai định dạng): in nguyên văn thông báo, dừng bước này.
 
-1. Sao lưu: `cp ~/.claude/settings.json ~/.claude/settings.json.bak-hm` (chưa có file thì tạo `{}` và bỏ qua sao lưu).
-2. Gộp vào `permissions.allow`: giữ nguyên mọi mục sẵn có, chỉ thêm rule còn thiếu, không trùng lặp, không xoá hay đổi gì khác trong file.
-3. Báo đã thêm bao nhiêu rule và đường dẫn bản sao lưu.
+Chỉ khi người dùng đồng ý rõ ràng, chạy lại cùng lệnh thêm `--apply`. Script tự sao lưu `settings.json.bak-hm-<thời gian>`, chỉ thêm rule còn thiếu, giữ nguyên mọi mục khác. Báo số rule đã thêm và đường dẫn bản sao lưu.
 
 Không đồng ý: bỏ qua, nói lịch có thể hỏi quyền mỗi lần chạy.
 

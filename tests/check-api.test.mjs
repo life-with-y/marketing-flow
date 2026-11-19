@@ -87,3 +87,29 @@ test('cli errors: missing --base, empty stdin', async () => {
   const r = await run(['--base', BASE], { stdin: '\n' });
   assert.equal(r.code, 2);
 });
+
+test('cli --save: malformed config.json -> exit 3, old secrets.json byte-identical', async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'hm-chk-'));
+  const dir = path.join(home, '.homematch-marketing');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'secrets.json'), '{"token":"old"}');
+  fs.writeFileSync(path.join(dir, 'config.json'), '{not json');
+  const r = await run(['--base', BASE, '--save'], { home });
+  assert.equal(r.code, 3);
+  assert.match(r.text, /^Không lưu được: /);
+  assert.ok(!r.text.includes(TOKEN));
+  assert.equal(fs.readFileSync(path.join(dir, 'secrets.json'), 'utf8'), '{"token":"old"}');
+  assert.equal(fs.readFileSync(path.join(dir, 'config.json'), 'utf8'), '{not json');
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['config.json', 'secrets.json']);
+});
+
+test('cli --save: existing 0755 dir becomes 0700', { skip: process.platform === 'win32' }, async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'hm-chk-'));
+  const dir = path.join(home, '.homematch-marketing');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.chmodSync(dir, 0o755);
+  const r = await run(['--base', BASE, '--save'], { home });
+  assert.equal(r.code, 0);
+  assert.equal(fs.statSync(dir).mode & 0o777, 0o700);
+  assert.equal(fs.readdirSync(dir).some((f) => f.includes('.tmp')), false);
+});

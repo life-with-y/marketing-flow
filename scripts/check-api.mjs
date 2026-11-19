@@ -41,16 +41,32 @@ function parseArgs(argv) {
   return o;
 }
 
+function writeAtomic(file, data, mode) {
+  const tmp = `${file}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(tmp, data, { mode, flag: 'w' });
+    fs.chmodSync(tmp, mode);
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    try { fs.rmSync(tmp, { force: true }); } catch { /* ignore */ }
+    throw e;
+  }
+}
+
+// Kiểm tra config trước, rồi mới ghi secrets (temp + rename), rồi config (temp + rename).
 function saveProfile(dir, { token, label, base }) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const file = path.join(dir, 'secrets.json');
-  fs.writeFileSync(file, JSON.stringify(label ? { token, label } : { token }), { mode: 0o600 });
-  fs.chmodSync(file, 0o600);
-  init(dir);
+  fs.chmodSync(dir, 0o700);
   const cfgFile = path.join(dir, 'config.json');
-  const cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+  let cfg = { apiBaseUrl: '', accounts: [], groups: [] };
+  if (fs.existsSync(cfgFile)) {
+    try { cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch { throw new Error('config.json không đọc được (sai định dạng)'); }
+    if (cfg === null || typeof cfg !== 'object' || Array.isArray(cfg)) throw new Error('config.json không đúng định dạng');
+  }
+  writeAtomic(path.join(dir, 'secrets.json'), JSON.stringify(label ? { token, label } : { token }), 0o600);
   cfg.apiBaseUrl = base;
-  fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2) + '\n');
+  writeAtomic(cfgFile, JSON.stringify(cfg, null, 2) + '\n', 0o644);
+  init(dir);
 }
 
 export async function main(argv, { stdin = process.stdin, home = os.homedir(), fetchImpl = fetch, out = (s) => console.log(s), err = (s) => console.error(s) } = {}) {
@@ -61,7 +77,7 @@ export async function main(argv, { stdin = process.stdin, home = os.homedir(), f
   const r = await checkApi({ baseUrl: a.base, token, fetchImpl });
   if (!r.ok) { out(r.message); return 2; }
   if (a.save) {
-    try { saveProfile(profileDir(home), { token, label: a.label, base: a.base }); } catch { err('Không ghi được hồ sơ ~/.homematch-marketing'); return 2; }
+    try { saveProfile(profileDir(home), { token, label: a.label, base: a.base }); } catch (e) { err(`Không lưu được: ${e.code ?? e.message}`); return 3; }
   }
   out(`OK: ${r.listingCount} tin đang hiển thị`);
   return 0;
