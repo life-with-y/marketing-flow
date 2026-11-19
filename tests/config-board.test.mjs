@@ -183,3 +183,20 @@ test('render-board: sheet error line; no url -> no block', async () => {
   await run(['render-board'], d2, THU, async () => { throw new Error('should not fetch'); });
   assert.ok(!board(d2).includes('class="pend"'));
 });
+
+test('validate: OK exit 0, sai thì LỖI exit 1', async () => {
+  const dir = tmp();
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg()));
+  let r = await run(['validate'], dir);
+  assert.equal(r.code, 0);
+  assert.deepEqual(r.o, ['OK']);
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg({ variants: { default: 9 } })));
+  r = await run(['validate'], dir);
+  assert.equal(r.code, 1);
+  assert.equal(r.o.length, 1);
+  assert.match(r.o[0], /^LỖI: .*variants\.default/);
+  fs.rmSync(path.join(dir, 'config.json'));
+  r = await run(['validate'], dir);
+  assert.equal(r.code, 1);
+  assert.match(r.o[0], /^LỖI: Chưa có config.json/);
+});

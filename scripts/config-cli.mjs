@@ -1,4 +1,4 @@
-// CLI cấu hình: init | backup | undo | changelog | render-board | today (Task 11).
+// CLI cấu hình: init | backup | undo | changelog | render-board | today | validate (Task 11).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -156,10 +156,19 @@ export async function main(argv, { dir = profileDir(), now = new Date(), root = 
       else lines.forEach((l) => out(l));
     } else if (cmd === 'render-board') {
       out(await renderBoard(dir, { now, root, fetchImpl }));
+    } else if (cmd === 'validate') {
+      try {
+        loadConfig(dir, { root });
+      } catch (e) {
+        if (!(e instanceof ConfigError)) throw e;
+        out(`LỖI: ${e.message}`);
+        return 1;
+      }
+      out('OK');
     } else if (cmd === 'today') {
       out(JSON.stringify(today(dir, { now, root }), null, 2));
     } else {
-      out('Dùng: config-cli.mjs init | backup | undo | changelog | render-board | today');
+      out('Dùng: config-cli.mjs init | backup | undo | changelog | render-board | today | validate');
       return 1;
     }
     return 0;

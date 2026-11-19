@@ -16,7 +16,7 @@ Mọi chữ hiển thị cho người dùng bằng tiếng Việt. Mỗi lượt
 
 File được sửa (trong `~/.homematch-marketing/`): `config.json`, `persona.md`, `content-types.md`.
 
-CLI: `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" <init|backup|undo|changelog|render-board|today>`.
+CLI: `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" <init|backup|undo|changelog|render-board|today|validate>`.
 
 ## Bước 1: Dựng và mở trang
 
@@ -36,7 +36,7 @@ Phản hồi từ `poll` là yêu cầu của người dùng.
   2. Sửa file liên quan trong ba file được phép.
   3. Kiểm tra chặt:
      ```
-     node --input-type=module -e 'import{loadConfig}from"${CLAUDE_PLUGIN_ROOT}/scripts/lib/config.mjs";import{profileDir}from"${CLAUDE_PLUGIN_ROOT}/scripts/lib/paths.mjs";try{loadConfig(profileDir(),{root:"${CLAUDE_PLUGIN_ROOT}"});console.log("OK")}catch(e){console.log("LOI: "+e.message);process.exit(1)}'
+     node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" validate
      ```
      (`render-board` cũng hiện lỗi trong khung đỏ.)
   4. Lỗi: chạy `config-cli undo`, nói lỗi cho người dùng (vd `variants` chỉ nhận 1–3), config giữ nguyên như trước. Sang bước 4.

@@ -68,7 +68,7 @@ Làm đúng phần "Bước 3: Đồng bộ lịch" của skill `hm-config` (tas
    - Preset: `${CLAUDE_PLUGIN_ROOT}/rules/templates/presets/founder-thang-than.md` (Founder, thẳng thắn) hoặc `tre-nang-dong.md` (Trẻ, năng động).
    - Hoặc phỏng vấn 3–5 câu ngắn (bạn là ai, giọng nói, điều NÊN, điều KHÔNG NÊN, xưng hô), rồi viết persona theo dạng của các preset.
    Ghi kết quả vào `~/.homematch-marketing/persona.md`. Nếu `persona.md` đã được người dùng sửa (khác bản mẫu), hỏi trước khi ghi đè.
-4. Trước khi sửa `config.json` chạy `config-cli backup`; sau khi sửa kiểm tra chặt như bước 2 của skill `hm-config`.
+4. Trước khi sửa `config.json` chạy `config-cli backup`; sau khi sửa kiểm tra chặt bằng `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" validate` (in `OK`, hoặc `LỖI: …` thì `config-cli undo` và báo lỗi).
 
 ## Bước 6: Mở cấu hình
 
