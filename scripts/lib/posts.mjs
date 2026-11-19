@@ -11,24 +11,43 @@ function isHomematchHost(host) {
 
 function findHomematchUrls(text) {
   const out = [];
-  for (const m of text.matchAll(/https?:\/\/[^\s<>"'`]+/gi)) {
-    const raw = m[0].replace(/[.,;:!?)\]}»”’]+$/u, '');
+  const re = /(?<![\w.@-])(?:https?:\/\/)?(?:[a-z0-9-]+\.)*homematch\.vn(?:[\/?#][^\s<>"'`]*)?/gi;
+  for (const m of text.matchAll(re)) {
+    const raw = m[0].replace(/[.,;:!?)\]}»”’…]+$/u, '');
     let u;
-    try { u = new URL(raw); } catch { continue; }
+    try { u = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { continue; }
     if (isHomematchHost(u.hostname)) out.push(raw);
   }
   return out;
 }
 
-function priceAppears(text, priceText) {
+const normUrl = (s) => stripSlash(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+
+// Khớp nguyên văn, có chặn biên: trước không phải số/,/. ; sau (cách tùy ý) không phải số, "rưỡi", hay ,/. + số.
+function appearsExact(text, needle) {
   let from = 0;
   for (;;) {
-    const i = text.indexOf(priceText, from);
+    const i = text.indexOf(needle, from);
     if (i < 0) return false;
-    // tránh khớp nhầm đuôi của số lớn hơn (vd "13,5 triệu" chứa "3,5 triệu")
-    if (i === 0 || !/[0-9,.]/.test(text[i - 1])) return true;
     from = i + 1;
+    if (i > 0 && /[0-9,.]/.test(text[i - 1])) continue;
+    const after = text.slice(i + needle.length);
+    if (/^\s*(?:[0-9]|rưỡi|[,.][0-9])/u.test(after)) continue;
+    return true;
   }
+}
+
+function englishForms(price) {
+  if (!Number.isFinite(price)) return [];
+  const whole = Math.floor(price / 1e6);
+  const frac = String(price % 1e6).padStart(6, '0').replace(/0+$/, '');
+  return [`${whole}${frac ? '.' + frac : ''} million VND`, `${Number(price).toLocaleString('en-US')} VND`];
+}
+
+function priceForms(room, language) {
+  const f = [room.priceText];
+  if (language === 'en') f.push(...englishForms(room.price));
+  return f.filter(Boolean);
 }
 
 export function validatePosts(posts, input) {
@@ -100,7 +119,7 @@ export function validatePosts(posts, input) {
       } else {
         if (text.includes('**')) err(pi, `${vk}: văn bản có "**" (chỉ dùng chữ thường).`);
         if (text.includes('__')) err(pi, `${vk}: văn bản có "__" (chỉ dùng chữ thường).`);
-        if (/^\s*#/m.test(text)) err(pi, `${vk}: có dòng bắt đầu bằng "#".`);
+        if (/^\s*#{1,6}\s/m.test(text)) err(pi, `${vk}: có dòng tiêu đề markdown bắt đầu bằng "#".`);
         if (MATH_ALNUM.test(text)) err(pi, `${vk}: có ký tự chữ toán học Unicode (U+1D400–U+1D7FF).`);
         if (target && target.kind === 'threads') {
           const len = [...text].length;
@@ -110,7 +129,7 @@ export function validatePosts(posts, input) {
         // 6. giá
         if (!isBrand && codesOk) {
           for (const l of used) {
-            const ok = (l.rooms || []).some((r) => priceAppears(text, r.priceText));
+            const ok = (l.rooms || []).some((r) => priceForms(r, target?.language).some((f) => appearsExact(text, f)));
             if (!ok) {
               err(pi, `${vk}: tin ${l.code} không có giá nào đúng nguyên văn trong bài (cần một trong: ${(l.rooms || []).map((r) => r.priceText).join('; ')}).`);
             }
@@ -119,9 +138,9 @@ export function validatePosts(posts, input) {
 
         // 7. link
         if (!isBrand && codesOk) {
-          const allowed = new Set(used.map((l) => stripSlash(l.link)));
+          const allowed = new Set(used.map((l) => normUrl(l.link)));
           for (const u of findHomematchUrls(text)) {
-            if (!allowed.has(stripSlash(u))) {
+            if (!allowed.has(normUrl(u))) {
               err(pi, `${vk}: link ${u} không khớp link của tin nào trong bài.`);
             }
           }

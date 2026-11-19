@@ -109,7 +109,7 @@ test('luật 4: bài gom tin', () => {
 test('luật 5: định dạng văn bản', () => {
   assert.ok(has(mk({}, { text: goodText + ' **đậm**' }), /\*\*/));
   assert.ok(has(mk({}, { text: goodText + ' __x__' }), /__/));
-  assert.ok(has(mk({}, { text: '# Tiêu đề\n' + goodText }), /bắt đầu bằng "#"/));
+  assert.ok(has(mk({}, { text: '# Tiêu đề\n' + goodText }), /tiêu đề markdown/));
   assert.ok(has(mk({}, { text: goodText + ' \u{1D5EF}' }), /toán học/));
   assert.deepEqual(msgs(mk({}, { text: 'dòng\n' + goodText + ' #hashtag' })), []);
 });
@@ -127,9 +127,20 @@ test('luật 5: Threads <= 500 code point', () => {
 test('luật 6: giá nguyên văn', () => {
   assert.ok(has(mk({}, { text: `Phòng 3tr5 ${l2.link}` }), /giá nào đúng nguyên văn/));
   assert.ok(has(mk({}, { text: `Phòng 13,5 triệu ${l2.link}` }), /giá nào đúng nguyên văn/));
-  // một trong các phòng là đủ
-  const second = l2.rooms.find((r) => r.priceText !== l2.rooms[0].priceText);
-  if (second) assert.deepEqual(msgs(mk({}, { text: `${second.priceText} ${l2.link}` })), []);
+  // một trong các phòng là đủ (listing 2 phòng dựng tay)
+  const two = { ...fake('TW', 3), rooms: [
+    { room: '1', price: 3000000, priceText: '3 triệu', status: 'AVAILABLE', label: '' },
+    { room: '2', price: 4500000, priceText: '4,5 triệu', status: 'AVAILABLE', label: '' }] };
+  const inp2 = { ...input, listings: [...input.listings, two] };
+  const pt = (text, tid = 'wall:1') => ({ posts: [{ targetId: tid, type: 't', postCodes: ['TW'], variants: [{ key: 'A', text: `${text} https://homematch.vn/p/TW`, images: fi('TW', 3) }] }] });
+  const m2 = (p, i = inp2) => validatePosts(p, i).errors;
+  assert.deepEqual(m2(pt('phòng 4,5 triệu')), []);
+  assert.deepEqual(m2(pt('phòng 3 triệu/tháng')), []);
+  assert.deepEqual(m2(pt('phòng 3 triệu.')), []);
+  assert.ok(m2(pt('Giá 3 triệu 5')).length > 0);
+  assert.ok(m2(pt('Giá 3 triệu rưỡi')).length > 0);
+  assert.ok(m2(pt('Giá 3 triệu,5')).length > 0);
+  assert.ok(m2(pt('Giá 3 triệu.5')).length > 0);
   // bài thương hiệu bỏ qua
   const b = { posts: [{ targetId: 'wall:1', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'không giá', images: fi('F1', 3) }] }] };
   assert.deepEqual(msgs(b), []);
@@ -150,4 +161,36 @@ test('luật 7: URL homematch.vn', () => {
 test('gom mọi lỗi, không dừng ở lỗi đầu', () => {
   const e = msgs(mk({ targetId: 'zz' }, { key: 'B', text: '**x** 3tr5', images: imgs('T1302', 1) }));
   assert.ok(e.length >= 4);
+});
+
+test('R12: tiếng Anh nhận dạng giá từ room.price', () => {
+  const mkRoom = (price, priceText) => ({ ...fake('EN', 3), rooms: [{ room: '1', price, priceText, status: 'AVAILABLE', label: '' }] });
+  const run = (lang, text, price = 3500000, pText = '3,5 triệu') => {
+    const inp = { targets: [{ id: 'wall:1', kind: 'wall', name: 'W', variants: 1, ...(lang ? { language: lang } : {}) }], listings: [mkRoom(price, pText)] };
+    const p = { posts: [{ targetId: 'wall:1', type: 't', postCodes: ['EN'], variants: [{ key: 'A', text: `${text} https://homematch.vn/p/EN`, images: fi('EN', 3) }] }] };
+    return validatePosts(p, inp).errors;
+  };
+  assert.deepEqual(run('en', 'Room 3.5 million VND'), []);
+  assert.deepEqual(run('en', 'Room 3,500,000 VND'), []);
+  assert.deepEqual(run('en', 'Room 3,5 triệu'), []);
+  assert.deepEqual(run('en', 'Room 4 million VND', 4000000, '4 triệu'), []);
+  assert.deepEqual(run('en', 'Room 3.555 million VND', 3555000, '3,555 triệu'), []);
+  assert.ok(run('en', 'Room 3.6 million VND').length > 0);
+  assert.ok(run('en', 'Room 13.5 million VND').length > 0);
+  assert.ok(run('en', 'Room 3.5 million VND 2').length > 0);
+  assert.ok(run('vi', 'Room 3.5 million VND').length > 0);
+  assert.ok(run(undefined, 'Room 3.5 million VND').length > 0);
+});
+
+test('R13: link không scheme', () => {
+  assert.ok(has(mk({}, { text: goodText + ' homematch.vn/p/F9' }), /không khớp link/));
+  assert.ok(has(mk({}, { text: goodText + ' www.homematch.vn/p/F9…' }), /không khớp link/));
+  assert.deepEqual(msgs(mk({}, { text: `${l2.rooms[0].priceText} homematch.vn/p/T1302…` })), []);
+  assert.deepEqual(msgs(mk({}, { text: goodText + ' nothomematch.vn/a, mail a@homematch.vn' })), []);
+});
+
+test('R13: # chỉ là tiêu đề markdown', () => {
+  assert.deepEqual(msgs(mk({}, { text: goodText + '\n#phongtro #hanoi' })), []);
+  assert.ok(has(mk({}, { text: '## Tiêu đề\n' + goodText }), /tiêu đề markdown/));
+  assert.ok(has(mk({}, { text: '# Tiêu đề\n' + goodText }), /tiêu đề markdown/));
 });
