@@ -51,7 +51,7 @@ Các cột của dòng: `Dấu thời gian`, `Người góp`, `Khung`, `Bài`, `
    - `## Tóm tắt` rồi phần tóm tắt.
    - `## Góp ý gốc` rồi mỗi dòng gốc một mục: thời điểm, người góp, khung, bài, bản, mã tin, góp ý; thêm `Nội dung bài` cắt còn 300 ký tự (thêm `…` nếu cắt). Chỉ các cột này.
    - Vô hiệu hoá nhắc tên và tham chiếu trong chữ của góp ý: chèn ký tự rộng bằng 0 (U+200B) ngay sau mỗi `@` và ngay trước mỗi `#` theo sau là chữ số.
-4. Lấy số issue từ URL `gh` in ra. Một issue lỗi thì báo và làm tiếp các nhóm còn lại.
+4. Lấy `number` trong JSON trả về. Một issue lỗi thì báo và làm tiếp các nhóm còn lại.
 
 ## Bước 5: Đánh dấu dòng trong Sheet
 
