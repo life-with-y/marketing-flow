@@ -19,8 +19,13 @@ export function targetsForSlot(cfg, date, hhmm, onlyGroups) {
   const out = [];
   const needles = onlyGroups?.map(fold);
   for (const g of cfg.groups || []) {
-    if (!g.active || !(g.days || []).includes(day) || !(g.slots || cfg.schedule || []).includes(hhmm)) continue;
-    if (needles && !needles.some((n) => fold(g.name).includes(n))) continue;
+    if (!g.active) continue;
+    if (needles) {
+      if (!needles.some((n) => fold(g.name).includes(n))) continue;
+    } else {
+      if (!(g.days || []).includes(day)) continue;
+      if (hhmm != null && !(g.slots || cfg.schedule || []).includes(hhmm)) continue;
+    }
     out.push({
       id: 'group:' + g.url,
       kind: 'group',

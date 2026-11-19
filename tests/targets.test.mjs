@@ -86,3 +86,21 @@ test('lastPreparedMap returns latest and handles missing file', () => {
   assert.equal(m.get('group:u|T2'), '2026-11-01T00:00:00.000Z');
   assert.equal(fs.readFileSync(path.join(d, 'prepared.jsonl'), 'utf8').trim().split('\n').length, 2);
 });
+
+test('hhmm null skips slot filter but keeps active + weekday', () => {
+  const c = cfg({ groups: [
+    grp({ slots: ['17:30'], url: 'a' }),
+    grp({ active: false, url: 'b' }),
+    grp({ days: ['mon'], url: 'c' }),
+  ] });
+  assert.deepEqual(targetsForSlot(c, THU, null).map((t) => t.url), ['a']);
+});
+
+test('onlyGroups ignores days/slots', () => {
+  const ts = targetsForSlot(cfg({ groups: [grp({ days: ['mon'], slots: ['17:30'] })] }), THU, '11:00', ['cau giay']);
+  assert.equal(ts.length, 1);
+});
+
+test('onlyGroups skips inactive match', () => {
+  assert.equal(targetsForSlot(cfg({ groups: [grp({ active: false })] }), THU, null, ['cau giay']).length, 0);
+});
