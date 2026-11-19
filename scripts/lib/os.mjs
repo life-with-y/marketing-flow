@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 
 function run(cmd, args, opts, spawnImpl) {
   try {
-    const child = spawnImpl(cmd, args, { stdio: 'ignore', detached: true, ...opts });
+    const child = spawnImpl(cmd, args, { stdio: 'ignore', detached: true, windowsHide: true, ...opts });
     child?.on?.('error', () => {});
     child?.unref?.();
   } catch {

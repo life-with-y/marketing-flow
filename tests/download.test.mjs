@@ -12,6 +12,7 @@ before(async () => {
   server = http.createServer((req, res) => {
     hits[req.url] = (hits[req.url] || 0) + 1;
     if (req.url.startsWith('/ok')) { res.setHeader('content-type', 'image/jpeg'); res.end(Buffer.from('JPG' + req.url)); }
+    else if (req.url.startsWith('/jpgalias')) { res.setHeader('content-type', 'image/jpg'); res.end(Buffer.from('JPG' + req.url)); }
     else if (req.url.startsWith('/png')) { res.setHeader('content-type', 'image/png'); res.end(Buffer.from('PNG' + req.url)); }
     else if (req.url.startsWith('/ico')) { res.setHeader('content-type', 'image/vnd.microsoft.icon'); res.end('ico'); }
     else if (req.url.startsWith('/html')) { res.setHeader('content-type', 'text/html'); res.end('<html/>'); }
@@ -140,4 +141,13 @@ test('non-whitelisted image type (ico) is a failed image', async () => {
   const posts = [{ targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 't', images: [u('/ok/a'), u('/ok/b'), u('/ico/c')] }] }];
   const r = await downloadPosts({ posts, input, outRoot: out });
   assert.equal(r.needsReplacement.length, 1);
+});
+
+test('content-type image/jpg -> .jpg', async () => {
+  const out = tmp();
+  const imgs = [0, 1, 2].map((i) => u(`/jpgalias/${i}`));
+  const input = { targets, listings: [{ code: 'T1', imageCount: 3, images: imgs.map((url, i) => ({ url, isCover: i === 0 })) }] };
+  const r = await downloadPosts({ posts: [{ targetId: 't1', type: 's', postCodes: ['T1'], variants: [{ key: 'A', text: 'x', images: imgs }] }], input, outRoot: path.join(out, 's') });
+  assert.equal(r.needsReplacement.length, 0);
+  assert.deepEqual(r.posts[0].variants[0].files, ['1.jpg', '2.jpg', '3.jpg']);
 });

@@ -102,6 +102,7 @@ test('os helpers: no-op on test platform, args arrays on darwin/win32, never thr
   assert.deepEqual(calls[2].slice(0, 2), ['explorer', ['C:\\o']]);
   notify('HomeMatch', 'b', 'win32', spy);
   assert.equal(calls[3][2].env.HM_BODY, 'b');
+  assert.ok(calls.every((c) => c[2].windowsHide === true));
   const boom = () => { throw new Error('x'); };
   assert.doesNotThrow(() => { openFolder('/a', 'darwin', boom); notify('a', 'b', 'darwin', boom); });
 });

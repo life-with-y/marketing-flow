@@ -23,7 +23,7 @@ export function postDirName(n, target, postCodes) {
 function extFor(contentType) {
   const m = /^image\/([a-z0-9.+-]+)/i.exec(contentType || '');
   if (!m) return null;
-  return { jpeg: 'jpg', png: 'png', webp: 'webp', gif: 'gif' }[m[1].toLowerCase()] ?? null;
+  return { jpeg: 'jpg', jpg: 'jpg', png: 'png', webp: 'webp', gif: 'gif' }[m[1].toLowerCase()] ?? null;
 }
 
 async function fetchOne(url, fetchImpl, timeoutMs) {
