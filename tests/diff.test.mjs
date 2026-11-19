@@ -80,3 +80,31 @@ test('saveSnapshot keeps 30, deletes oldest; latestSnapshot before slot', () => 
   assert.equal(latestSnapshot(dir, pad(2)), null);
   assert.equal(latestSnapshot(tmp(), pad(5)), null);
 });
+
+test('latestSnapshot bỏ file hỏng, lùi về bản cũ hơn; saveSnapshot ghi qua file tạm', () => {
+  const dir = tmp();
+  const s = (d) => `2026-11-${d}_0900`;
+  saveSnapshot(dir, s('10'), [{ code: 'OLD', rooms: [] }]);
+  saveSnapshot(dir, s('11'), [{ code: 'MID', rooms: [] }]);
+  fs.writeFileSync(path.join(dir, 'snapshots', `${s('12')}.json`), '[{"code":"TRUNC');
+  assert.equal(latestSnapshot(dir, s('13'))[0].code, 'MID');
+  fs.writeFileSync(path.join(dir, 'snapshots', `${s('11')}.json`), '');
+  assert.equal(latestSnapshot(dir, s('13'))[0].code, 'OLD');
+  fs.writeFileSync(path.join(dir, 'snapshots', `${s('10')}.json`), '{not json');
+  assert.equal(latestSnapshot(dir, s('13')), null);
+  // không để lại file tạm
+  saveSnapshot(dir, s('14'), [{ code: 'NEW', rooms: [] }]);
+  assert.deepEqual(fs.readdirSync(path.join(dir, 'snapshots')).filter((f) => !f.endsWith('.json')), []);
+  assert.equal(latestSnapshot(dir, s('15'))[0].code, 'NEW');
+});
+
+test('saveSnapshot dùng rename (file tạm rồi đổi tên)', () => {
+  const dir = tmp();
+  const orig = fs.renameSync;
+  const calls = [];
+  fs.renameSync = (a, b) => { calls.push([a, b]); return orig(a, b); };
+  try { saveSnapshot(dir, '2026-11-20_0900', []); } finally { fs.renameSync = orig; }
+  assert.equal(calls.length, 1);
+  assert.equal(path.basename(calls[0][1]), '2026-11-20_0900.json');
+  assert.notEqual(calls[0][0], calls[0][1]);
+});
