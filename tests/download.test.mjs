@@ -13,6 +13,7 @@ before(async () => {
     hits[req.url] = (hits[req.url] || 0) + 1;
     if (req.url.startsWith('/ok')) { res.setHeader('content-type', 'image/jpeg'); res.end(Buffer.from('JPG' + req.url)); }
     else if (req.url.startsWith('/png')) { res.setHeader('content-type', 'image/png'); res.end(Buffer.from('PNG' + req.url)); }
+    else if (req.url.startsWith('/ico')) { res.setHeader('content-type', 'image/vnd.microsoft.icon'); res.end('ico'); }
     else if (req.url.startsWith('/html')) { res.setHeader('content-type', 'text/html'); res.end('<html/>'); }
     else { res.statusCode = 404; res.end('no'); }
   });
@@ -104,5 +105,39 @@ test('timeout counts as failure', async () => {
   const slow = (url, { signal }) => new Promise((_, rej) => signal.addEventListener('abort', () => rej(new Error('abort'))));
   const posts = [{ targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 't', images: [u('/ok/a'), u('/ok/b'), u('/ok/c')] }] }];
   const r = await downloadPosts({ posts, input, outRoot: path.join(out, 's'), fetchImpl: slow, timeoutMs: 30 });
+  assert.equal(r.needsReplacement.length, 1);
+});
+
+test('re-run cleans stale NN_ dirs, keeps other files', async () => {
+  const out = path.join(tmp(), 'slot');
+  const input = { targets, listings: [listing('T1', 3), listing('T2', 3)] };
+  const mk = (code, ok = true) => ({ targetId: 't1', type: 'single', postCodes: [code], variants: [{ key: 'A', text: 't', images: [0, 1, 2].map((i) => u(ok ? `/ok/${code}/${i}` : `/missing/${i}`)) }] });
+  await downloadPosts({ posts: [mk('T1'), mk('T2')], input, outRoot: out });
+  fs.writeFileSync(path.join(out, 'index.html'), 'keep');
+  const r = await downloadPosts({ posts: [mk('T1'), mk('T2', false)], input, outRoot: out });
+  assert.equal(r.needsReplacement.length, 1);
+  assert.deepEqual(fs.readdirSync(out).sort(), ['01_phong-tro-cau-giay_T1', 'index.html']);
+});
+
+test('unsafe code / variant key -> needsReplacement, nothing written outside', async () => {
+  const out = path.join(tmp(), 'slot');
+  const input = { targets, listings: [listing('T1', 3)] };
+  const imgs = [0, 1, 2].map((i) => u(`/ok/T1/${i}`));
+  const posts = [
+    { targetId: 't1', type: 'single', postCodes: ['../x'], variants: [{ key: 'A', text: 't', images: imgs }] },
+    { targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 't', images: imgs }, { key: '../B', text: 't', images: imgs }] },
+  ];
+  const r = await downloadPosts({ posts, input, outRoot: out });
+  assert.equal(r.needsReplacement.length, 2);
+  assert.match(r.needsReplacement[0].reason, /không hợp lệ/);
+  assert.equal(r.posts.length, 0);
+  assert.deepEqual(fs.readdirSync(out), []);
+});
+
+test('non-whitelisted image type (ico) is a failed image', async () => {
+  const out = path.join(tmp(), 'slot');
+  const input = { targets, listings: [listing('T1', 3)] };
+  const posts = [{ targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 't', images: [u('/ok/a'), u('/ok/b'), u('/ico/c')] }] }];
+  const r = await downloadPosts({ posts, input, outRoot: out });
   assert.equal(r.needsReplacement.length, 1);
 });
