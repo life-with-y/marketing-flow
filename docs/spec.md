@@ -134,7 +134,7 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
 
 1. **Fetch (script)**: gọi API, lưu `snapshots/<slot>.json`, giữ 30 bản gần nhất.
 2. **So sánh (script)**:
-   - Khoá phòng là `post_code + room_number`. So với snapshot liền trước, gắn nhãn phòng: `NEW`, `PRICE_DOWN` / `PRICE_UP`, `NOW_AVAILABLE` (`COMING_SOON` → `AVAILABLE`), `UNCHANGED`. Lần đầu chạy thì mọi phòng là `NEW`.
+   - Khoá phòng là `post_code + room_number`. So với snapshot liền trước, gắn nhãn phòng: `NEW`, `PRICE_DOWN` / `PRICE_UP`, `NOW_AVAILABLE` (`COMING_SOON` → `AVAILABLE`), `UNCHANGED`. Lần đầu chạy thì mọi phòng là `UNCHANGED` (chưa có bản trước nên không biết gì là mới).
    - Nhãn tin là nhãn mạnh nhất trong các phòng của nó, theo thứ tự ưu tiên ở bước 3.
    - Đọc `prepared.jsonl` để biết lần gần nhất mỗi tin được soạn cho mỗi đích.
 3. **Chọn và soạn (Claude)**:

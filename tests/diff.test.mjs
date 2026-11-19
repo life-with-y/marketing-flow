@@ -12,11 +12,11 @@ const base = () => toListings(fixture);
 const find = (ls, code) => ls.find((l) => l.code === code);
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'snap-'));
 
-test('prev null -> all NEW', () => {
+test('prev null (first run) -> all UNCHANGED', () => {
   const out = labelListings(null, base());
   for (const l of out) {
-    assert.equal(l.label, 'NEW');
-    for (const r of l.rooms) assert.equal(r.label, 'NEW');
+    assert.equal(l.label, 'UNCHANGED');
+    for (const r of l.rooms) assert.equal(r.label, 'UNCHANGED');
   }
 });
 

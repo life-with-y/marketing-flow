@@ -27,7 +27,7 @@ function mkHome(cfgOver = {}) {
 const ok = async () => ({ ok: true, status: 200, json: async () => JSON.parse(FIX), text: async () => '' });
 const status = (s) => async () => ({ ok: false, status: s, json: async () => ({}) });
 
-test('first run writes input.json with NEW labels, eligibility, no token', async () => {
+test('first run writes input.json with UNCHANGED labels, eligibility, no token', async () => {
   const { home, dir } = mkHome();
   const r = await runPrepare({ home, now: NOW, fetchImpl: ok });
   assert.equal(r.exitCode, 0);
@@ -37,7 +37,7 @@ test('first run writes input.json with NEW labels, eligibility, no token', async
   const input = JSON.parse(text);
   assert.equal(input.slot, '2026-11-19_1105');
   assert.ok(input.listings.length > 0);
-  assert.ok(input.listings.every((l) => l.label === 'NEW'));
+  assert.ok(input.listings.every((l) => l.label === 'UNCHANGED'));
   assert.equal(input.listings.find((l) => l.code === 'T1299').eligible, false);
   assert.ok(fs.existsSync(path.join(dir, 'snapshots', '2026-11-19_1105.json')));
 });

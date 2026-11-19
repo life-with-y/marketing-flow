@@ -14,7 +14,7 @@ export function labelListings(prev, curr) {
   return curr.map((l) => {
     const rooms = l.rooms.map((r) => ({
       ...r,
-      label: prev === null || prev === undefined ? 'NEW' : roomLabel(prevRooms.get(`${l.code}\u0000${r.room}`), r),
+      label: prev === null || prev === undefined ? 'UNCHANGED' : roomLabel(prevRooms.get(`${l.code}\u0000${r.room}`), r),
     }));
     const label = rooms.reduce((best, r) => (RANK.indexOf(r.label) < RANK.indexOf(best) ? r.label : best), 'PRICE_UP');
     return { ...l, rooms, label: rooms.length ? label : 'UNCHANGED' };
