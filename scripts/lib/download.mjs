@@ -1,6 +1,7 @@
 // Tải ảnh bài đăng vào thư mục theo thứ tự đăng (Task 8).
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const CONCURRENCY = 6;
 
@@ -42,6 +43,30 @@ async function fetchOne(url, fetchImpl, timeoutMs) {
   }
 }
 
+const defaultRun = (cmd, args) => spawnSync(cmd, args, { stdio: 'ignore', windowsHide: true });
+
+// Trên Mac đổi webp/png sang jpg bằng sips, giữ số thứ tự; lỗi hoặc không phải Mac thì giữ file gốc.
+function toJpg(vdir, name, platform, run) {
+  const m = /^(\d+)\.(webp|png)$/.exec(name);
+  if (platform !== 'darwin' || !m) return name;
+  const src = path.join(vdir, name);
+  const outName = `${m[1]}.jpg`;
+  const out = path.join(vdir, outName);
+  let ok = false;
+  try {
+    const r = run('sips', ['-s', 'format', 'jpeg', src, '--out', out]);
+    ok = r?.status === 0 && fs.existsSync(out);
+  } catch {
+    ok = false;
+  }
+  if (!ok) {
+    fs.rmSync(out, { force: true });
+    return name;
+  }
+  fs.rmSync(src, { force: true });
+  return outName;
+}
+
 async function pool(items, limit, fn) {
   let i = 0;
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
@@ -50,7 +75,7 @@ async function pool(items, limit, fn) {
   await Promise.all(workers);
 }
 
-export async function downloadPosts({ posts, input, outRoot, fetchImpl = fetch, timeoutMs = 20000 }) {
+export async function downloadPosts({ posts, input, outRoot, fetchImpl = fetch, timeoutMs = 20000, platform = process.platform, run = defaultRun }) {
   const targets = new Map((input.targets ?? []).map((t) => [t.id, t]));
   const listings = new Map((input.listings ?? []).map((l) => [l.code, l]));
 
@@ -102,7 +127,7 @@ export async function downloadPosts({ posts, input, outRoot, fetchImpl = fetch, 
         const { ext, bytes } = cache.get(u);
         const name = `${i + 1}.${ext}`;
         fs.writeFileSync(path.join(vdir, name), bytes);
-        return name;
+        return toJpg(vdir, name, platform, run);
       });
       fs.writeFileSync(path.join(vdir, 'post.txt'), v.text, 'utf8');
       return { key: v.key, dir: vdir, text: v.text, files };

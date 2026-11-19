@@ -161,6 +161,7 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
    - Bài 1 bản: ảnh và `post.txt` nằm thẳng trong thư mục bài. Bài nhiều bản: mỗi bản một thư mục con `A/`, `B/`, `C/`, mỗi thư mục có `post.txt` và ảnh đánh số lại theo thứ tự của bản đó (`1.jpg` là ảnh bìa của bản ấy).
    - **Bài 1 tin**: mục tiêu 5 ảnh, ảnh bìa trước. Tin có 3–4 ảnh thì dùng đủ số đó.
    - **Bài nhiều tin**: mục tiêu tổng 5 ảnh. Lấy ảnh bìa từng tin trước, còn chỗ thì thêm ảnh của tin đứng đầu. Bài hơn 5 tin thì mỗi tin 1 ảnh bìa, tối đa 10 ảnh.
+   - Ảnh được đổi sang jpg trên Mac khi có thể (ảnh webp/png đổi bằng `sips`, giữ số thứ tự). Đổi lỗi hoặc không phải Mac thì giữ file gốc (`1.webp`, `2.png`…).
    - Ảnh tải lỗi thì bỏ ảnh. Tin còn dưới 3 ảnh (bài 1 tin) hoặc tin mất ảnh bìa (bài nhiều tin) thì Claude thay tin một lần, vẫn thiếu thì bỏ bài.
 5. **Trang bài đăng (script)**: `<outputDir>/<slot>/index.html`, file tĩnh, mở không cần server. Kiểu chữ trang theo house style của trang cấu hình (serif, mực đen trên giấy trắng).
    - **Thanh trên cùng luôn hiện**: giờ khung, ngày, giờ soạn xong, tiến độ "đã đăng x / N" kèm thanh mảnh, bộ lọc theo tài khoản, dòng nhắc thư mục khung giờ đã mở trong Finder.

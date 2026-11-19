@@ -13,6 +13,7 @@ before(async () => {
     hits[req.url] = (hits[req.url] || 0) + 1;
     if (req.url.startsWith('/ok')) { res.setHeader('content-type', 'image/jpeg'); res.end(Buffer.from('JPG' + req.url)); }
     else if (req.url.startsWith('/jpgalias')) { res.setHeader('content-type', 'image/jpg'); res.end(Buffer.from('JPG' + req.url)); }
+    else if (req.url.startsWith('/webp')) { res.setHeader('content-type', 'image/webp'); res.end(Buffer.from('WEBP' + req.url)); }
     else if (req.url.startsWith('/png')) { res.setHeader('content-type', 'image/png'); res.end(Buffer.from('PNG' + req.url)); }
     else if (req.url.startsWith('/ico')) { res.setHeader('content-type', 'image/vnd.microsoft.icon'); res.end('ico'); }
     else if (req.url.startsWith('/html')) { res.setHeader('content-type', 'text/html'); res.end('<html/>'); }
@@ -75,7 +76,7 @@ test('two variants -> A/ and B/, B/1.jpg is images[0] of B; ext by content-type;
   const A = [0, 1, 2].map((i) => u(`/ok/T1/${i}`));
   const B = [u('/png/b0'), u('/ok/T1/1'), u('/ok/T1/2')];
   const posts = [{ targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 'a', images: A }, { key: 'B', text: 'b', images: B }] }];
-  const r = await downloadPosts({ posts, input, outRoot: path.join(out, 'slot') });
+  const r = await downloadPosts({ posts, input, outRoot: path.join(out, 'slot'), platform: 'linux' });
   const dir = r.posts[0].dir;
   assert.equal(fs.readFileSync(path.join(dir, 'A', '1.jpg'), 'utf8'), 'JPG/ok/T1/0');
   assert.equal(fs.readFileSync(path.join(dir, 'B', '1.png'), 'utf8'), 'PNG/png/b0');
@@ -150,4 +151,59 @@ test('content-type image/jpg -> .jpg', async () => {
   const r = await downloadPosts({ posts: [{ targetId: 't1', type: 's', postCodes: ['T1'], variants: [{ key: 'A', text: 'x', images: imgs }] }], input, outRoot: path.join(out, 's') });
   assert.equal(r.needsReplacement.length, 0);
   assert.deepEqual(r.posts[0].variants[0].files, ['1.jpg', '2.jpg', '3.jpg']);
+});
+
+// F4: đổi webp/png sang jpg trên Mac bằng sips (runner được tiêm, không cần sips thật).
+const webpPost = () => {
+  const imgs = [u('/webp/0'), u('/png/1'), u('/ok/T1/2')];
+  return {
+    input: { targets, listings: [{ code: 'T1', imageCount: 3, images: imgs.map((url, i) => ({ url, isCover: i === 0 })) }] },
+    posts: [{ targetId: 't1', type: 's', postCodes: ['T1'], variants: [{ key: 'A', text: 'x', images: imgs }] }],
+  };
+};
+
+test('darwin + sips ok -> webp/png become N.jpg, original removed, jpg not converted', async () => {
+  const out = tmp();
+  const calls = [];
+  const run = (cmd, args) => {
+    calls.push([cmd, ...args]);
+    fs.writeFileSync(args[args.length - 1], 'CONVERTED');
+    return { status: 0 };
+  };
+  const { input, posts } = webpPost();
+  const r = await downloadPosts({ posts, input, outRoot: path.join(out, 's'), platform: 'darwin', run });
+  const dir = r.posts[0].dir;
+  assert.deepEqual(r.posts[0].variants[0].files, ['1.jpg', '2.jpg', '3.jpg']);
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['1.jpg', '2.jpg', '3.jpg', 'post.txt']);
+  assert.equal(fs.readFileSync(path.join(dir, '1.jpg'), 'utf8'), 'CONVERTED');
+  assert.equal(fs.readFileSync(path.join(dir, '3.jpg'), 'utf8'), 'JPG/ok/T1/2');
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], ['sips', '-s', 'format', 'jpeg', path.join(dir, '1.webp'), '--out', path.join(dir, '1.jpg')]);
+});
+
+test('darwin + sips fails -> keep N.webp / N.png', async () => {
+  const out = tmp();
+  const run = () => ({ status: 1 });
+  const { input, posts } = webpPost();
+  const r = await downloadPosts({ posts, input, outRoot: path.join(out, 's'), platform: 'darwin', run });
+  assert.deepEqual(r.posts[0].variants[0].files, ['1.webp', '2.png', '3.jpg']);
+  assert.equal(fs.readFileSync(path.join(r.posts[0].dir, '1.webp'), 'utf8'), 'WEBP/webp/0');
+});
+
+test('darwin + runner throws -> keep original', async () => {
+  const out = tmp();
+  const run = () => { throw new Error('ENOENT'); };
+  const { input, posts } = webpPost();
+  const r = await downloadPosts({ posts, input, outRoot: path.join(out, 's'), platform: 'darwin', run });
+  assert.deepEqual(r.posts[0].variants[0].files, ['1.webp', '2.png', '3.jpg']);
+});
+
+test('not darwin -> no conversion, runner never called', async () => {
+  const out = tmp();
+  let called = false;
+  const run = () => { called = true; return { status: 0 }; };
+  const { input, posts } = webpPost();
+  const r = await downloadPosts({ posts, input, outRoot: path.join(out, 's'), platform: 'win32', run });
+  assert.deepEqual(r.posts[0].variants[0].files, ['1.webp', '2.png', '3.jpg']);
+  assert.equal(called, false);
 });
