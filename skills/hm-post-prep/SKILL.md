@@ -76,7 +76,11 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
 2. Tin phòng hay thương hiệu (kiểu có số tin `0` là thương hiệu):
    - `group`: luôn là tin phòng.
    - `page` dùng tỉ lệ `page`; `wall` và `threads` dùng tỉ lệ `personal`.
-   - Đếm trong `prepared.jsonl` tối đa 10 dòng gần nhất có `target` = `id` của đích: `n` dòng, `b` dòng có `postCodes` rỗng. Soạn bài thương hiệu khi `(b + 1) / (n + 1) ≤ brand / 100`; không thì tin phòng. Không có file hoặc không có dòng nào thì `n = b = 0`.
+   - Tính theo **tài khoản** (`target.account`), không theo từng đích. `n` = số dòng, `b` = số dòng có `postCodes` rỗng, cộng từ hai nguồn:
+     - tối đa 10 dòng gần nhất trong `prepared.jsonl` có `account` = `target.account` (không có file hoặc không có dòng nào thì 0);
+     - các bài đã soạn **trước đó trong lượt này** cho cùng tài khoản (bài thương hiệu tính vào `b`).
+   - Soạn bài thương hiệu khi `(b + 1) / (n + 1) ≤ brand / 100`; không thì tin phòng.
+   - Ví dụ: Page có 5 đích trong khung, chưa có lịch sử, `brand` = 50. Bài 1: n=0, b=0, (0+1)/(0+1)=1 > 0,5 → tin phòng. Bài 2: n=1, b=0, 1/2=0,5 ≤ 0,5 → thương hiệu. Bài 3: n=2, b=1, 2/3 > 0,5 → tin phòng. Bài 4: n=3, b=1, 2/4 ≤ 0,5 → thương hiệu. Bài 5: n=4, b=2, 3/5 > 0,5 → tin phòng. Kết quả: tin phòng, thương hiệu, tin phòng, thương hiệu, tin phòng.
 3. Trong nhóm kiểu đã chọn (tin phòng hoặc thương hiệu), dùng kiểu theo mục **Cách chọn tin** của từng kiểu. Kiểu không đủ tin theo điều kiện của nó thì lùi về kiểu 1 tin. Không có kiểu thương hiệu nào dùng được cho kênh thì soạn tin phòng.
 4. `type` trong `posts.json` = tên kiểu, đúng như tiêu đề trong file kiểu bài (vd `Phòng mới / giảm giá`).
 
