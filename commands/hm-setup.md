@@ -31,12 +31,12 @@ Nếu `~/.homematch-marketing/config.json` đã có: hỏi "Bạn muốn đổi 
 ## Bước 2: Hồ sơ và giờ chạy
 
 1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" init` (chỉ tạo file còn thiếu, không ghi đè).
-2. Đọc `schedule` hiện có trong `config.json` (mặc định của owner), hỏi "Giờ chạy soạn bài: <schedule>. Giữ hay đổi?". Đổi thì sửa `schedule` (dạng `HH:MM`, 24 giờ) bằng cách chạy `config-cli backup` rồi sửa `config.json`.
-3. Hỏi `outputDir` (hiện mặc định `~/HomeMatch-Posts`), giữ hay đổi.
+2. Lấy `schedule` hiện có: trong `config.json` nếu có, không thì mặc định owner ở `${CLAUDE_PLUGIN_ROOT}/rules/templates/config.default.json`, hỏi "Giờ chạy soạn bài: <schedule>. Giữ hay đổi?". Đổi thì sửa `schedule` (dạng `HH:MM`, 24 giờ) bằng cách chạy `config-cli backup` rồi sửa `config.json`.
+3. Hỏi `outputDir` (lấy tương tự; mặc định `~/HomeMatch-Posts`), giữ hay đổi.
 
 ## Bước 3: Quyền
 
-Đọc `outputDir` trong `config.json`, mở rộng `~` thành đường dẫn tuyệt đối. `<root>` là đường dẫn tuyệt đối của `${CLAUDE_PLUGIN_ROOT}`. Hiện cho người dùng đúng các rule sau, hỏi "Thêm các quyền này vào ~/.claude/settings.json? (có/không)":
+Lấy `outputDir` (config.json, không có thì config.default.json), mở rộng `~` thành đường dẫn tuyệt đối. `<root>` là đường dẫn tuyệt đối của `${CLAUDE_PLUGIN_ROOT}`. Hiện cho người dùng đúng các rule sau, hỏi "Thêm các quyền này vào ~/.claude/settings.json? (có/không)":
 
 ```
 Bash(node <root>/scripts/prepare.mjs:*)
