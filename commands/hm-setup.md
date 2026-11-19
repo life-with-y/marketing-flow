@@ -14,7 +14,7 @@ Thiết lập HomeMatch marketing. Mọi chữ hiển thị cho người dùng b
 
 ## Chạy lại
 
-Nếu `~/.homematch-marketing/config.json` đã có: hỏi "Bạn muốn đổi phần nào?" (token / giờ chạy / quyền / Page và liên hệ / persona / lịch) và chỉ làm các bước tương ứng bên dưới. Không hỏi lại phần không đổi.
+Nếu `~/.homematch-marketing/config.json` đã có: hỏi "Bạn muốn đổi phần nào?" (token / giờ chạy / quyền / tài khoản, Page và liên hệ / persona / lịch) và chỉ làm các bước tương ứng bên dưới. Không hỏi lại phần không đổi.
 
 ## Bước 1: API và token
 
@@ -60,15 +60,20 @@ Không đồng ý: bỏ qua, nói lịch có thể hỏi quyền mỗi lần ch�
 
 Làm đúng phần "Bước 3: Đồng bộ lịch" của skill `hm-config` (task `hm-post-prep-HHMM` cho từng giờ trong `schedule`, cùng prompt, cùng ghi chú app phải mở). Không tự đặt quy ước khác.
 
-## Bước 5: Page, liên hệ, persona
+## Bước 5: Tài khoản, Page, liên hệ, persona
 
-1. Hỏi "Bạn có phụ trách Page không?" (mặc định **Không**). Có: thêm vào `accounts` của `config.json` một mục `{ "id": "page", "type": "fb-page", "label": "HomeMatch Page" }` và hỏi liên hệ riêng cho Page, lưu vào `pageContact`.
-2. Hỏi danh sách liên hệ theo thứ tự ưu tiên, các loại: `zalo` (kèm số/link), `phone` (kèm số), `inbox`, `comment-code`. Lưu vào `contact`, dạng `{ "type": "zalo", "value": "…" }` (`inbox` và `comment-code` không có `value`).
-3. Persona: hỏi chọn một trong hai:
+1. Tài khoản cá nhân:
+   - Hỏi "Bạn đăng bằng mấy tài khoản Facebook cá nhân?" (0 trở lên), rồi hỏi tên hiển thị của từng tài khoản. Thêm vào `accounts` mỗi tài khoản một mục `{ "id": "fb1", "type": "fb-personal", "label": "<tên>" }`, `id` lần lượt `fb1`, `fb2`, …
+   - Hỏi "Bạn có tài khoản Threads không?" (mặc định **Không**). Có: hỏi tên hiển thị, thêm `{ "id": "th", "type": "threads", "label": "<tên>" }`.
+   - Chạy lại: hiện các tài khoản đang có, chỉ thêm/sửa/xoá theo ý người dùng; giữ nguyên `id` của tài khoản còn lại. Xoá tài khoản thì xoá luôn khoá đó trong `perSlot`.
+2. Hỏi "Bạn có phụ trách Page không?" (mặc định **Không**). Có: thêm vào `accounts` của `config.json` một mục `{ "id": "page", "type": "fb-page", "label": "HomeMatch Page" }` và hỏi liên hệ riêng cho Page, lưu vào `pageContact`.
+3. Số bài mỗi khung: với từng tài khoản trong `accounts` (cá nhân, Threads, Page), hỏi "<tên>: mấy bài mỗi khung giờ? (mặc định 1, từ 0 đến 5)". Ghi vào `perSlot`, khoá là `id` tài khoản (vd `{ "fb1": 1, "th": 1, "page": 1 }`). Ngoài khoảng 0–5 hoặc không phải số nguyên thì hỏi lại.
+4. Hỏi danh sách liên hệ theo thứ tự ưu tiên, các loại: `zalo` (kèm số/link), `phone` (kèm số), `inbox`, `comment-code`. Lưu vào `contact`, dạng `{ "type": "zalo", "value": "…" }` (`inbox` và `comment-code` không có `value`).
+5. Persona: hỏi chọn một trong hai:
    - Preset: `${CLAUDE_PLUGIN_ROOT}/rules/templates/presets/founder-thang-than.md` (Founder, thẳng thắn) hoặc `tre-nang-dong.md` (Trẻ, năng động).
    - Hoặc phỏng vấn 3–5 câu ngắn (bạn là ai, giọng nói, điều NÊN, điều KHÔNG NÊN, xưng hô), rồi viết persona theo dạng của các preset.
    Ghi kết quả vào `~/.homematch-marketing/persona.md`. Nếu `persona.md` đã được người dùng sửa (khác bản mẫu), hỏi trước khi ghi đè.
-4. Trước khi sửa `config.json` chạy `config-cli backup`; sau khi sửa kiểm tra chặt bằng `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" validate` (in `OK`, hoặc `LỖI: …` thì `config-cli undo` và báo lỗi).
+6. Trước khi sửa `config.json` (mục 1–4) chạy `config-cli backup`; sau khi sửa kiểm tra chặt bằng `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" validate` (in `OK`, hoặc `LỖI: …` thì `config-cli undo` và báo lỗi).
 
 ## Bước 6: Mở cấu hình
 
