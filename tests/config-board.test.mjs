@@ -200,3 +200,9 @@ test('validate: OK exit 0, sai thì LỖI exit 1', async () => {
   assert.equal(r.code, 1);
   assert.match(r.o[0], /^LỖI: Chưa có config.json/);
 });
+
+test('model không còn trong bảng cấu hình và diff (lịch dùng model mặc định của app)', () => {
+  const html = renderConfigBoard({ cfg: cfg({ model: 'opus' }), today: THU, tokenLabel: null });
+  assert.ok(!html.includes('<dt>Model</dt>'));
+  assert.deepEqual(diffConfig(cfg({ model: 'sonnet' }), cfg({ model: 'opus' })), []);
+});

@@ -79,7 +79,7 @@ Kênh: FB cá nhân (có thể nhiều tài khoản), FB Page HomeMatch, Threads
 Claude Code plugin.
 - **Script (Node, chạy được Mac và Windows)**: các bước cố định (fetch, so sánh, tải ảnh, dựng HTML, ghi nhật ký).
 - **Claude (skill)**: chọn tin cho từng kênh/nhóm, soạn nội dung, sửa config theo góp ý.
-- **Lịch**: scheduled task của app Claude desktop trên máy từng người, model mặc định Sonnet (đổi được trong config). Máy phải bật và app phải mở lúc đến giờ. **Bỏ lỡ thì bỏ qua**, không chạy bù.
+- **Lịch**: scheduled task của app Claude desktop trên máy từng người, dùng model mặc định của app Claude (scheduled task không đặt được model trong config; muốn đổi thì sửa trong cài đặt task ở mục Scheduled). Máy phải bật và app phải mở lúc đến giờ. **Bỏ lỡ thì bỏ qua**, không chạy bù.
 - **Trang cấu hình**: `lavish-axi` (chạy qua `npx`), chỉ trên máy.
 
 ```
@@ -195,7 +195,7 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
 - `channel-format.md`: giới hạn từng kênh (vd Threads ≤ 500 ký tự), định dạng giá. Claude đề xuất, owner duyệt.
-- `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, model, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
+- `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
 - `templates/content-types.example.md`: 3 kiểu bài khởi đầu:
   1. **Phòng mới / giảm giá**: 1 tin, ảnh, giá, khu, link
   2. **Gom theo khu**: nhiều tin cùng khu/tầm giá, ảnh bìa mỗi tin
@@ -213,7 +213,6 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
     "apiBaseUrl": "https://…",
     "outputDir": "~/HomeMatch-Posts",
     "schedule": ["11:00", "17:30"],
-    "model": "sonnet",
     "contact": [                                  // thứ tự ưu tiên
       { "type": "zalo", "value": "…" },
       { "type": "inbox" },
@@ -274,7 +273,7 @@ Chạy lại `/hm-setup` để đổi token hoặc dựng lại lịch và quy�
     - Persona
     - Kiểu bài
     - Tài khoản & liên hệ
-    - Lịch & cài đặt (giờ chạy, tỉ lệ, model, thư mục, quét nhóm, token chỉ hiện "đã cài")
+    - Lịch & cài đặt (giờ chạy, tỉ lệ, thư mục, quét nhóm, token chỉ hiện "đã cài")
   - **Cột phải**: ô "Muốn đổi gì?" (nút gợi ý nhanh: tạm ngừng / bật lại nhóm, thêm nhóm, bỏ một nhóm hôm nay; ô gõ lời thường; danh sách chờ gửi; nút "Gửi cho Claude sửa") và "Lần sửa gần nhất" thu gọn, có nút hoàn tác; dưới cùng là nút **Báo lỗi / góp ý plugin** (xem A8).
 - Người dùng chú thích lên mục hoặc gõ yêu cầu (vd "tạm ngừng nhóm Cầu Giấy", "đổi 17:30 thành 18:00", "thêm nhóm: <tên> <link>").
 - Claude **sửa ngay**: lưu bản sao vào `history/`, ghi file, dựng lại trang, hiện changelog (vd "Nhóm Cầu Giấy: active true → false"). Có lệnh "hoàn tác lần sửa trước".

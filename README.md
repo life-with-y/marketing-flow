@@ -32,6 +32,8 @@ Không cần tài khoản GitHub.
 
 Máy phải bật và app Claude đang mở lúc đến giờ. Nếu trễ quá 90 phút thì khung đó bị bỏ qua.
 
+Lịch chạy dùng model mặc định của app Claude; muốn đổi model thì sửa trong cài đặt task ở mục Scheduled.
+
 ## Góp ý
 
 Bấm nút **Góp ý** trên bài hoặc **Báo lỗi / góp ý plugin** trong `/hm-config`, điền Form. Owner sẽ xử lý.

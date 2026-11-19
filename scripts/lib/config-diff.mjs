@@ -78,7 +78,6 @@ export function diffConfig(oldCfg, newCfg) {
   if (!same(o.contact, n.contact)) out.push(`Liên hệ: ${list(o.contact)} → ${list(n.contact)}`);
   if (!same(o.pageContact, n.pageContact)) out.push(`Liên hệ Page: ${list(o.pageContact)} → ${list(n.pageContact)}`);
   out.push(...accountLines(o.accounts, n.accounts));
-  if ((o.model ?? '') !== (n.model ?? '')) out.push(`Model: ${text(o.model)} → ${text(n.model)}`);
   if ((o.outputDir ?? '') !== (n.outputDir ?? '')) out.push(`Thư mục lưu: ${text(o.outputDir)} → ${text(n.outputDir)}`);
   return out;
 }

@@ -57,7 +57,7 @@ test('loadConfig merges defaults', () => {
   assert.equal(c.groups[0].active, true);
   assert.equal(c.groups[0].days.length, 7);
   assert.deepEqual(c.groups[0].districts, []);
-  assert.equal(c.model, 'sonnet');
+  assert.equal('model' in c, false);
   assert.equal(c.outputDir, '~/HomeMatch-Posts');
   assert.deepEqual(c.variants, { default: 1 });
 });
@@ -65,10 +65,10 @@ test('loadConfig merges defaults', () => {
 test('user values win over defaults', () => {
   const d = tmp();
   const b = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, schedule: ['09:00'], model: 'opus' }));
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, schedule: ['09:00'], outputDir: '~/Khac' }));
   const c = loadConfig(d);
   assert.deepEqual(c.schedule, ['09:00']);
-  assert.equal(c.model, 'opus');
+  assert.equal(c.outputDir, '~/Khac');
 });
 
 test('loadToken missing / present', () => {

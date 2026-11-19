@@ -59,6 +59,8 @@ Việc cần làm:
 
 Sau khi đồng bộ, nói người dùng: lịch chỉ chạy khi app Claude đang mở; nếu app đóng lúc đến giờ, app chạy bù khi mở lại nhưng plugin tự bỏ qua nếu trễ quá 90 phút.
 
+Lịch chạy dùng model mặc định của app Claude; muốn đổi model thì sửa trong cài đặt task ở mục Scheduled.
+
 `schedule` không đổi thì bỏ qua bước này. Sau `undo` làm lại bước này (lịch có thể đổi ngược).
 
 ## Bước 4: Dựng lại trang và trả lời

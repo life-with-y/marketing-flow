@@ -187,7 +187,6 @@ function profileHtml(cfg, persona, contentTypesMd, tokenLabel) {
       <div class="body"><dl class="kv">
         <dt>Giờ chạy</dt><dd>${esc(sched) || '—'} <span class="mute it">— bỏ lỡ thì bỏ qua</span></dd>
         <dt>Tỉ lệ</dt><dd>${mix || '<span class="mute">—</span>'}</dd>
-        <dt>Model</dt><dd>${dash(cfg.model)}</dd>
         <dt>Thư mục lưu</dt><dd>${dash(cfg.outputDir)}</dd>
         <dt>Quét nhóm</dt><dd>${cfg.leadScan?.enabled ? 'bật' : 'tắt'}</dd>
         <dt>Token</dt><dd>${token} <span class="mute it">— đổi qua /hm-setup</span></dd>
