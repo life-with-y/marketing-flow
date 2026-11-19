@@ -31,8 +31,8 @@ Xử lý theo mã thoát:
 | Mã | Nghĩa | Làm gì |
 |---|---|---|
 | `0` | OK | stdout có dạng `Đã chuẩn bị khung <slotId>: <đường dẫn input.json>`. Ghi nhớ `slotId` (dạng `2026-11-19_1100`) và đường dẫn, sang bước 2. |
-| `3` | Khung đã lỡ | Dừng im lặng. Không viết gì thêm. Kết thúc. |
-| `4` | Hôm nay không có đích nào | Dừng im lặng. Không viết gì thêm. Kết thúc. |
+| `3` | Khung đã lỡ | Chạy theo lịch (có `--slot`): dừng im lặng, không viết gì thêm. Chạy tay (không `--slot`): in nguyên văn dòng thông báo của script (stderr), rồi dừng. |
+| `4` | Hôm nay không có đích nào | Chạy theo lịch (có `--slot`): dừng im lặng, không viết gì thêm. Chạy tay (không `--slot`): in nguyên văn dòng thông báo của script (stderr) (vd `Không có đích nào cần đăng hôm nay`), rồi dừng. |
 | `2` | Lỗi config / token / API | Báo nguyên văn thông báo lỗi của script (stderr), một dòng. Dừng. |
 | khác | Script hỏng | Báo nguyên văn stderr. Dừng. |
 
@@ -127,12 +127,13 @@ Mỗi đích có đúng `target.variants` bản, khoá `A`, `B`, `C` theo thứ 
 Luật cứng (bài vi phạm sẽ bị script trả về ở bước 4):
 
 1. Chỉ dữ kiện có trong `input.json`: quận, toà, địa chỉ, phòng, giá, trạng thái, dịch vụ, nội thất, mã tin, link. Không bịa diện tích, loại phòng, tiêu đề, số phòng còn lại, lượt xem, "phòng cuối"… Không nói hay ám chỉ tin được ưu tiên vì chủ nhà trả tiền.
-2. **Giá**: mỗi tin trong bài phải có ít nhất một `priceText` của phòng xuất hiện **nguyên văn** (vd `3,5 triệu`; không `3tr5`, `3.5tr`, `3 triệu rưỡi`). Ngay sau giá không đặt chữ số, `rưỡi`, hay `,5` (viết `3,5 triệu/tháng`). Mọi giá khác nhắc tới cũng phải đúng `priceText` của phòng. Đích `en`: được ghi `3.5 million VND` hoặc `3,500,000 VND` (đúng số `price`), hoặc `priceText`.
-3. **Trạng thái** dùng đúng `statusText`. **Mã tin** dùng đúng `code`.
-4. **Link**: mọi chuỗi chứa `homematch.vn` (kể cả không có `https://`) phải bằng đúng `link` của một tin trong bài. Không viết tên miền `homematch.vn` trần, không link quận, không rút gọn. Bài thương hiệu không đặt link tin. Nhóm theo mặc định an toàn: không link.
-5. **Chỉ văn bản thường**: không `**`, không `__`, không `_…_`, không dòng bắt đầu bằng `#` kèm khoảng trắng (tiêu đề markdown), không chữ đậm/nghiêng giả bằng ký tự Unicode (U+1D400–U+1D7FF). Được dùng xuống dòng, emoji, gạch đầu dòng `•`. Hashtag viết liền (`#phongtrohanoi`) thì được.
-6. **Threads** ≤ 500 ký tự (đếm cả emoji và xuống dòng). Viết ngắn ngay từ đầu, đừng để sát giới hạn.
-7. Tuân theo `channel-format.md` và cấu trúc của kiểu bài.
+2. **Giá**: mỗi tin trong bài phải có ít nhất một `priceText` của phòng xuất hiện **nguyên văn** (vd `3,5 triệu`; không `3tr5`, `3.5tr`, `3 triệu rưỡi`). Ngay trước giá không đặt chữ số, `,` hay `.`; ngay sau giá không đặt chữ số, `rưỡi`, hay `,5` (viết `3,5 triệu/tháng`). Không viết khoảng giá kiểu `3,5 đến 4,2 triệu` (số đầu không phải `priceText`); ghi giá từng phòng. Mọi giá khác nhắc tới cũng phải đúng `priceText` của phòng. Đích `en`: được ghi `3.5 million VND` hoặc `3,500,000 VND` (đúng số `price`), hoặc `priceText`.
+3. **Hợp với ai / không hợp với ai** chỉ được suy ra từ dữ liệu API trong `input.json` (giá, nội thất, dịch vụ, quận, trạng thái / ngày trống). Không bao giờ nói số người ở, diện tích, tầng, hay bất cứ điều gì không có trong input (vd không viết "hợp 1 người", "phòng rộng", "tầng cao").
+4. **Trạng thái** dùng đúng `statusText`. **Mã tin** dùng đúng `code`.
+5. **Link**: mọi chuỗi chứa `homematch.vn` (kể cả không có `https://`) phải bằng đúng `link` của một tin trong bài. Không viết tên miền `homematch.vn` trần, không link quận, không rút gọn. Bài thương hiệu không đặt link tin. Nhóm theo mặc định an toàn: không link.
+6. **Chỉ văn bản thường**: không `**`, không `__`, không `_…_`, không dòng bắt đầu bằng `#` kèm khoảng trắng (tiêu đề markdown), không chữ đậm/nghiêng giả bằng ký tự Unicode (U+1D400–U+1D7FF). Được dùng xuống dòng, emoji, gạch đầu dòng `•`. Hashtag viết liền (`#phongtrohanoi`) thì được.
+7. **Threads** ≤ 500 ký tự (đếm cả emoji và xuống dòng). Viết ngắn ngay từ đầu, đừng để sát giới hạn.
+8. Tuân theo `channel-format.md` và cấu trúc của kiểu bài.
 
 ### 3.7 Ghi `posts.json`
 
@@ -163,7 +164,7 @@ Ghi vào `~/.homematch-marketing/runs/<slotId>/posts.json` (cùng thư mục v�
 - `text` xuống dòng bằng `\n` thật trong chuỗi JSON.
 - `reason` trong `skipped` viết tiếng Việt, ngắn, người dùng đọc được.
 
-Trước khi ghi, tự soát từng bản theo luật 1–6 ở 3.6 và quy tắc ảnh ở 3.3.
+Trước khi ghi, tự soát từng bản theo luật 1–7 ở 3.6 và quy tắc ảnh ở 3.3.
 
 ## Bước 4: Dựng trang (script)
 
@@ -177,6 +178,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/build.mjs" --slot <slotId>
 |---|---|---|
 | `0` | OK | stdout có dạng `Đã soạn N bài lúc HH:MM: <đường dẫn index.html>`. Sang bước 5. |
 | `5` | `posts.json` sai luật | stderr liệt kê lỗi, mỗi lỗi ghi "Bài n" (n là thứ tự bài trong `posts`, đếm từ 1). Sửa **đúng các lỗi đó** trong `posts.json` (không đổi bài khác), chạy lại build. Tối đa **2 lần sửa**. Sau lần sửa thứ 2 vẫn còn lỗi thì chuyển các bài còn lỗi từ `posts` sang `skipped` (`reason`: lỗi tóm tắt, vd `Không viết được giá đúng định dạng sau 2 lần sửa`), rồi chạy build lại. |
+| `5` (lỗi cấu trúc) | stderr có `posts.json sai cấu trúc` (không có "Bài n") | Viết lại **toàn bộ** `posts.json` đúng cấu trúc ở 3.7 (giữ nguyên tin, ảnh, nội dung đã chọn), chạy lại build. Tính vào giới hạn 2 lần sửa; lần 2 vẫn sai cấu trúc thì ghi `posts.json` với `posts: []` và mọi đích vào `skipped` (`reason`: `Không ghi được posts.json đúng cấu trúc`), chạy build lại. |
 | `6` | Thiếu ảnh khi tải | stderr liệt kê `<targetId>: <lý do>`. Với mỗi đích đó: **thay tin một lần** bằng tin kế tiếp theo thứ tự ở 3.2 (chưa dùng cho đích đó trong lần chạy này), chọn lại ảnh, viết lại nội dung, rồi chạy build lại. Đích đã thay một lần mà vẫn bị báo thì chuyển bài sang `skipped` (`reason`: lý do script báo), chạy build lại. Không còn tin để thay thì `skipped` ngay. |
 | `2` | Lỗi config hoặc thiếu file | Báo nguyên văn stderr, một dòng. Dừng. |
 | khác | Script hỏng | Báo nguyên văn stderr. Dừng. |

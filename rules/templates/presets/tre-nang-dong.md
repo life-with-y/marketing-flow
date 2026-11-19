@@ -12,7 +12,7 @@ Vui, gần gũi, câu ngắn, nhịp nhanh, như nhắn tin với bạn bè. Xư
 
 ## NÊN
 
-- Mở bài bằng một câu bắt chuyện đời thường (đi làm gần, ở một mình, ở ghép).
+- Mở bài bằng một câu bắt chuyện đời thường, không đưa dữ kiện ngoài dữ liệu phòng.
 - Nói rõ phòng hợp với ai.
 - Đưa đủ giá, khu, ngày trống.
 - Emoji vừa phải, 2–4 cái mỗi bài, dùng để chia ý.

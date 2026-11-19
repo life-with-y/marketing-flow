@@ -32,7 +32,7 @@ Phòng vừa trống ở Cầu Giấy.
 • Wifi, giữ xe
 • Giường, tủ quần áo, điều hoà
 
-Hợp với 1 người muốn có sẵn giường tủ, vào ở luôn.
+Hợp với bạn muốn có sẵn giường tủ, vào ở luôn. Không hợp nếu bạn muốn phòng trống để tự sắm đồ.
 Phòng còn thật, đã kiểm tra.
 
 Nhắn Zalo 09xx xxx xxx, ghi mã T1302 để mình gửi thêm ảnh và hẹn xem phòng.
@@ -54,7 +54,7 @@ Xem ảnh và vị trí: <link của tin T1302>
 - **Ví dụ** (nhóm Cầu Giấy, quy định nhóm chưa rõ nên không SĐT, không link):
 
 ```
-3 phòng đang trống ở Cầu Giấy, tầm 3,5 đến 4,2 triệu:
+3 phòng ở Cầu Giấy, giá và ngày trống từng phòng:
 
 T1302 • ngõ 100 Trần Thái Tông • 3,8 triệu/tháng • Còn trống
 T1417 • ngõ 68 Cầu Giấy • 3,5 triệu/tháng • Còn trống
