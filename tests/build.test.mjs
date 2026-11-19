@@ -105,3 +105,27 @@ test('os helpers: no-op on test platform, args arrays on darwin/win32, never thr
   const boom = () => { throw new Error('x'); };
   assert.doesNotThrow(() => { openFolder('/a', 'darwin', boom); notify('a', 'b', 'darwin', boom); });
 });
+
+test('rebuild lỗi (exit 6 / exit 5) xoá index.html cũ', async () => {
+  const { home, runDir, input, posts } = mk();
+  const page = path.join(home, 'out', SLOT, 'index.html');
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 0);
+  assert.ok(fs.existsSync(page));
+  const bad = structuredClone(input);
+  bad.listings[0].images = [0, 1, 2].map((i) => ({ url: `${base}/${i > 0 ? 'bad' : 'ok'}/${i}`, isCover: i === 0 }));
+  fs.writeFileSync(path.join(runDir, 'input.json'), JSON.stringify(bad));
+  const p6 = structuredClone(posts);
+  p6.posts[0].variants[0].images = bad.listings[0].images.map((i) => i.url);
+  fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(p6));
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 6);
+  assert.ok(!fs.existsSync(page));
+
+  fs.writeFileSync(path.join(runDir, 'input.json'), JSON.stringify(input));
+  fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(posts));
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 0);
+  const p5 = structuredClone(posts);
+  p5.posts[0].variants[0].text = 'Cầu Giấy 3tr8';
+  fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(p5));
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 5);
+  assert.ok(!fs.existsSync(page));
+});

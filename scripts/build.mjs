@@ -57,13 +57,16 @@ export async function runBuild({
   const input = inp.value;
   const postsDoc = pj.value;
 
+  // Xoá trang cũ trước: lần chạy lỗi (exit 5/6) không để lại index.html của lần trước.
+  const outDir = path.join(expandHome(cfg.outputDir, home), slot);
+  fs.rmSync(path.join(outDir, 'index.html'), { force: true });
+
   const { errors } = validatePosts(postsDoc, input);
   if (errors.length) {
     const lines = errors.map((e, i) => `${i + 1}. ${e.message}`);
     return { exitCode: 5, report: `posts.json có ${errors.length} lỗi, sửa rồi chạy lại:\n${lines.join('\n')}` };
   }
 
-  const outDir = path.join(expandHome(cfg.outputDir, home), slot);
   const dl = await downloadPosts({ posts: postsDoc, input, outRoot: outDir, fetchImpl });
   if (dl.needsReplacement.length) {
     const lines = dl.needsReplacement.map((n, i) => `${i + 1}. ${n.targetId}: ${n.reason}`);
