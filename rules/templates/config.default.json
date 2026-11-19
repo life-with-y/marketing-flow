@@ -2,6 +2,10 @@
   "outputDir": "~/HomeMatch-Posts",
   "schedule": ["11:00", "17:30"],
   "model": "sonnet",
+  "contact": [],
+  "pageContact": [],
+  "library": {},
+  "leadScan": { "enabled": false },
   "perSlot": {},
   "variants": { "default": 1 },
   "feedback": {

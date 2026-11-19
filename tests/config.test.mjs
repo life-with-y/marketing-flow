@@ -83,3 +83,29 @@ test('paths', () => {
   assert.equal(expandHome('~/x', '/h'), '/h/x');
   assert.equal(expandHome('/abs', '/h'), '/abs');
 });
+
+test('group without slots gets schedule slots', () => {
+  const d = tmp();
+  const b = base();
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, groups: [{ name: 'g', url: 'u', account: 'fb1' }] }));
+  const c = loadConfig(d);
+  assert.deepEqual(c.groups[0].slots, c.schedule);
+  assert.notEqual(c.groups[0].slots, c.schedule);
+});
+
+test('group slot not in schedule is an error', () => {
+  const c = base();
+  c.groups[0].slots = ['12:00'];
+  assert.ok(validateConfig(c).some((e) => e.includes('groups[0].slots[0]')));
+});
+
+test('top-level optional sections get defaults', () => {
+  const d = tmp();
+  const { apiBaseUrl, accounts, groups } = base();
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups }));
+  const c = loadConfig(d);
+  assert.deepEqual(c.contact, []);
+  assert.deepEqual(c.pageContact, []);
+  assert.deepEqual(c.library, {});
+  assert.deepEqual(c.leadScan, { enabled: false });
+});

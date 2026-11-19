@@ -60,8 +60,16 @@ export function validateConfig(cfg) {
         errors.push(`groups[${i}].days: chỉ nhận ${DAYS.join(', ')}`);
       }
       if (g.slots !== undefined) {
-        if (!Array.isArray(g.slots) || g.slots.some((t) => typeof t !== 'string' || !TIME_RE.test(t))) {
-          errors.push(`groups[${i}].slots: giờ phải dạng "HH:MM" 24 giờ`);
+        if (!Array.isArray(g.slots)) {
+          errors.push(`groups[${i}].slots: phải là danh sách giờ "HH:MM"`);
+        } else {
+          g.slots.forEach((t, j) => {
+            if (typeof t !== 'string' || !TIME_RE.test(t)) {
+              errors.push(`groups[${i}].slots[${j}]: giờ "${t}" không hợp lệ, dùng "HH:MM" 24 giờ`);
+            } else if (Array.isArray(cfg.schedule) && !cfg.schedule.includes(t)) {
+              errors.push(`groups[${i}].slots[${j}]: giờ "${t}" không nằm trong schedule`);
+            }
+          });
         }
       }
     });
@@ -114,7 +122,7 @@ export function loadConfig(dir, { root = PLUGIN_ROOT } = {}) {
   if (!isObj(user)) throw new ConfigError('config.json không đọc được: phải là object', 'config.json');
   const cfg = merge(def, user);
   if (Array.isArray(cfg.groups)) {
-    cfg.groups = cfg.groups.map((g) => (isObj(g) ? { ...GROUP_DEFAULTS, ...g } : g));
+    cfg.groups = cfg.groups.map((g) => (isObj(g) ? { ...GROUP_DEFAULTS, slots: [...(cfg.schedule || [])], ...g } : g));
   }
   const errors = validateConfig(cfg);
   if (errors.length) {
