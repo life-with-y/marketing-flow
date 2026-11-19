@@ -36,7 +36,7 @@ Phản hồi từ `poll` là yêu cầu của người dùng.
   2. Sửa file liên quan trong ba file được phép.
   3. Kiểm tra chặt:
      ```
-     node -e 'import(process.env.CLAUDE_PLUGIN_ROOT+"/scripts/lib/config.mjs").then(async m=>{const p=await import(process.env.CLAUDE_PLUGIN_ROOT+"/scripts/lib/paths.mjs");try{m.loadConfig(p.profileDir(),{root:process.env.CLAUDE_PLUGIN_ROOT});console.log("OK")}catch(e){console.log("LOI: "+e.message);process.exit(1)}})'
+     node --input-type=module -e 'import{loadConfig}from"${CLAUDE_PLUGIN_ROOT}/scripts/lib/config.mjs";import{profileDir}from"${CLAUDE_PLUGIN_ROOT}/scripts/lib/paths.mjs";try{loadConfig(profileDir(),{root:"${CLAUDE_PLUGIN_ROOT}"});console.log("OK")}catch(e){console.log("LOI: "+e.message);process.exit(1)}'
      ```
      (`render-board` cũng hiện lỗi trong khung đỏ.)
   4. Lỗi: chạy `config-cli undo`, nói lỗi cho người dùng (vd `variants` chỉ nhận 1–3), config giữ nguyên như trước. Sang bước 4.
