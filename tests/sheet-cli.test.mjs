@@ -12,7 +12,7 @@ test('prints rows as JSON', async () => {
   const fetchImpl = async () => ({ ok: true, status: 200, text: async () => 'Góp ý,Issue\nSai giá,\nĐẹp,Đã tạo issue #1\n' });
   const { code, json } = await run(['https://example.com/x.csv'], fetchImpl);
   assert.equal(code, 0);
-  assert.deepEqual(json, { rows: [{ 'Góp ý': 'Sai giá', Issue: '' }, { 'Góp ý': 'Đẹp', Issue: 'Đã tạo issue #1' }], error: null });
+  assert.deepEqual(json, { rows: [{ rowNumber: 2, 'Góp ý': 'Sai giá', Issue: '' }, { rowNumber: 3, 'Góp ý': 'Đẹp', Issue: 'Đã tạo issue #1' }], error: null });
 });
 
 test('HTTP error gives error and exit 2', async () => {
