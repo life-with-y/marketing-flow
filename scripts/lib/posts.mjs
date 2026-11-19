@@ -153,9 +153,10 @@ export function validatePosts(posts, input) {
             else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
             else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
           }
-          // 6c. mọi mã tin trong bài phải nằm trong postCodes
+          // 6c. mọi mã tin trong bài phải nằm trong postCodes (bỏ qua token trùng số phòng của tin trong bài)
+          const roomNames = new Set(codes.flatMap((c) => (listings.get(c)?.rooms || []).map((r) => String(r.room ?? '').toUpperCase())));
           for (const m of new Set(text.match(CODE_RE) || [])) {
-            if (!codes.includes(m)) err(pi, `${vk}: mã tin ${m} không nằm trong postCodes của bài.`);
+            if (!codes.includes(m) && !roomNames.has(m.toUpperCase())) err(pi, `${vk}: mã tin ${m} không nằm trong postCodes của bài.`);
           }
         }
 

@@ -24,7 +24,7 @@ const input = {
     { id: 'threads:1', kind: 'threads', name: 'Th', variants: 1 },
     { id: 'wall:1', kind: 'wall', name: 'W', variants: 1 },
   ],
-  listings: [...listings, fake('F1', 6), fake('F2', 4), ...'ABCDEFGHIJK'.split('').map((c) => fake('K' + c, 3))],
+  listings: [...listings, fake('F1', 6), fake('F2', 4), { ...fake('T2142', 5), rooms: [{ room: 'T101', priceText: '2 triệu', status: 'AVAILABLE', label: '' }] }, ...'ABCDEFGHIJK'.split('').map((c) => fake('K' + c, 3))],
 };
 const l2 = L('T1302');
 const goodText = `Phòng ${l2.rooms[0].priceText} ${l2.link}`;
@@ -238,4 +238,12 @@ test('R24: tiếng Anh chỉ nhận dạng chuẩn', () => {
   assert.deepEqual(run('Room 3.5 million VND, also 3,500,000 VND'), []);
   assert.ok(run('Room 3.5 million VND, other 3.8 million VND').length > 0);
   assert.ok(run('Room 3.5 million VND, other 4,000,000 VND').length > 0);
+});
+
+test('mã tin: token T… trùng số phòng của tin trong bài thì bỏ qua', () => {
+  const base = `Mã T2142, 2 triệu https://homematch.vn/p/T2142`;
+  const p = (text) => ({ posts: [{ targetId: 'group:1', type: 't', postCodes: ['T2142'], variants: [{ key: 'A', text, images: fi('T2142', 5) }] }] });
+  assert.deepEqual(msgs(p(`${base} phòng T101`)), []);
+  assert.deepEqual(msgs(p(`${base} phòng t101`)), []);
+  assert.ok(has(p(`${base} phòng T999`), /mã tin T999 không nằm trong postCodes/));
 });
