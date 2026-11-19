@@ -13,7 +13,8 @@ import { lastPreparedMap } from './lib/prepared.mjs';
 import { fetchSheet, loadLeads } from './lib/sheet.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const RANK = ['NEW', 'PRICE_DOWN', 'NOW_AVAILABLE', 'UNCHANGED', 'PRICE_UP'];
+const RANK = ['NEW', 'PRICE_DOWN', 'NOW_AVAILABLE', 'UNCHANGED'];
+const rankOf = (label) => RANK.indexOf(label === 'PRICE_UP' ? 'UNCHANGED' : label);
 const LATE_MS = 90 * 60 * 1000;
 const p2 = (n) => String(n).padStart(2, '0');
 const ymd = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
@@ -104,7 +105,7 @@ export async function runPrepare({
       }
       return { ...l, eligible: l.images.length >= 3, lastPrepared, _lead: leadMatches(l, leads) };
     })
-    .sort((a, b) => (b._lead - a._lead) || (RANK.indexOf(a.label) - RANK.indexOf(b.label)))
+    .sort((a, b) => (b._lead - a._lead) || (rankOf(a.label) - rankOf(b.label)))
     .map(({ _lead, ...l }) => l);
 
   const lib = cfg.library || {};

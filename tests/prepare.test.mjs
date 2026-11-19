@@ -91,3 +91,36 @@ test('leads matching listings sort first', async () => {
   const input = JSON.parse(fs.readFileSync(r.inputPath, 'utf8'));
   assert.equal(input.listings[0].district, target);
 });
+
+async function orderWithPrev(mutate) {
+  const { home, dir } = mkHome();
+  const { toListings } = await import('../scripts/lib/listings.mjs');
+  const prev = mutate(toListings(JSON.parse(FIX)));
+  fs.mkdirSync(path.join(dir, 'snapshots'));
+  fs.writeFileSync(path.join(dir, 'snapshots', '2026-11-18_1100.json'), JSON.stringify(prev));
+  const r = await runPrepare({ home, now: NOW, fetchImpl: ok });
+  const input = JSON.parse(fs.readFileSync(r.inputPath, 'utf8'));
+  return input.listings.map((l) => `${l.code}:${l.label}`);
+}
+
+test('priority order NEW < PRICE_DOWN < NOW_AVAILABLE < PRICE_UP', async () => {
+  const got = await orderWithPrev((prev) => prev
+    .filter((l) => l.code !== 'T1288') // NEW
+    .map((l) => {
+      const rooms = l.rooms.map((r) => ({ ...r }));
+      if (l.code === 'T1302') rooms.forEach((r) => { r.price -= 100000; }); // PRICE_UP
+      if (l.code === 'T1299') rooms[0].status = 'COMING_SOON'; // NOW_AVAILABLE
+      if (l.code === 'T1275') rooms[0].price += 100000; // PRICE_DOWN
+      return { ...l, rooms };
+    }));
+  assert.deepEqual(got, ['T1288:NEW', 'T1275:PRICE_DOWN', 'T1299:NOW_AVAILABLE', 'T1302:PRICE_UP']);
+});
+
+test('PRICE_UP ranks equal to UNCHANGED (stable input order)', async () => {
+  const got = await orderWithPrev((prev) => prev.map((l) => {
+    const rooms = l.rooms.map((r) => ({ ...r }));
+    if (l.code === 'T1302') rooms.forEach((r) => { r.price -= 100000; });
+    return { ...l, rooms };
+  }));
+  assert.deepEqual(got.slice(0, 2), ['T1302:PRICE_UP', 'T1299:UNCHANGED']);
+});
