@@ -45,13 +45,31 @@ export function validateConfig(cfg) {
       }
     }
   }
+  if (cfg.perSlot !== undefined) {
+    if (!isObj(cfg.perSlot)) {
+      errors.push('perSlot: phải là object');
+    } else {
+      for (const [k, v] of Object.entries(cfg.perSlot)) {
+        if (!ids.has(k)) errors.push(`perSlot.${k}: "${k}" không có trong accounts`);
+        else if (!Number.isInteger(v) || v < 0 || v > 5) errors.push(`perSlot.${k}: phải là số nguyên từ 0 đến 5`);
+      }
+    }
+  }
   if (!Array.isArray(cfg.groups)) {
     errors.push('groups: phải là danh sách');
   } else {
+    const urls = new Map();
     cfg.groups.forEach((g, i) => {
       if (!isObj(g)) {
         errors.push(`groups[${i}]: phải là object`);
         return;
+      }
+      if (typeof g.url !== 'string' || !/^https?:\/\/\S+$/i.test(g.url.trim())) {
+        errors.push(`groups[${i}].url: bắt buộc, phải là link http(s)`);
+      } else {
+        const key = g.url.trim().replace(/\/+$/, '').toLowerCase();
+        if (urls.has(key)) errors.push(`groups[${i}].url: trùng link với groups[${urls.get(key)}]`);
+        else urls.set(key, i);
       }
       if (!ids.has(g.account)) {
         errors.push(`groups[${i}].account: "${g.account}" không có trong accounts`);

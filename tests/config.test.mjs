@@ -10,7 +10,7 @@ const base = () => ({
   apiBaseUrl: 'https://x',
   schedule: ['11:00'],
   accounts: [{ id: 'fb1', type: 'fb-personal', label: 'a' }],
-  groups: [{ name: 'g', url: 'u', account: 'fb1', days: ['mon'] }],
+  groups: [{ name: 'g', url: 'https://fb/g', account: 'fb1', days: ['mon'] }],
   variants: { default: 1 },
 });
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hm-'));
@@ -50,7 +50,7 @@ test('loadConfig broken json', () => {
 test('loadConfig merges defaults', () => {
   const d = tmp();
   const { apiBaseUrl, accounts, groups } = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups: [{ name: 'g', url: 'u', account: 'fb1' }] }));
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups: [{ name: 'g', url: 'https://fb/g', account: 'fb1' }] }));
   const c = loadConfig(d);
   assert.deepEqual(c.schedule, ['11:00', '17:30']);
   assert.equal(c.groups[0].language, 'vi');
@@ -87,7 +87,7 @@ test('paths', () => {
 test('group without slots gets schedule slots', () => {
   const d = tmp();
   const b = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, groups: [{ name: 'g', url: 'u', account: 'fb1' }] }));
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, groups: [{ name: 'g', url: 'https://fb/g', account: 'fb1' }] }));
   const c = loadConfig(d);
   assert.deepEqual(c.groups[0].slots, c.schedule);
   assert.notEqual(c.groups[0].slots, c.schedule);
@@ -108,4 +108,25 @@ test('top-level optional sections get defaults', () => {
   assert.deepEqual(c.pageContact, []);
   assert.deepEqual(c.library, {});
   assert.deepEqual(c.leadScan, { enabled: false });
+});
+
+test('groups[i].url: bắt buộc http(s), không trùng', () => {
+  const at = (urls) => { const c = base(); c.groups = urls.map((url) => ({ ...base().groups[0], url })); return validateConfig(c); };
+  assert.deepEqual(at(['https://fb/a', 'http://fb/b']), []);
+  for (const bad of [undefined, '', 'u', 'ftp://fb/a', 'facebook.com/groups/x', 3]) {
+    assert.ok(at([bad]).some((e) => e.startsWith('groups[0].url')), String(bad));
+  }
+  const dup = at(['https://fb/a', 'https://fb/a']);
+  assert.ok(dup.some((e) => e.startsWith('groups[1].url')));
+  assert.ok(!dup.some((e) => e.startsWith('groups[0].url')));
+});
+
+test('perSlot.<key>: account có thật, số nguyên 0–5', () => {
+  const at = (perSlot) => validateConfig({ ...base(), perSlot });
+  assert.deepEqual(at({}), []);
+  assert.deepEqual(at({ fb1: 0 }), []);
+  assert.deepEqual(at({ fb1: 5 }), []);
+  assert.ok(at({ fb9: 1 }).some((e) => e.startsWith('perSlot.fb9')));
+  for (const v of [-1, 6, 1.5, '2', null]) assert.ok(at({ fb1: v }).some((e) => e.startsWith('perSlot.fb1')), String(v));
+  assert.ok(at([1]).some((e) => e.startsWith('perSlot')));
 });
