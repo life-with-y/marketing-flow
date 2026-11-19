@@ -90,8 +90,13 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
 - Đích `group` có `districts`: chỉ tin có `district` thuộc danh sách (so không dấu, không phân biệt hoa thường). `districts` rỗng: mọi quận.
 - Mức ưu tiên của tin: (1) khớp leads: có một `leads.demands[]` cùng `district` (so không dấu) và giá phòng thấp nhất của tin ≤ `maxPrice` (không có `maxPrice` thì chỉ cần cùng quận); (2) `label` theo `NEW` > `PRICE_DOWN` > `NOW_AVAILABLE` > `UNCHANGED` = `PRICE_UP`.
 - **Xoay vòng**: trong cùng mức, xếp tin chưa có `lastPrepared[<id đích>]` trước, rồi tới tin có thời điểm cũ nhất. Lấy tin đầu danh sách (bài nhiều tin: lấy đủ số tin theo kiểu, theo thứ tự đó, thoả điều kiện của kiểu).
+- **Trải tin trong lượt** (áp sau mức ưu tiên và xoay vòng, chỉ đổi thứ tự giữa các tin còn lại):
+  - Cùng tài khoản (`target.account`): không dùng lại tin đã chọn cho tài khoản đó trong lượt này khi còn tin đủ điều kiện khác cho đích. Hết tin mới dùng lại.
+  - Khác tài khoản: ưu tiên tin chưa dùng ở bất kỳ đích nào trong lượt này, trước tin đã dùng cho tài khoản khác.
+  - Cụ thể: lọc tin dùng được cho đích, bỏ tin đã dùng cho cùng tài khoản (nếu bỏ hết thì giữ lại cả); trong phần còn lại xếp theo (1) chưa dùng trong lượt trước đã dùng, (2) mức ưu tiên, (3) xoay vòng; lấy từ đầu.
+  - Hoà nhau hoàn toàn (cùng mức, cùng thời điểm `lastPrepared` hoặc cùng chưa có): giữ thứ tự trong `input.listings`.
 - Ngày không có gì mới vẫn soạn đủ bài bằng tin `UNCHANGED`.
-- Một tin có thể vào nhiều đích trong cùng khung; mỗi đích một nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
+- Một tin có thể vào nhiều đích trong cùng khung (khi không còn tin khác theo luật trải tin ở trên); mỗi đích một nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
 - Không đủ tin cho đích (vd nhóm có `districts` mà không còn tin đủ điều kiện): không soạn bài cho đích đó, thêm vào `skipped` với lý do (vd `Không có tin đủ điều kiện ở Cầu Giấy`).
 
 ### 3.3 Chọn ảnh (`images`: URL lấy nguyên từ `listing.images[].url`, theo thứ tự đăng)
