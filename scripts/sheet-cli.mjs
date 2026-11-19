@@ -23,6 +23,8 @@ export async function main(argv, { fetchImpl = fetch, out = (s) => process.stdou
     }
   }
   const res = await fetchSheet(url, fetchImpl);
+  // Dòng 1 là tiêu đề nên dòng dữ liệu đầu tiên là dòng 2 (Form không để dòng trống giữa chừng).
+  res.rows = res.rows.map((r, i) => ({ rowNumber: i + 2, ...r }));
   out(JSON.stringify(res) + '\n');
   return res.error ? 2 : 0;
 }
