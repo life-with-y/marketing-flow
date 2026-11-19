@@ -13,6 +13,9 @@ test('formatPrice', () => {
   assert.equal(formatPrice(3500000), '3,5 triệu');
   assert.equal(formatPrice(4000000), '4 triệu');
   assert.equal(formatPrice(3550000), '3,55 triệu');
+  assert.equal(formatPrice(3555000), '3,555 triệu');
+  assert.equal(formatPrice(3505000), '3,505 triệu');
+  assert.equal(formatPrice(12000000), '12 triệu');
 });
 
 test('toListings gom phòng cùng post_code', () => {
@@ -68,4 +71,12 @@ test('fetchListingsRaw ok gửi đúng url + header', async () => {
   assert.equal(seen[0], 'https://x.test/public/building-listing-posts-unit');
   assert.equal(seen[1].headers['x-public-api-token'], 'tk');
   assert.equal(raw.count, 5);
+});
+
+test('fetchListingsRaw rent_price sai -> schema', async () => {
+  for (const bad of [null, undefined, 0, -5, '3500000', NaN, 3500000.5]) {
+    const body = structuredClone(fixture);
+    body.data[0].areas[0].buildings[0].rooms[0].rent_price = bad;
+    await assert.rejects(fetchListingsRaw({ baseUrl: 'https://x.test', token: 't', fetchImpl: resp(200, body) }), (e) => e.kind === 'schema', String(bad));
+  }
 });

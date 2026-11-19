@@ -17,6 +17,11 @@ function checkSchema(raw) {
       if (!isObj(a) || !Array.isArray(a.buildings)) throw bad();
       for (const b of a.buildings) {
         if (!isObj(b) || !Array.isArray(b.rooms)) throw bad();
+        for (const r of b.rooms) {
+          if (!isObj(r) || !Number.isInteger(r.rent_price) || r.rent_price <= 0) {
+            throw new ApiError('Dữ liệu từ máy chủ có phòng thiếu hoặc sai giá thuê (rent_price)', 'schema');
+          }
+        }
       }
     }
   }

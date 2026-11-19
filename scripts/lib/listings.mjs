@@ -1,6 +1,7 @@
 export function formatPrice(vnd) {
-  const millions = Math.round((vnd / 1e6) * 100) / 100;
-  return `${String(millions).replace('.', ',')} triệu`;
+  const whole = Math.floor(vnd / 1e6);
+  const frac = String(vnd % 1e6).padStart(6, '0').replace(/0+$/, '');
+  return `${whole}${frac ? ',' + frac : ''} triệu`;
 }
 
 export function toListings(raw) {
