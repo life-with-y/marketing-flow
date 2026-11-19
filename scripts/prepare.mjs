@@ -16,6 +16,7 @@ const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const RANK = ['NEW', 'PRICE_DOWN', 'NOW_AVAILABLE', 'UNCHANGED'];
 const rankOf = (label) => RANK.indexOf(label === 'PRICE_UP' ? 'UNCHANGED' : label);
 const LATE_MS = 90 * 60 * 1000;
+const EARLY_MS = 10 * 60 * 1000;
 const p2 = (n) => String(n).padStart(2, '0');
 const ymd = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 
@@ -64,15 +65,20 @@ export async function runPrepare({
   if (slot) {
     const m = /^(\d{2}):(\d{2})$/.exec(slot);
     if (!m) return { exitCode: 2, message: `Giờ khung "${slot}" không hợp lệ, dùng "HH:MM"` };
+    if (!(cfg.schedule || []).includes(slot)) return { exitCode: 4, message: `Khung ${slot} không còn trong lịch` };
     hhmm = slot;
     slotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Number(m[1]), Number(m[2]));
+    // Khung còn xa hơn 10 phút ở tương lai: đây là khung của hôm qua (chạy qua nửa đêm).
+    if (slotTime - now > EARLY_MS) {
+      slotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, Number(m[1]), Number(m[2]));
+    }
     if (now - slotTime > LATE_MS) {
       return { exitCode: 3, message: `Khung ${slot} đã lỡ (trễ quá 90 phút), bỏ qua` };
     }
   }
   const slotId = `${ymd(slotTime)}_${p2(slotTime.getHours())}${p2(slotTime.getMinutes())}`;
 
-  const targets = targetsForSlot(cfg, now, hhmm, onlyGroups);
+  const targets = targetsForSlot(cfg, slotTime, hhmm, onlyGroups);
   if (!targets.length) return { exitCode: 4, message: 'Không có đích nào cần đăng hôm nay' };
 
   const call = () => fetchListingsRaw({ baseUrl: cfg.apiBaseUrl, token, fetchImpl });

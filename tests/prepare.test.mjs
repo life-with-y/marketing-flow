@@ -124,3 +124,26 @@ test('PRICE_UP ranks equal to UNCHANGED (stable input order)', async () => {
   }));
   assert.deepEqual(got.slice(0, 2), ['T1302:PRICE_UP', 'T1299:UNCHANGED']);
 });
+
+test('--slot qua nửa đêm: dùng ngày hôm qua cho mã khung, thứ, độ trễ', async () => {
+  const { home, dir } = mkHome({ schedule: ['11:00', '23:30'], groups: [{ name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', account: 'fb1', days: ['thu'] }] });
+  const r = await runPrepare({ home, slot: '23:30', now: new Date(2026, 10, 20, 0, 30), fetchImpl: ok });
+  assert.equal(r.exitCode, 0, r.message);
+  assert.equal(r.slot, '2026-11-19_2330');
+  assert.equal(JSON.parse(fs.readFileSync(r.inputPath, 'utf8')).targets.length, 1);
+  assert.ok(fs.existsSync(path.join(dir, 'snapshots', '2026-11-19_2330.json')));
+  const late = await runPrepare({ home, slot: '23:30', now: new Date(2026, 10, 20, 1, 10), fetchImpl: ok });
+  assert.equal(late.exitCode, 3);
+  // chạy sớm trong 10 phút vẫn là hôm nay
+  const early = await runPrepare({ home, slot: '11:00', now: new Date(2026, 10, 19, 10, 52), fetchImpl: ok });
+  assert.equal(early.exitCode, 0, early.message);
+  assert.equal(early.slot, '2026-11-19_1100');
+});
+
+test('--slot không còn trong schedule -> exit 4', async () => {
+  const { home, dir } = mkHome({ schedule: ['11:00'] });
+  const r = await runPrepare({ home, slot: '17:30', now: new Date(2026, 10, 19, 17, 31), fetchImpl: ok });
+  assert.equal(r.exitCode, 4);
+  assert.equal(r.message, 'Khung 17:30 không còn trong lịch');
+  assert.ok(!fs.existsSync(path.join(dir, 'snapshots')));
+});

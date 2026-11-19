@@ -32,7 +32,7 @@ Xử lý theo mã thoát:
 |---|---|---|
 | `0` | OK | stdout có dạng `Đã chuẩn bị khung <slotId>: <đường dẫn input.json>`. Ghi nhớ `slotId` (dạng `2026-11-19_1100`) và đường dẫn, sang bước 2. |
 | `3` | Khung đã lỡ | Chạy theo lịch (có `--slot`): dừng im lặng, không viết gì thêm. Chạy tay (không `--slot`): in nguyên văn dòng thông báo của script (stderr), rồi dừng. |
-| `4` | Hôm nay không có đích nào | Chạy theo lịch (có `--slot`): dừng im lặng, không viết gì thêm. Chạy tay (không `--slot`): in nguyên văn dòng thông báo của script (stderr) (vd `Không có đích nào cần đăng hôm nay`), rồi dừng. |
+| `4` | Hôm nay không có đích nào, hoặc giờ khung không còn trong `schedule` | Chạy theo lịch (có `--slot`): dừng im lặng, không viết gì thêm. Chạy tay (không `--slot`): in nguyên văn dòng thông báo của script (stderr) (vd `Không có đích nào cần đăng hôm nay`), rồi dừng. |
 | `2` | Lỗi config / token / API | Báo nguyên văn thông báo lỗi của script (stderr), một dòng. Dừng. |
 | khác | Script hỏng | Báo nguyên văn stderr. Dừng. |
 
