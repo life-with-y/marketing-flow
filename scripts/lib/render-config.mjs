@@ -130,13 +130,23 @@ function perSlotHtml(cfg) {
   return `<dl class="kv">${ps.map(([id, n]) => `<dt>${esc(accLabel(cfg, id))}</dt><dd>${esc(n)} · mỗi khung</dd>`).join('')}</dl>`;
 }
 
-function pendingHtml(pending) {
-  const items = arr(pending);
-  if (!items.length) return '';
-  const text = (p) => (p && typeof p === 'object' ? Object.values(p).map((v) => String(v ?? '').trim()).filter(Boolean).join(' · ') : String(p ?? ''));
+const PENDING_COLS = ['Mục', 'Trạng thái', 'Mặc định tạm'];
+function pendingText(p) {
+  if (p && typeof p === 'object') {
+    const pick = PENDING_COLS.map((c) => String(p[c] ?? '').trim()).filter(Boolean);
+    if (pick.length) return pick.join(' · ');
+    return Object.values(p).map((v) => String(v ?? '').trim()).filter(Boolean).join(' · ');
+  }
+  return String(p ?? '');
+}
+
+function pendingHtml(pending, error) {
+  const items = arr(pending).filter((p) => pendingText(p));
+  if (!items.length && !error) return '';
+  const head = items.length ? `<b>${items.length} mục đang chờ quy định</b>` : '<b>Mục đang chờ quy định</b>';
   return `    <details class="pend">
-      <summary><b>${items.length} mục đang chờ quy định</b></summary>
-      ${items.map((p) => `<p>${esc(text(p))}</p>`).join('')}
+      <summary>${head}</summary>
+      ${error ? `<p class="mute it">Không đọc được tab Cần tìm hiểu: ${esc(error)}</p>` : ''}${items.map((p) => `<p>${esc(pendingText(p))}</p>`).join('')}
     </details>`;
 }
 
@@ -190,7 +200,7 @@ function whenOf(at) {
   return Number.isNaN(d.getTime()) ? '' : hhmmOf(d);
 }
 
-export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = null, pending = [], today = new Date(), lastChange = null, tokenLabel = null, errors } = {}) {
+export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = null, pending = [], pendingError = null, today = new Date(), lastChange = null, tokenLabel = null, errors } = {}) {
   cfg = cfg && typeof cfg === 'object' ? cfg : {};
   const errs = errors ?? validateConfig(cfg);
   const slots = slotsHtml(cfg, today, errs);
@@ -220,7 +230,7 @@ export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = nu
     GROUPS: groups.html,
     MORE: esc(groups.more),
     PERSLOT: perSlotHtml(cfg),
-    PENDING: pendingHtml(pending),
+    PENDING: pendingHtml(pending, pendingError),
     PROFILE: profileHtml(cfg, persona, ctMd, tokenLabel),
     LAST_CHANGE: lastHtml,
     FEEDBACK: feedback,

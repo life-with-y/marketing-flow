@@ -7,6 +7,7 @@ import { loadConfig, validateConfig, ConfigError } from './lib/config.mjs';
 import { targetsForSlot } from './lib/targets.mjs';
 import { diffProfile } from './lib/config-diff.mjs';
 import { renderConfigBoard } from './lib/render-config.mjs';
+import { fetchSheet } from './lib/sheet.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['config.json', 'persona.md', 'content-types.md'];
@@ -80,6 +81,7 @@ export function backup(dir, now = new Date()) {
     const src = path.join(dir, f);
     if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(target, f)); copied.push(f); }
   }
+  fs.writeFileSync(path.join(target, 'manifest.json'), JSON.stringify({ files: copied }));
   return { dir: target, files: copied };
 }
 
@@ -93,24 +95,27 @@ export function undo(dir) {
   const snap = newestHistory(dir);
   if (!snap) return null;
   const before = profile(dir);
+  const manifest = readJsonSafe(path.join(snap.dir, 'manifest.json'));
   for (const f of FILES) {
     const src = path.join(snap.dir, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(dir, f));
+    else if (Array.isArray(manifest?.files)) fs.rmSync(path.join(dir, f), { force: true });
   }
   const lines = diffProfile(before, profile(dir));
   fs.rmSync(snap.dir, { recursive: true, force: true });
   return lines;
 }
 
-export function renderBoard(dir, { now = new Date(), root = PLUGIN_ROOT } = {}) {
+export async function renderBoard(dir, { now = new Date(), root = PLUGIN_ROOT, fetchImpl = fetch } = {}) {
   const { cfg, errors } = readForBoard(dir, root);
   const snap = newestHistory(dir);
   const lastChange = snap
     ? { at: unstamp(snap.name) ?? now, lines: diffProfile(profileOf(snap.dir), profile(dir)) }
     : null;
+  const sheet = await fetchSheet(cfg.library?.pendingCsvUrl, fetchImpl);
   const html = renderConfigBoard({
     cfg, persona: readText(path.join(dir, 'persona.md')), contentTypes: readText(path.join(dir, 'content-types.md')),
-    pending: [], today: now, lastChange, tokenLabel: tokenLabel(dir), errors,
+    pending: sheet.rows, pendingError: sheet.error, hasPendingUrl: !!cfg.library?.pendingCsvUrl, today: now, lastChange, tokenLabel: tokenLabel(dir), errors,
   });
   const out = path.join(dir, 'board', 'index.html');
   fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -130,7 +135,7 @@ export function today(dir, { now = new Date(), root = PLUGIN_ROOT } = {}) {
   };
 }
 
-export function main(argv, { dir = profileDir(), now = new Date(), root = PLUGIN_ROOT, out = (s) => console.log(s) } = {}) {
+export async function main(argv, { dir = profileDir(), now = new Date(), root = PLUGIN_ROOT, out = (s) => console.log(s), fetchImpl = fetch } = {}) {
   const cmd = argv[0];
   try {
     if (cmd === 'init') {
@@ -150,7 +155,7 @@ export function main(argv, { dir = profileDir(), now = new Date(), root = PLUGIN
       else if (!lines.length) out('Không có thay đổi');
       else lines.forEach((l) => out(l));
     } else if (cmd === 'render-board') {
-      out(renderBoard(dir, { now, root }));
+      out(await renderBoard(dir, { now, root, fetchImpl }));
     } else if (cmd === 'today') {
       out(JSON.stringify(today(dir, { now, root }), null, 2));
     } else {
@@ -165,5 +170,5 @@ export function main(argv, { dir = profileDir(), now = new Date(), root = PLUGIN
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2));
+  process.exitCode = await main(process.argv.slice(2));
 }
