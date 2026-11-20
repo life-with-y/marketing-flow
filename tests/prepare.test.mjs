@@ -150,3 +150,19 @@ test('--slot không còn trong schedule -> exit 4', async () => {
   assert.equal(r.message, 'Khung 17:30 không còn trong lịch');
   assert.ok(!fs.existsSync(path.join(dir, 'snapshots')));
 });
+
+test('paths.platforms: page/wall/group/threads trỏ guide plugin, file cá nhân ghi đè', async () => {
+  const { home, dir } = mkHome();
+  fs.mkdirSync(path.join(dir, 'platforms'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'platforms', 'threads.md'), '# Threads riêng');
+  const r = await runPrepare({ home, now: NOW, fetchImpl: ok });
+  assert.equal(r.exitCode, 0);
+  const { platforms } = JSON.parse(fs.readFileSync(r.inputPath, 'utf8')).paths;
+  assert.deepEqual(Object.keys(platforms).sort(), ['group', 'page', 'threads', 'wall']);
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  assert.equal(platforms.page, path.join(root, 'rules', 'platforms', 'facebook-page.md'));
+  assert.equal(platforms.wall, path.join(root, 'rules', 'platforms', 'facebook-profile.md'));
+  assert.equal(platforms.group, path.join(root, 'rules', 'platforms', 'facebook-groups.md'));
+  assert.equal(platforms.threads, path.join(dir, 'platforms', 'threads.md'));
+  for (const p of Object.values(platforms)) assert.ok(path.isAbsolute(p) && fs.existsSync(p));
+});

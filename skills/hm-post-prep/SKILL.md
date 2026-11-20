@@ -47,10 +47,11 @@ Xử lý theo mã thoát:
    - `persona`: giọng của người đăng (FB cá nhân, Threads, nhóm).
    - `contentTypes`: các kiểu bài, mỗi kiểu có kênh, số tin, cách chọn tin, cấu trúc, ví dụ.
    - `channelMix`: nếu khác `null` thì đọc (tỉ lệ kiểu bài riêng của người dùng).
+   - `platforms` (`{ page, wall, group, threads }`): hướng dẫn đăng theo nền tảng (link, số điện thoại, emoji, hashtag, câu mở đầu, độ dài, CTA, điều cần tránh). Đọc file của **mọi `kind` có trong `input.targets`**; bỏ qua kind không có đích.
 3. Tỉ lệ trộn kiểu bài khi `paths.channelMix` là `null`: lấy `channelMix` trong `~/.homematch-marketing/config.json`; nếu thiếu hoặc `null` thì lấy `channelMix` trong `${CLAUDE_PLUGIN_ROOT}/rules/templates/config.default.json`. Dạng: `{ "page": { "listing": 50, "brand": 50 }, "personal": { "listing": 70, "brand": 30 } }` (phần trăm).
 4. `~/.homematch-marketing/prepared.jsonl` nếu có (mỗi dòng: `slot, account, target, postCodes, type, at`), chỉ để tính tỉ lệ kiểu bài ở bước 3.1.
 
-Thứ tự ưu tiên khi mâu thuẫn: luật cứng > hồ sơ cá nhân (persona, kiểu bài, config) > mặc định chung > Trends.
+Thứ tự ưu tiên khi mâu thuẫn: luật cứng (`hardRules`) > hướng dẫn nền tảng (`platforms.<kind>`) > persona, kiểu bài, config > `channelFormat` và Trends.
 
 ### Cấu trúc `input.json`
 

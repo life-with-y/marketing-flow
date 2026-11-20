@@ -9,11 +9,7 @@
 
 ## Theo kênh
 
-| Kênh | Giới hạn | Link tin |
-|---|---|---|
-| Threads | ≤ 500 ký tự (tính cả emoji, xuống dòng) | được để trong thân bài |
-| FB cá nhân, FB Page | không giới hạn cứng; ưu tiên ngắn, dễ đọc trên điện thoại | không để trong thân bài; để ở comment đầu tiên (`comment`, ≤ 300 ký tự) rồi ghim; CTA thân bài trỏ Zalo/inbox và ghi "link chi tiết ở comment" |
-| Nhóm FB | như trên | mặc định không link ở đâu cả; nhóm cho phép (`target.note`) thì để ở comment đầu tiên |
+Link, số điện thoại, emoji, hashtag, câu mở đầu, độ dài, CTA của từng kênh nằm trong `rules/platforms/` (`input.paths.platforms`): `facebook-page.md`, `facebook-profile.md`, `facebook-groups.md`, `threads.md`. Khi mâu thuẫn, hướng dẫn nền tảng đứng trên file này.
 
 ## Ngôn ngữ
 

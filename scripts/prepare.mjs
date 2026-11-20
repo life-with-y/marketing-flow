@@ -11,6 +11,7 @@ import { labelListings } from './lib/diff.mjs';
 import { targetsForSlot, fold } from './lib/targets.mjs';
 import { lastPreparedMap } from './lib/prepared.mjs';
 import { fetchSheet, loadLeads } from './lib/sheet.mjs';
+import { platformGuidePaths } from './lib/platforms.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RANK = ['NEW', 'PRICE_DOWN', 'NOW_AVAILABLE', 'UNCHANGED'];
@@ -136,6 +137,7 @@ export async function runPrepare({
       persona: pickPath(dir, root, 'persona.md', 'persona.example.md'),
       contentTypes: pickPath(dir, root, 'content-types.md', 'content-types.example.md'),
       channelMix: fs.existsSync(path.join(dir, 'channel-mix.md')) ? path.join(dir, 'channel-mix.md') : null,
+      platforms: platformGuidePaths(dir, root),
     },
     contact: cfg.contact || [],
     pageContact: cfg.pageContact || [],
