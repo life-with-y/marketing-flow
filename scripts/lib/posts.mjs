@@ -34,6 +34,30 @@ const hasTrail = (after) => TRAIL_RE.test(after);
 // Mọi số kèm đơn vị tiền thuê; "tr" viết tắt cũng bắt (không bao giờ hợp lệ). Không quét "k", "đ".
 const PRICE_TOKEN_RE = /(?<!\p{N})\d+(?:[.,]\d+)*\s*(?:triệu|tr(?![\p{L}\p{M}])|million(?:\s*vnd(?![\p{L}\p{N}]))?|vnd(?![\p{L}\p{N}]))/giu;
 const CODE_RE = /\bT\d{3,}\b/g;
+// Mức trần "dưới X triệu" / "tầm X triệu" (X dạng priceText: "5", "4,5"), không phân biệt hoa thường.
+const CEIL_RE = /(?<![\p{L}\p{M}\p{N}])(dưới|tầm)\s+(\d+(?:,\d+)?)\s*triệu(?![\p{L}\p{M}])/giu;
+
+// Giá phòng (đồng): ưu tiên room.price, không có thì đọc từ priceText "4,5 triệu".
+function roomPrice(r) {
+  if (Number.isFinite(r?.price)) return r.price;
+  const m = /^(\d+(?:,\d+)?)\s*triệu$/u.exec(String(r?.priceText ?? '').normalize('NFC').trim());
+  return m ? Math.round(Number(m[1].replace(',', '.')) * 1e6) : null;
+}
+
+// Các mức trần trong đoạn chữ: vị trí số, cụm nguyên văn, đúng hay sai (mọi phòng của mọi tin ≤ X).
+function findCeilings(text, used) {
+  const out = new Map();
+  for (const m of text.matchAll(CEIL_RE)) {
+    const x = Math.round(Number(m[2].replace(',', '.')) * 1e6);
+    const ok = used.length > 0 && used.every((l) => (l.rooms || []).length > 0
+      && l.rooms.every((r) => { const p = roomPrice(r); return p != null && p <= x; }));
+    out.set(m.index + m[0].search(/\d/), { phrase: m[0], ok, x: `${m[2]} triệu` });
+  }
+  return out;
+}
+
+// Bỏ các mức trần khỏi đoạn chữ (để mức trần không thay cho giá thật của tin).
+const stripCeilings = (text) => text.replace(CEIL_RE, (m) => ' '.repeat(m.length));
 
 // Khớp nguyên văn, có chặn biên: trước không phải số/,/. ; sau không phải số, ,/. + số, hay đuôi đọc giá.
 function appearsExact(text, needle) {
@@ -75,9 +99,15 @@ function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listin
   // 6b. mọi giá ghi trong bài phải là giá thật của tin trong bài (bài thương hiệu: không có giá)
   if (Array.isArray(postCodes)) {
     const allowed = new Set(used.flatMap((l) => (l.rooms || []).flatMap((r) => priceForms(r, language))));
+    const ceilings = findCeilings(text, used);
     for (const m of text.matchAll(PRICE_TOKEN_RE)) {
       const tok = m[0];
+      const ce = ceilings.get(m.index);
       if (isBrand) err(pi, `${vk}: bài thương hiệu không được ghi giá thuê ("${tok}").`);
+      else if (ce) {
+        if (!ce.ok) err(pi, `${vk}: mức "${ce.phrase}" sai, có phòng trong bài giá cao hơn ${ce.x}.`);
+        else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
+      }
       else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
       else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
     }
@@ -186,7 +216,8 @@ export function validatePosts(posts, input) {
         // 6. giá: mỗi tin trong bài phải có một giá đúng nguyên văn trong thân bài
         if (!isBrand && codesOk) {
           for (const l of used) {
-            const ok = (l.rooms || []).some((r) => priceForms(r, target?.language).some((f) => appearsExact(text, f)));
+            const bare = stripCeilings(text);
+            const ok = (l.rooms || []).some((r) => priceForms(r, target?.language).some((f) => appearsExact(bare, f)));
             if (!ok) {
               err(pi, `${vk}: tin ${l.code} không có giá nào đúng nguyên văn trong bài (cần một trong: ${(l.rooms || []).map((r) => r.priceText).join('; ')}).`);
             }

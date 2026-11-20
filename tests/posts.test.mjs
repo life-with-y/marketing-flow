@@ -349,3 +349,33 @@ test('công tắc link tắt: mọi link homematch ở text hoặc comment đề
   const b = { posts: [{ targetId: 'threads:off', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'ghé homematch.vn', images: fi('F1', 3) }] }] };
   assert.ok(validatePosts(b, inp).errors.some((e) => /kênh này đang tắt link/.test(e.message)));
 });
+
+test('mức trần "dưới X triệu" / "tầm X triệu": chỉ khi mọi phòng của mọi tin ≤ X', () => {
+  const room = (room, price, priceText) => ({ room, price, priceText, status: 'AVAILABLE', label: '' });
+  const A = { ...fake('CA', 3), rooms: [room('1', 3000000, '3 triệu'), room('2', 4500000, '4,5 triệu')] };
+  const B = { ...fake('CB', 3), rooms: [room('1', 5000000, '5 triệu')] };
+  const C = { ...fake('CC', 3), rooms: [room('1', 6000000, '6 triệu')] };
+  const inp = { ...input, listings: [...input.listings, A, B, C] };
+  const run = (text, codes = ['CA'], comment) => validatePosts({ posts: [{ targetId: 'wall:1', type: 't', postCodes: codes,
+    variants: [{ key: 'A', text, ...(comment ? { comment } : {}), images: codes.length === 1 ? fi(codes[0], 3) : codes.length ? codes.map((c) => fi(c, 3)[0]) : fi('F1', 3) }] }] }, inp).errors;
+  const one = (text, codes, comment) => run(text, codes, comment).map((e) => e.message);
+  // đúng: mọi phòng ≤ X (bằng X vẫn được)
+  assert.deepEqual(one('Phòng dưới 5 triệu: 3 triệu, 4,5 triệu'), []);
+  assert.deepEqual(one('Tầm 4,5 triệu: phòng 3 triệu'), []);
+  assert.deepEqual(one('DƯỚI 5 triệu, TẦM 5 triệu: 3 triệu'), []);
+  assert.deepEqual(one('Hai phòng dưới 5 triệu: 4,5 triệu và 5 triệu', ['CA', 'CB']), []);
+  assert.deepEqual(one('Phòng 3 triệu', ['CA'], 'Còn phòng dưới 5 triệu, nhắn mình'), []);
+  // sai: có phòng giá cao hơn X
+  assert.ok(one('Phòng dưới 4 triệu: 3 triệu').some((m) => /mức "dưới 4 triệu".*cao hơn/.test(m)));
+  assert.ok(one('Tầm 5 triệu: 4,5 triệu và 6 triệu', ['CA', 'CC']).some((m) => /mức "Tầm 5 triệu"/.test(m)));
+  assert.ok(one('Phòng 3 triệu', ['CA'], 'Phòng dưới 4 triệu').some((m) => /\(comment\).*mức "dưới 4 triệu"/.test(m)));
+  // mức trần không thay cho giá thật của tin
+  assert.ok(one('Phòng dưới 4,5 triệu').some((m) => /tin CA không có giá nào đúng nguyên văn/.test(m)));
+  // đuôi đọc giá, viết tắt vẫn bị chặn
+  assert.ok(one('Dưới 5 triệu rưỡi: 3 triệu').length > 0);
+  assert.ok(one('Dưới 5tr: 3 triệu').length > 0);
+  // từ khác trước số không phải mức trần
+  assert.ok(one('Trên 5 triệu: 3 triệu').some((m) => /giá "5 triệu" không phải giá/.test(m)));
+  // bài thương hiệu: không được
+  assert.ok(one('Nhiều phòng dưới 5 triệu', []).some((m) => /bài thương hiệu không được ghi giá/.test(m)));
+});
