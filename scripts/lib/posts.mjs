@@ -44,13 +44,14 @@ function roomPrice(r) {
   return m ? Math.round(Number(m[1].replace(',', '.')) * 1e6) : null;
 }
 
-// Các mức trần trong đoạn chữ: vị trí số, cụm nguyên văn, đúng hay sai (mọi phòng của mọi tin ≤ X).
-function findCeilings(text, used) {
+// Các mức trần trong đoạn chữ: vị trí số, cụm nguyên văn, đúng hay sai.
+// Giá đầy đủ: mọi phòng của mọi tin ≤ X. Kênh ẩn giá: mọi phòng < X (X không được là giá thật của phòng nào).
+function findCeilings(text, used, masked) {
   const out = new Map();
   for (const m of text.matchAll(CEIL_RE)) {
     const x = Math.round(Number(m[2].replace(',', '.')) * 1e6);
     const ok = used.length > 0 && used.every((l) => (l.rooms || []).length > 0
-      && l.rooms.every((r) => { const p = roomPrice(r); return p != null && p <= x; }));
+      && l.rooms.every((r) => { const p = roomPrice(r); return p != null && (masked ? p < x : p <= x); }));
     out.set(m.index + m[0].search(/\d/), { phrase: m[0], ok, x: `${m[2]} triệu` });
   }
   return out;
@@ -104,13 +105,15 @@ function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listin
   // 6b. mọi giá ghi trong bài phải là giá thật của tin trong bài (bài thương hiệu: không có giá)
   if (Array.isArray(postCodes)) {
     const allowed = new Set(used.flatMap((l) => (l.rooms || []).flatMap((r) => priceForms(r, language))));
-    const ceilings = findCeilings(text, used);
+    const ceilings = findCeilings(text, used, masked);
     for (const m of text.matchAll(PRICE_TOKEN_RE)) {
       const tok = m[0];
       const ce = ceilings.get(m.index);
       if (isBrand) err(pi, `${vk}: bài thương hiệu không được ghi giá thuê ("${tok}").`);
       else if (ce) {
-        if (!ce.ok) err(pi, `${vk}: mức "${ce.phrase}" sai, có phòng trong bài giá cao hơn ${ce.x}.`);
+        if (!ce.ok) err(pi, masked
+          ? `${vk}: mức "${ce.phrase}" sai, kênh ẩn giá cần mức trần lớn hơn mọi giá phòng trong bài (không trùng giá thật).`
+          : `${vk}: mức "${ce.phrase}" sai, có phòng trong bài giá cao hơn ${ce.x}.`);
         else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
       } else if (masked) err(pi, `${vk}: kênh này che giá (ghi dạng 4xxx), không ghi giá "${tok}".`);
       else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
@@ -233,7 +236,8 @@ export function validatePosts(posts, input) {
         if (!isBrand && codesOk && masked) {
           for (const l of used) {
             const toks = [...new Set((l.rooms || []).map(maskedOf).filter(Boolean))];
-            if (!toks.some((t) => hasMasked(text, t))) {
+            if (!toks.length) err(pi, `${vk}: tin ${l.code} không có giá để viết dạng ẩn.`);
+            else if (!toks.some((t) => hasMasked(text, t))) {
               err(pi, `${vk}: tin ${l.code} không có giá dạng che nào trong bài (cần một trong: ${toks.join('; ')}).`);
             }
           }

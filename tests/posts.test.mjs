@@ -409,8 +409,10 @@ test('giá che (masked): "4xxx" thay giá đầy đủ, không ghi priceText', (
     assert.ok(run(tid, 'Studio 4xxx, phòng khác 5xxx').some((m) => /"5xxx" không khớp phòng nào/.test(m)), tid);
     assert.ok(run(tid, 'Studio 4xxx', 'Còn căn 7XXX').some((m) => /\(comment\).*"7XXX" không khớp/.test(m)), tid);
     assert.deepEqual(run(tid, 'Studio 4xxx', 'Phòng 12xxx nữa'), [], tid);
-    // mức trần vẫn được
-    assert.deepEqual(run(tid, 'Phòng dưới 12 triệu, có căn 4xxx'), [], tid);
+    // mức trần vẫn được, nhưng phải lớn hơn hẳn mọi giá phòng (không lộ giá thật)
+    assert.deepEqual(run(tid, 'Phòng dưới 13 triệu, có căn 4xxx'), [], tid);
+    assert.ok(run(tid, 'Căn 12xxx, tầm 12 triệu').some((m) => /mức "tầm 12 triệu".*kênh ẩn giá.*lớn hơn/.test(m)), tid);
+    assert.ok(run(tid, 'Căn 4xxx', 'Phòng dưới 12 triệu').some((m) => /\(comment\).*mức "dưới 12 triệu".*kênh ẩn giá/.test(m)), tid);
   }
   // tiếng Anh: không ghi dạng đầy đủ tiếng Anh
   assert.ok(run('wall:en', 'Room 4xxx, 4.4 million VND').some((m) => /kênh này che giá/.test(m)));
@@ -423,6 +425,12 @@ test('giá che (masked): "4xxx" thay giá đầy đủ, không ghi priceText', (
   }
   // bài thương hiệu: không giá che
   assert.ok(run('wall:m', 'Phòng 4xxx', null, []).some((m) => /bài thương hiệu không được ghi giá/.test(m)));
+  // tin không có giá dùng được: báo rõ, không để danh sách rỗng
+  const nop = { ...fake('MZ', 3), rooms: [{ room: '1', priceText: 'Liên hệ', status: 'AVAILABLE', label: '' }] };
+  const e = validatePosts({ posts: [{ targetId: 'wall:m', type: 't', postCodes: ['MZ'], variants: [{ key: 'A', text: 'Studio đẹp', images: fi('MZ', 3) }] }] },
+    { ...inp, listings: [...inp.listings, nop] }).errors.map((x) => x.message);
+  assert.ok(e.some((m) => /tin MZ không có giá để viết dạng ẩn/.test(m)), e.join('\n'));
+  assert.ok(!e.some((m) => /cần một trong: \)/.test(m)));
 });
 
 test('bài "phân khúc": đúng 1 ảnh bìa mỗi tin, theo thứ tự postCodes, không ảnh phụ', () => {

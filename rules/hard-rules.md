@@ -24,7 +24,7 @@ Nội dung phải dán được nguyên lên Facebook/Threads:
 
 - Giá chép đúng `priceText` (vd `3,5 triệu`); bài tiếng Anh được dùng thêm `3.5 million VND` hoặc `3,500,000 VND`. Không viết `tr`, không viết giá nào khác.
 - Ngay sau giá không đặt số hay chữ đọc giá (`5`, `rưỡi`, `một`, `tư`, `lẻ`…). Viết `3 triệu/tháng`, không viết `3 triệu một tháng`.
-- Mức trần: được viết "dưới X triệu" / "tầm X triệu" (X dạng `priceText`) chỉ khi mọi phòng của mọi tin trong bài có giá ≤ X; không thay cho giá riêng của tin; bài thương hiệu không ghi.
+- Mức trần: được viết "dưới X triệu" / "tầm X triệu" (X dạng `priceText`) chỉ khi mọi phòng của mọi tin trong bài có giá ≤ X (kênh ẩn giá: lớn hơn hẳn mọi giá phòng); không thay cho giá riêng của tin; bài thương hiệu không ghi.
 - Giá che: kênh có `priceStyle` = `masked` ghi `4xxx` (phần triệu làm tròn xuống + `xxx`, vd 4.400.000 → `4xxx/tháng`) thay `priceText`; không ghi giá đầy đủ ở thân bài lẫn comment; `…xxx` phải khớp một phòng trong bài. Kênh `full` không dùng `…xxx`. Page nên để giá đầy đủ (che được nhưng có cảnh báo).
 - Chỉ ghi mã T… của tin có trong bài. Bài thương hiệu không ghi giá thuê, không ghi mã tin.
 - Phí và cọc lấy từ `details.fees` / `details.deposit`, giữ đúng số tiền và đơn vị (viết bằng `đ`, vd `3.990đ/số`, `Cọc 1 tháng`); được bỏ dấu ":" giữa tên phí và số. Không đổi sang `triệu`/`k`, không cộng gộp, không tính tổng chi phí.

@@ -16,7 +16,7 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 
 - Giá dưới 5 triệu: thường là sinh viên, người mới đi làm. Đánh vào: giá, chi phí hằng tháng rõ ràng (điện, nước, dịch vụ), đủ đồ cơ bản, vào ở luôn, để được xe điện. Câu ngắn, gần gũi.
 - Giá từ 5 triệu: thường là người đi làm. Đánh vào: loại phòng (1 ngủ 1 khách, studio rộng), diện tích, máy giặt riêng, bếp từ, sofa, thang máy, ngõ ô tô, an ninh (camera, vân tay cửa chính), không gian riêng. Câu gọn, chỉn chu.
-- Giá trong bài chỉ là `priceText` của phòng trong bài. Ngoại lệ duy nhất: mức trần "dưới X triệu" / "tầm X triệu" (X viết như `priceText`, vd `5 triệu`, `4,5 triệu`) khi **mọi** phòng của **mọi** tin trong bài có giá ≤ X; bài thương hiệu không ghi. Không viết khoảng giá ("4–5 triệu").
+- Giá trong bài chỉ là `priceText` của phòng trong bài. Ngoại lệ duy nhất: mức trần "dưới X triệu" / "tầm X triệu" (X viết như `priceText`, vd `5 triệu`, `4,5 triệu`) khi **mọi** phòng của **mọi** tin trong bài có giá ≤ X (kênh ẩn giá: X lớn hơn hẳn mọi giá phòng, không trùng giá thật); bài thương hiệu không ghi. Không viết khoảng giá ("4–5 triệu").
 - Kênh ẩn giá (`target.priceStyle` = `masked`): giá ghi dạng `4xxx` (phần triệu làm tròn xuống + `xxx`, vd 4.400.000 → `4xxx/tháng`, 12.000.000 → `12xxx`), không ghi `priceText`. Lời mời: "nhắn mình để có giá chính xác" (Zalo / inbox), không "comment để nhận giá".
 
 ## Dùng dữ liệu tin thế nào
