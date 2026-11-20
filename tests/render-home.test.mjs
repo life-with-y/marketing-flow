@@ -315,3 +315,33 @@ test('writeHome: 4 thẻ hướng dẫn từ plugin, file cá nhân ghi đè', (
   assert.ok(p.includes('<h3>Facebook Page</h3>') && p.includes('<h3>Threads của tôi</h3>'));
   assert.ok(p.includes('<h4>Mục tiêu</h4>'));
 });
+
+const PAGE_WARN = 'Page đang ẩn giá: khác với giá trị minh bạch của HomeMatch khi tư vấn — cân nhắc.';
+const profileOf = (html) => html.slice(html.indexOf('id="p-profile"'), html.indexOf('</section>', html.indexOf('id="p-profile"')));
+
+test('Hồ sơ: công tắc link và cách ghi giá theo kênh; cảnh báo khi Page che giá', () => {
+  const off = profileOf(home());
+  assert.ok(off.includes('Link homematch.vn</dt><dd>Page tắt · Tường tắt · Threads tắt · Nhóm tắt</dd>'), off);
+  assert.ok(off.includes('Giá</dt><dd>Page đầy đủ · Tường đầy đủ · Threads đầy đủ · Nhóm đầy đủ</dd>'));
+  assert.ok(!off.includes(PAGE_WARN));
+  const on = profileOf(home({ cfg: cfg({ links: { page: true, wall: false, threads: true, group: false }, priceStyle: { page: 'masked', wall: 'masked' } }) }));
+  assert.ok(on.includes('Page bật · Tường tắt · Threads bật · Nhóm tắt'));
+  assert.ok(on.includes('Page ẩn giá (4xxx) · Tường ẩn giá (4xxx) · Threads đầy đủ · Nhóm đầy đủ'));
+  assert.equal(on.split(PAGE_WARN).length - 1, 1);
+});
+
+test('khung có bài Page che giá: chú thích cuối khung một lần', () => {
+  const mt = targets.map((t) => (t.kind === 'page' ? { ...t, priceStyle: 'masked' } : t));
+  const s = '2026-11-19_1100';
+  const posts = [post(s, 1, 'page:page:0', ['a']), post(s, 2, 'page:page:0', ['b']), post(s, 3, 'group:g1', ['c'])];
+  const html = home({ slots: [slotData(s, { targets: mt, posts })] });
+  const view = html.slice(html.indexOf('<section class="slotview"'), html.indexOf('</section>', html.indexOf('<section class="slotview"')));
+  assert.equal(view.split(PAGE_WARN).length - 1, 1);
+  const plain = home({ slots: [slotData(s, { posts })] });
+  const pv = plain.slice(plain.indexOf('<section class="slotview"'), plain.indexOf('</section>', plain.indexOf('<section class="slotview"')));
+  assert.ok(!pv.includes(PAGE_WARN));
+  // chỉ đích Page che giá mới tính, nhóm che giá không cảnh báo
+  const gm = targets.map((t) => (t.kind === 'group' ? { ...t, priceStyle: 'masked' } : t));
+  const gh = home({ slots: [slotData(s, { targets: gm, posts: [post(s, 1, 'group:g1', ['c'])] })] });
+  assert.ok(!gh.slice(gh.indexOf('<section class="slotview"')).split('id="p-profile"')[0].includes(PAGE_WARN));
+});

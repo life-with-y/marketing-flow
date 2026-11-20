@@ -1,5 +1,5 @@
 // Các phần cấu hình của trang chủ: tab Hằng ngày, tab Hồ sơ và cột phải (Lần sửa gần nhất, Báo lỗi).
-import { esc } from './render-posts.mjs';
+import { esc, PAGE_MASKED_WARNING } from './render-posts.mjs';
 import { targetsForSlot } from './targets.mjs';
 import { validateConfig } from './config.mjs';
 
@@ -9,6 +9,7 @@ const DAY_LABEL = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 
 const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const LANG = { vi: 'tiếng Việt', en: 'tiếng Anh' };
 const KIND_LABEL = { wall: 'Tường', page: 'Page', threads: 'Threads' };
+const SWITCH_KINDS = [['page', 'Page'], ['wall', 'Tường'], ['threads', 'Threads'], ['group', 'Nhóm']];
 
 const p2 = (n) => String(n).padStart(2, '0');
 const arr = (v) => (Array.isArray(v) ? v : []);
@@ -131,6 +132,9 @@ function profileHtml(cfg, persona, tokenLabel) {
   const sched = arr(cfg.schedule).join(' · ');
   const mix = cfg.channelMix && typeof cfg.channelMix === 'object'
     ? Object.entries(cfg.channelMix).map(([k, v]) => `${esc(k)} ${esc(v?.listing)}/${esc(v?.brand)}`).join(' · ') : '';
+  const links = SWITCH_KINDS.map(([k, l]) => `${l} ${cfg.links?.[k] === true ? 'bật' : 'tắt'}`).join(' · ');
+  const prices = SWITCH_KINDS.map(([k, l]) => `${l} ${cfg.priceStyle?.[k] === 'masked' ? 'ẩn giá (4xxx)' : 'đầy đủ'}`).join(' · ');
+  const pageWarn = cfg.priceStyle?.page === 'masked' ? ` <span class="warn">${esc(PAGE_MASKED_WARNING)}</span>` : '';
   const contact = (v) => (arr(v).length ? arr(v).map((c, i) => `${i + 1}. ${esc(typeof c === 'string' ? c : JSON.stringify(c))}`).join(' · ') : '<span class="mute">—</span>');
   return `    <details class="sec" open>
       <summary>Persona <small>FB cá nhân, Threads, nhóm</small></summary>
@@ -156,6 +160,8 @@ function profileHtml(cfg, persona, tokenLabel) {
         <dt>Giờ chạy</dt><dd>${esc(sched) || '—'} <span class="mute it">— bỏ lỡ thì bỏ qua</span></dd>
         <dt>Tỉ lệ</dt><dd>${mix || '<span class="mute">—</span>'}</dd>
         <dt>Thư mục lưu</dt><dd>${dash(cfg.outputDir)}</dd>
+        <dt>Link homematch.vn</dt><dd>${esc(links)}</dd>
+        <dt>Giá</dt><dd>${esc(prices)}${pageWarn}</dd>
         <dt>Quét nhóm</dt><dd>${cfg.leadScan?.enabled ? 'bật' : 'tắt'}</dd>
         <dt>Token</dt><dd>${token} <span class="mute it">— đổi qua /hm-setup</span></dd>
       </dl></div>
