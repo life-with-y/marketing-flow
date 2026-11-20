@@ -14,6 +14,11 @@ function variantsFor(cfg, kind) {
   return v[kind === 'group' ? 'groups' : kind] ?? v.default ?? 1;
 }
 
+// Công tắc link homematch.vn theo kênh: chỉ đúng true mới bật (thiếu/sai = tắt).
+const linksFor = (cfg, kind) => cfg.links?.[kind] === true;
+// Cách ghi giá: Page luôn đầy đủ; kênh khác "masked" khi config ghi đúng như vậy.
+const priceStyleFor = (cfg, kind) => (kind !== 'page' && cfg.priceStyle?.[kind] === 'masked' ? 'masked' : 'full');
+
 export function targetsForSlot(cfg, date, hhmm, onlyGroups) {
   const day = DAY_KEYS[date.getDay()];
   const out = [];
@@ -36,6 +41,8 @@ export function targetsForSlot(cfg, date, hhmm, onlyGroups) {
       language: g.language,
       note: g.note,
       variants: variantsFor(cfg, 'group'),
+      links: linksFor(cfg, 'group'),
+      priceStyle: priceStyleFor(cfg, 'group'),
       contact: cfg.contact || [],
     });
   }
@@ -55,6 +62,8 @@ export function targetsForSlot(cfg, date, hhmm, onlyGroups) {
         language: 'vi',
         note: '',
         variants: variantsFor(cfg, kind),
+        links: linksFor(cfg, kind),
+        priceStyle: priceStyleFor(cfg, kind),
         contact: kind === 'page' ? cfg.pageContact || [] : cfg.contact || [],
       });
     }

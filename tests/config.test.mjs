@@ -130,3 +130,35 @@ test('perSlot.<key>: account có thật, số nguyên 0–5', () => {
   for (const v of [-1, 6, 1.5, '2', null]) assert.ok(at({ fb1: v }).some((e) => e.startsWith('perSlot.fb1')), String(v));
   assert.ok(at([1]).some((e) => e.startsWith('perSlot')));
 });
+
+test('links, priceStyle: mặc định tắt link, giá đầy đủ; trộn từng khoá', () => {
+  const d = tmp();
+  const { apiBaseUrl, accounts, groups } = base();
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups }));
+  const c = loadConfig(d);
+  assert.deepEqual(c.links, { page: false, wall: false, threads: false, group: false });
+  assert.deepEqual(c.priceStyle, { wall: 'full', threads: 'full', group: 'full' });
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups, links: { threads: true }, priceStyle: { wall: 'masked' } }));
+  const c2 = loadConfig(d);
+  assert.deepEqual(c2.links, { page: false, wall: false, threads: true, group: false });
+  assert.deepEqual(c2.priceStyle, { wall: 'masked', threads: 'full', group: 'full' });
+});
+
+test('links: object, khoá page/wall/threads/group, giá trị boolean', () => {
+  const v = (links) => validateConfig({ ...base(), links });
+  assert.deepEqual(v({ page: true, wall: false, threads: true, group: false }), []);
+  assert.ok(v('x').some((e) => e.startsWith('links:')));
+  assert.ok(v([]).some((e) => e.startsWith('links:')));
+  assert.ok(v({ wall: 'true' }).some((e) => e.startsWith('links.wall:')));
+  assert.ok(v({ zalo: true }).some((e) => e.startsWith('links.zalo:')));
+});
+
+test('priceStyle: wall/threads/group nhận full | masked, Page luôn đầy đủ', () => {
+  const v = (priceStyle) => validateConfig({ ...base(), priceStyle });
+  assert.deepEqual(v({ wall: 'masked', threads: 'full', group: 'masked' }), []);
+  assert.ok(v('masked').some((e) => e.startsWith('priceStyle:')));
+  assert.ok(v({ wall: 'hidden' }).some((e) => e.startsWith('priceStyle.wall:')));
+  assert.ok(v({ page: 'masked' }).some((e) => e.startsWith('priceStyle.page:') && /Page luôn/.test(e)));
+  assert.ok(v({ page: 'full' }).some((e) => e.startsWith('priceStyle.page:')));
+  assert.ok(v({ zalo: 'full' }).some((e) => e.startsWith('priceStyle.zalo:')));
+});

@@ -7,6 +7,8 @@
   "leadScan": { "enabled": false },
   "perSlot": {},
   "variants": { "default": 1 },
+  "links": { "page": false, "wall": false, "threads": false, "group": false },
+  "priceStyle": { "wall": "full", "threads": "full", "group": "full" },
   "feedback": {
     "formUrl": "",
     "fields": { "person": "", "slot": "", "post": "", "variant": "", "codes": "", "text": "" }

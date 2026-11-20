@@ -15,6 +15,9 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+export const LINK_KINDS = ['page', 'wall', 'threads', 'group'];
+export const PRICE_STYLE_KINDS = ['wall', 'threads', 'group'];
+export const PRICE_STYLES = ['full', 'masked'];
 
 export function validateConfig(cfg) {
   const errors = [];
@@ -42,6 +45,27 @@ export function validateConfig(cfg) {
         if (!Number.isInteger(v) || v < 1 || v > 3) {
           errors.push(`variants.${k}: phải là số nguyên từ 1 đến 3`);
         }
+      }
+    }
+  }
+  if (cfg.links !== undefined) {
+    if (!isObj(cfg.links)) {
+      errors.push(`links: phải là object { ${LINK_KINDS.join(', ')} } với giá trị true/false`);
+    } else {
+      for (const [k, v] of Object.entries(cfg.links)) {
+        if (!LINK_KINDS.includes(k)) errors.push(`links.${k}: chỉ nhận ${LINK_KINDS.join(', ')}`);
+        else if (typeof v !== 'boolean') errors.push(`links.${k}: phải là true hoặc false`);
+      }
+    }
+  }
+  if (cfg.priceStyle !== undefined) {
+    if (!isObj(cfg.priceStyle)) {
+      errors.push(`priceStyle: phải là object { ${PRICE_STYLE_KINDS.join(', ')} } với giá trị "full" hoặc "masked"`);
+    } else {
+      for (const [k, v] of Object.entries(cfg.priceStyle)) {
+        if (k === 'page') errors.push('priceStyle.page: Page luôn ghi giá đầy đủ, bỏ khoá này');
+        else if (!PRICE_STYLE_KINDS.includes(k)) errors.push(`priceStyle.${k}: chỉ nhận ${PRICE_STYLE_KINDS.join(', ')}`);
+        else if (!PRICE_STYLES.includes(v)) errors.push(`priceStyle.${k}: phải là "full" hoặc "masked"`);
       }
     }
   }
@@ -120,7 +144,7 @@ function readJson(file, label, missingMsg) {
 
 function merge(def, user) {
   const out = { ...def, ...user };
-  for (const k of ['variants', 'perSlot']) {
+  for (const k of ['variants', 'perSlot', 'links', 'priceStyle']) {
     if (isObj(def[k]) && isObj(user[k])) out[k] = { ...def[k], ...user[k] };
   }
   if (isObj(def.feedback) && isObj(user.feedback)) {
