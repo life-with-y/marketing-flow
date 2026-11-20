@@ -150,8 +150,8 @@ Luật cứng (bài vi phạm sẽ bị script trả về ở bước 4):
 4. **Trạng thái** dùng đúng `statusText`. **Mã tin** dùng đúng `code`. Không ghi số phòng nếu không cần (mã tin là đủ).
 5. **Link**: đích `page`, `wall`, `group`: thân bài (`text`) không có chuỗi `homematch.vn` nào (kể cả không có `https://`); link tin chỉ để trong `comment`. Đích `threads`: link được để trong `text`. Ở đâu thì mọi chuỗi chứa `homematch.vn` cũng phải bằng đúng `link` của một tin trong bài. Không viết tên miền `homematch.vn` trần, không link quận, không rút gọn. Bài thương hiệu không đặt link tin, `comment` (nếu có) không có link homematch, không có mã tin. Nhóm theo mặc định an toàn: không link ở đâu cả.
    - **`comment`** (tuỳ chọn, comment đầu tiên sẽ ghim): ngắn, tối đa 300 ký tự; cùng luật như `text` về link, mã tin (chỉ mã trong `postCodes`), chữ thường (luật 6) và giá (có ghi giá thì phải đúng `priceText`).
-6. **Chỉ văn bản thường**: không `**`, không `__`, không `_…_`, không dòng bắt đầu bằng `#` kèm khoảng trắng (tiêu đề markdown), không chữ đậm/nghiêng giả bằng ký tự Unicode (U+1D400–U+1D7FF). Được dùng xuống dòng, emoji, gạch đầu dòng `•`. Hashtag viết liền (`#phongtrohanoi`) thì được.
-7. **Threads** ≤ 500 ký tự (đếm cả emoji và xuống dòng). Viết ngắn ngay từ đầu, đừng để sát giới hạn.
+6. **Chỉ văn bản thường**: không `**`, không `__`, không `_…_`, không dòng bắt đầu bằng `#` kèm khoảng trắng (tiêu đề markdown), không chữ đậm/nghiêng giả bằng ký tự Unicode (U+1D400–U+1D7FF). Được dùng xuống dòng, emoji, gạch đầu dòng `•`. Hashtag viết liền (`#phongtrohanoi`) thì được. Không dùng số dạng icon (0️⃣8️⃣…, ký tự U+20E3) ở `text` lẫn `comment`.
+7. **Threads** ≤ 500 ký tự (đếm cả emoji và xuống dòng), tối đa một `#tag`. Viết ngắn ngay từ đầu, đừng để sát giới hạn.
 8. Tuân theo `channel-format.md` và cấu trúc của kiểu bài.
 
 ### 3.7 Ghi `posts.json`

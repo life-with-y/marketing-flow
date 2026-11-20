@@ -301,3 +301,22 @@ test('comment bài thương hiệu: không link homematch, không mã tin', () =
   assert.ok(has(b('Xem thêm homematch.vn'), /bài thương hiệu.*comment.*link/));
   assert.ok(has(b('Xem mã T1302'), /comment.*T1302/));
 });
+
+test('số dạng icon (keycap U+20E3) bị chặn ở text và comment, mọi kênh', () => {
+  const icon = '0️⃣8️⃣';
+  assert.ok(has(mk({}, { text: `${goodText} Zalo ${icon}` }), /Bài 1, bản A: không dùng số dạng icon/));
+  assert.ok(has(mk({}, { text: `${goodText} 1⃣` }), /không dùng số dạng icon/));
+  assert.ok(has(th(`${thGood} #️⃣`), /không dùng số dạng icon/));
+  assert.ok(has(mk({ targetId: 'wall:1' }, { comment: `Zalo ${icon}` }), /\(comment\): không dùng số dạng icon/));
+  assert.ok(!has(mk({}, { text: `${goodText} Zalo 0838 600 055` }), /số dạng icon/));
+});
+
+test('Threads: tối đa một #tag; Facebook không giới hạn ở validator', () => {
+  assert.deepEqual(msgs(th(`${thGood} #phongtro`)), []);
+  assert.ok(has(th(`${thGood} #phongtro #caugiay`), /Threads có 2 hashtag, tối đa 1/));
+  assert.ok(has(th(`#phòngtrọ ${thGood} #hanoi`), /tối đa 1/));
+  // # dính sau chữ/số không tính là tag
+  assert.deepEqual(msgs(th(`${thGood} #phongtro C# a#b`)), []);
+  assert.ok(!has(mk(), /hashtag/));
+  assert.ok(!has(mk({}, { text: `${goodText} #a #b #c` }), /hashtag/));
+});

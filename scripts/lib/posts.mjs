@@ -1,6 +1,9 @@
 // Kiểm tra posts.json do Claude soạn bằng luật cứng (Task 7).
 const KEYS = ['A', 'B', 'C'];
 const MATH_ALNUM = /[\u{1D400}-\u{1D7FF}]/u;
+const KEYCAP = /\u20E3/u;
+// #tag đứng riêng (không dính sau chữ, số, "/", "&").
+const HASHTAG_RE = /(?<![\p{L}\p{M}\p{N}_&\/])#[\p{L}\p{M}\p{N}_]+/gu;
 
 const stripSlash = (s) => String(s).replace(/\/+$/, '');
 
@@ -67,6 +70,7 @@ function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listin
   if (text.includes('__')) err(pi, `${vk}: văn bản có "__" (chỉ dùng chữ thường).`);
   if (/^\s*#{1,6}\s/m.test(text)) err(pi, `${vk}: có dòng tiêu đề markdown bắt đầu bằng "#".`);
   if (MATH_ALNUM.test(text)) err(pi, `${vk}: có ký tự chữ toán học Unicode (U+1D400–U+1D7FF).`);
+  if (KEYCAP.test(text)) err(pi, `${vk}: không dùng số dạng icon (0️⃣…9️⃣), viết chữ số thường.`);
 
   // 6b. mọi giá ghi trong bài phải là giá thật của tin trong bài (bài thương hiệu: không có giá)
   if (Array.isArray(postCodes)) {
@@ -169,6 +173,8 @@ export function validatePosts(posts, input) {
         if (target && target.kind === 'threads') {
           const len = [...text].length;
           if (len > 500) err(pi, `${vk}: văn bản Threads dài ${len} ký tự, tối đa 500.`);
+          const tags = (text.match(HASHTAG_RE) || []).length;
+          if (tags > 1) err(pi, `${vk}: Threads có ${tags} hashtag, tối đa 1 tag chủ đề.`);
         }
 
         // 6. giá: mỗi tin trong bài phải có một giá đúng nguyên văn trong thân bài
