@@ -65,7 +65,7 @@ const FACEBOOK_KINDS = new Set(['page', 'wall', 'group']);
 const COMMENT_MAX = 300;
 
 // Luật định dạng (5), giá ghi trong bài (6b), mã tin (6c), link (7) cho một đoạn chữ.
-function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listings, postCodes, language, checkLinks }) {
+function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listings, postCodes, language, checkLinks, linksOn }) {
   if (text.includes('**')) err(pi, `${vk}: văn bản có "**" (chỉ dùng chữ thường).`);
   if (text.includes('__')) err(pi, `${vk}: văn bản có "__" (chỉ dùng chữ thường).`);
   if (/^\s*#{1,6}\s/m.test(text)) err(pi, `${vk}: có dòng tiêu đề markdown bắt đầu bằng "#".`);
@@ -88,7 +88,12 @@ function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listin
     }
   }
 
-  // 7. link homematch phải là link của tin trong bài
+  // 7. công tắc link của kênh tắt: không link homematch nào, ở đâu cũng vậy
+  if (!linksOn) {
+    if (findHomematchUrls(text).length) err(pi, `${vk}: kênh này đang tắt link homematch.vn`);
+    return;
+  }
+  // 7b. link homematch phải là link của tin trong bài
   if (checkLinks && !isBrand && codesOk) {
     const allowed = new Set(used.map((l) => normUrl(l.link)));
     for (const u of findHomematchUrls(text)) {
@@ -161,13 +166,14 @@ export function validatePosts(posts, input) {
 
       // 5–7. văn bản (thân bài) và comment đầu tiên dùng chung luật định dạng, giá, mã tin, link
       const fb = target && FACEBOOK_KINDS.has(target.kind);
-      const ctx = { pi, err, isBrand, codesOk, used, codes, listings, postCodes: post.postCodes, language: target?.language };
+      const linksOn = target?.links === true;
+      const ctx = { pi, err, isBrand, codesOk, used, codes, listings, postCodes: post.postCodes, language: target?.language, linksOn };
       const text = typeof v.text === 'string' ? v.text.normalize('NFC') : null;
       if (text === null) {
         err(pi, `${vk}: thiếu văn bản "text".`);
       } else {
         checkContent(text, vk, { ...ctx, checkLinks: !fb });
-        if (fb && findHomematchUrls(text).length) {
+        if (linksOn && fb && findHomematchUrls(text).length) {
           err(pi, `${vk}: link tin để ở comment đầu tiên, không để trong thân bài.`);
         }
         if (target && target.kind === 'threads') {
@@ -198,7 +204,7 @@ export function validatePosts(posts, input) {
           const len = [...comment].length;
           if (len > COMMENT_MAX) err(pi, `${cl}: comment dài ${len} ký tự, tối đa ${COMMENT_MAX}.`);
           checkContent(comment, cl, { ...ctx, checkLinks: true });
-          if (isBrand && findHomematchUrls(comment).length) {
+          if (linksOn && isBrand && findHomematchUrls(comment).length) {
             err(pi, `${cl}: bài thương hiệu, comment không để link homematch.`);
           }
         }

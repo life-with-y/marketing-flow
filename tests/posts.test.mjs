@@ -19,10 +19,11 @@ const fi = (c, n) => fake(c, n).images.map((i) => i.url);
 
 const input = {
   targets: [
-    { id: 'group:1', kind: 'group', name: 'G1', variants: 1 },
-    { id: 'group:2', kind: 'group', name: 'G2', variants: 2 },
-    { id: 'threads:1', kind: 'threads', name: 'Th', variants: 1 },
-    { id: 'wall:1', kind: 'wall', name: 'W', variants: 1 },
+    // links: true để thử luật đặt link; công tắc tắt có test riêng
+    { id: 'group:1', kind: 'group', name: 'G1', variants: 1, links: true },
+    { id: 'group:2', kind: 'group', name: 'G2', variants: 2, links: true },
+    { id: 'threads:1', kind: 'threads', name: 'Th', variants: 1, links: true },
+    { id: 'wall:1', kind: 'wall', name: 'W', variants: 1, links: true },
   ],
   listings: [...listings, fake('F1', 6), fake('F2', 4), { ...fake('T2142', 5), rooms: [{ room: 'T101', priceText: '2 triệu', status: 'AVAILABLE', label: '' }] }, ...'ABCDEFGHIJK'.split('').map((c) => fake('K' + c, 3))],
 };
@@ -252,7 +253,7 @@ test('mã tin: token T… trùng số phòng của tin trong bài thì bỏ qua'
 });
 
 test('link Facebook: thân bài page/wall/group không có link, link ở comment', () => {
-  const inp = { ...input, targets: [...input.targets, { id: 'page:1', kind: 'page', name: 'P', variants: 1 }] };
+  const inp = { ...input, targets: [...input.targets, { id: 'page:1', kind: 'page', name: 'P', variants: 1, links: true }] };
   const run = (tid, v) => validatePosts(mk({ targetId: tid }, v), inp).errors;
   const body = /link tin để ở comment đầu tiên, không để trong thân bài/;
   for (const tid of ['wall:1', 'page:1', 'group:1']) {
@@ -324,4 +325,27 @@ test('Threads: tối đa một #tag; Facebook không giới hạn ở validator'
 test('Threads: "#2", "#1" không phải hashtag (sau # phải là chữ)', () => {
   assert.deepEqual(msgs(th(`${thGood} #phongtro phòng #2 và #1`)), []);
   assert.ok(has(th(`${thGood} #phongtro #a1`), /tối đa 1/));
+});
+
+test('công tắc link tắt: mọi link homematch ở text hoặc comment đều lỗi, mọi kênh', () => {
+  const kinds = ['page', 'wall', 'threads', 'group'];
+  const inp = { ...input, targets: [...input.targets, ...kinds.map((k) => ({ id: `${k}:off`, kind: k, name: k, variants: 1, links: false })), { id: 'wall:nokey', kind: 'wall', name: 'W', variants: 1 }] };
+  const run = (tid, v) => validatePosts(mk({ targetId: tid }, v), inp).errors;
+  const off = /^Bài 1, bản A( \(comment\))?: kênh này đang tắt link homematch\.vn$/;
+  for (const tid of [...kinds.map((k) => `${k}:off`), 'wall:nokey']) {
+    for (const u of [l2.link, 'homematch.vn/p/T1302', 'www.homematch.vn/p/T1302', 'https://homematch.vn']) {
+      const e = run(tid, { text: `${goodText} ${u}` });
+      assert.equal(e.length, 1, `${tid} ${u} ${JSON.stringify(e)}`);
+      assert.match(e[0].message, off);
+      const c = run(tid, { comment: `Chi tiết: ${u}` });
+      assert.equal(c.length, 1, `${tid} comment ${u}`);
+      assert.match(c[0].message, /\(comment\): kênh này đang tắt link homematch\.vn$/);
+    }
+    // không link, comment chỉ ghi mã: qua
+    assert.deepEqual(run(tid, {}), [], tid);
+    assert.deepEqual(run(tid, { comment: 'Mã T1302, nhắn Zalo để xem phòng' }), [], tid);
+  }
+  // bài thương hiệu Threads có link homematch cũng bị chặn khi tắt
+  const b = { posts: [{ targetId: 'threads:off', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'ghé homematch.vn', images: fi('F1', 3) }] }] };
+  assert.ok(validatePosts(b, inp).errors.some((e) => /kênh này đang tắt link/.test(e.message)));
 });
