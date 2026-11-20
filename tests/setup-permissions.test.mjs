@@ -28,6 +28,10 @@ test('dry run prints rules JSON incl deny and ~ form, writes nothing', async () 
   assert.ok(j.allow.includes('Read(~/.homematch-marketing/**)'));
   assert.ok(j.allow.some((x) => /^Bash\(node \/.*\/scripts\/prepare\.mjs:\*\)$/.test(x)));
   assert.ok(j.allow.some((x) => x.includes('/scripts/build.mjs:*')) && j.allow.some((x) => x.includes('/scripts/config-cli.mjs:*')));
+  for (const n of ['prepare', 'build', 'config-cli']) {
+    assert.equal(j.allow.filter((x) => /^Bash\(node \/[^"]*\/scripts\/NAME\.mjs:\*\)$/.test(x.replace(n, 'NAME'))).length, 1, n);
+    assert.equal(j.allow.filter((x) => x.startsWith('Bash(node "/') && x.endsWith(`/scripts/${n}.mjs":*)`)).length, 1, n);
+  }
   assert.deepEqual(j.deny, ['Read(~/.homematch-marketing/secrets.json)']);
   assert.equal(fs.existsSync(e.file), false);
 });
@@ -81,4 +85,21 @@ test('refuses dangerous outputDir', async () => {
     assert.equal(r.code, 2, `dir=${d}`);
   }
   assert.equal(fs.existsSync(e.file), false);
+});
+
+test('--apply on settings with only unquoted rules adds only quoted ones; second run adds nothing', async () => {
+  const e = mk();
+  const rules = JSON.parse((await run(['--output-dir', '~/HM-Posts'], e)).text);
+  const unquoted = rules.allow.filter((x) => x.startsWith('Bash(node /'));
+  assert.equal(unquoted.length, 3);
+  fs.mkdirSync(path.dirname(e.file), { recursive: true });
+  fs.writeFileSync(e.file, JSON.stringify({ permissions: { allow: unquoted } }));
+  const r = await run(['--output-dir', '~/HM-Posts', '--apply'], e);
+  assert.equal(r.code, 0);
+  const s = readJ(e.file);
+  assert.equal(s.permissions.allow.filter((x) => x.startsWith('Bash(node "/')).length, 3);
+  assert.equal(s.permissions.allow.filter((x) => x.startsWith('Bash(node /')).length, 3);
+  const r2 = await run(['--output-dir', '~/HM-Posts', '--apply'], e);
+  assert.match(r2.text, /đã có sẵn/);
+  assert.deepEqual(readJ(e.file), s);
 });

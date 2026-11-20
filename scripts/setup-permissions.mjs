@@ -1,5 +1,5 @@
 // Quyền cho scheduled task (Task 13). Mặc định chỉ in rule (dry run); --apply gộp vào ~/.claude/settings.json.
-// TODO: cú pháp rule và cách khớp tiền tố được xác nhận trong Task 0 spike.
+// Mỗi script có hai rule: đường dẫn không và có ngoặc kép (đúng như skill gọi).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -29,7 +29,8 @@ export function buildRules({ outputDir, home = os.homedir(), pluginRoot = PLUGIN
   const root = pluginRoot.split(path.sep).join('/');
   return {
     allow: [
-      ...['prepare', 'build', 'config-cli'].map((n) => `Bash(node ${root}/scripts/${n}.mjs:*)`),
+      // Skill gọi script với đường dẫn trong ngoặc kép, nên cần cả hai dạng (có và không ngoặc kép).
+      ...['prepare', 'build', 'config-cli'].flatMap((n) => [`Bash(node ${root}/scripts/${n}.mjs:*)`, `Bash(node "${root}/scripts/${n}.mjs":*)`]),
       `Read(${PROFILE}/**)`, `Write(${PROFILE}/**)`, `Edit(${PROFILE}/**)`,
       outputRule(outputDir, home),
     ],

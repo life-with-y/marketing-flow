@@ -2,7 +2,7 @@
 description: Thiết lập HomeMatch marketing lần đầu (token API, lịch soạn bài, quyền, persona, Page); chạy lại để đổi phần nào đó
 ---
 
-<!-- TODO: các rule quyền ở bước 3 (scripts/setup-permissions.mjs) sẽ được xác nhận lại trong Task 0 spike (đúng cú pháp, scheduled task chạy không hỏi quyền). -->
+<!-- TODO: dạng rule có ngoặc kép `Bash(node "/abs/…/x.mjs":*)` đã được xác nhận là cần thiết trong một lần chạy scheduled task thật (chế độ quyền mặc định dừng hỏi quyền khi chỉ có dạng không ngoặc kép); setup-permissions.mjs phát cả hai dạng. -->
 
 Thiết lập HomeMatch marketing. Mọi chữ hiển thị cho người dùng bằng tiếng Việt, mỗi lượt một câu hỏi ngắn.
 
