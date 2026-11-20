@@ -85,6 +85,12 @@ p { margin: 8px 0; }
 /* nội dung hiển thị đúng như trên Facebook / Threads: font hệ thống, 15px, chữ thường */
 .text { white-space: pre-wrap; min-width: 0; overflow-wrap: anywhere; font: 15px/1.34 var(--fb);
   color: #080809; background: #fff; border: 1px solid #dadde1; border-radius: 8px; padding: 12px 16px; }
+.txtcol { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+/* comment đầu tiên: người đăng dán rồi ghim, nhỏ hơn hộp nội dung */
+.cmt { font: 13.5px/1.34 var(--fb); color: #080809; background: #f0f2f5; border-radius: 12px; padding: 8px 12px; }
+.cmt-h { font-weight: 600; font-size: 12.5px; color: #65676b; margin-bottom: 4px; }
+.cmt-t { white-space: pre-wrap; overflow-wrap: anywhere; }
+.actions [hidden] { display: none; }
 .text::before { content: attr(data-who); display: block; font-weight: 600; font-size: 15px; margin-bottom: 8px; color: #080809; }
 @media (min-width: 701px) { .count { grid-column: 1; } .photos { grid-column: 2; grid-row: 1 / span 2; } }
 .count { font: 12.5px var(--fb); color: var(--mute); margin-top: 4px; text-align: right; }
@@ -178,6 +184,11 @@ details.sec[open] > summary::after { content: "–"; }
 details.sec > summary small { margin-left: auto; }
 details.sec > .body { padding: 0 0 16px; }
 .ctype .text { max-width: 520px; }
+.pguide { border-top: var(--hair); padding: 4px 0 12px; max-width: 640px; }
+.pguide:first-child { border-top: 0; }
+.pguide h3 { font-size: 16px; margin: 12px 0 4px; }
+.pguide ul { margin: 0; padding-left: 20px; }
+.pguide p { margin: 4px 0; }
 blockquote { margin: 6px 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--ink); }
 .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-top: 10px; }
 @media (max-width: 600px) { .cols { grid-template-columns: minmax(0, 1fr); } }
@@ -418,6 +429,15 @@ $$('.slotview').forEach(view => {
       if (ok) e.target.classList.add('done');
       toast(ok ? 'Đã copy nội dung' : 'Không copy được');
     });
+    const cc = $('[data-act="copy-comment"]', post);
+    if (cc) cc.addEventListener('click', async e => {
+      const c = $('.cmt-t', active(post));
+      if (!c) return;
+      const ok = await copy(c.dataset.raw);
+      e.target.textContent = ok ? 'Đã copy comment' : 'Không copy được, chọn và copy tay';
+      if (ok) e.target.classList.add('done');
+      toast(ok ? 'Đã copy comment: dán làm comment đầu tiên rồi ghim' : 'Không copy được');
+    });
     $('[data-act="copy-path"]', post).addEventListener('click', async e => {
       const ok = await copy(active(post).dataset.path);
       e.target.textContent = ok ? 'Đã copy thư mục' : 'Không copy được';
@@ -430,6 +450,7 @@ $$('.slotview').forEach(view => {
       $$('.vbody', post).forEach(v => { v.hidden = v.dataset.key !== b.dataset.key; });
       const ct = $('[data-act="copy-text"]', post);
       ct.textContent = 'Copy nội dung'; ct.classList.remove('done');
+      if (cc) { cc.hidden = !$('.cmt-t', active(post)); cc.textContent = 'Copy comment'; cc.classList.remove('done'); }
       $('[data-act="copy-path"]', post).textContent = 'Copy thư mục ảnh';
       $('.path', post).textContent = active(post).dataset.path;
     }));

@@ -21,7 +21,7 @@ test('parses the example template into 4 types with all fields', () => {
   assert.match(a.structure[4], /^Liên hệ \+ mã tin/);
   assert.match(a.images, /^5 ảnh của tin/);
   assert.equal(a.exampleNote, 'tường cá nhân, phòng giá thấp, liên hệ Zalo');
-  assert.ok(a.example.startsWith('🔥 STUDIO 25M²'));
+  assert.ok(a.example.startsWith('🏡 Studio 25m² có bếp riêng'));
   assert.ok(a.example.endsWith('<link của tin T1302>'));
   assert.ok(!a.example.includes('```'));
   assert.equal(b.name, 'Gom theo khu');

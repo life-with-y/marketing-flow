@@ -53,6 +53,8 @@ function locate(ctx, dir) {
   return { abs: path.join(ctx.outputDir, ctx.slot, rel), rel: path.join(ctx.slot, rel) };
 }
 
+const hasComment = (v) => typeof v?.comment === 'string' && v.comment !== '';
+
 function renderVariant(post, v, i, ctx) {
   const { slot, feedback, who, target, person } = ctx;
   const codes = arr(post.postCodes);
@@ -71,7 +73,10 @@ function renderVariant(post, v, i, ctx) {
   )).join('');
   const note = `${files.length} ảnh · ${codes.length ? esc(codes.join(', ')) : 'thương hiệu'}`;
   return `<div class="post-b vbody" data-key="${esc(v.key)}" data-kind="${esc(target?.kind ?? '')}" data-path="${esc(where.abs)}" data-feedback="${esc(fb)}"${i ? ' hidden' : ''}>
-      <div class="text" data-who="${esc(who)}" data-raw="${esc(v.text)}">${esc(v.text)}</div>
+      <div class="txtcol">
+        <div class="text" data-who="${esc(who)}" data-raw="${esc(v.text)}">${esc(v.text)}</div>${hasComment(v) ? `
+        <div class="cmt"><div class="cmt-h">Comment đầu tiên (ghim lại)</div><div class="cmt-t" data-raw="${esc(v.comment)}">${esc(v.comment)}</div></div>` : ''}
+      </div>
       <div class="photos">${photos}<div class="ph-note">${note}</div></div>
     </div>`;
 }
@@ -107,6 +112,7 @@ function renderPost(post, ctx) {
     ${variants.map((v, i) => renderVariant(post, v, i, vctx)).join('\n    ')}
     <div class="actions">
       <button type="button" class="btn" data-act="copy-text">Copy nội dung</button>
+      ${variants.some(hasComment) ? `<button type="button" class="btn" data-act="copy-comment"${hasComment(variants[0]) ? '' : ' hidden'}>Copy comment</button>` : ''}
       <button type="button" class="btn ghost" data-act="copy-path">Copy thư mục ảnh</button>
       ${link}
       ${anyFeedback ? '<button type="button" class="btn ghost" data-act="feedback">Góp ý</button>' : ''}

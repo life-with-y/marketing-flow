@@ -95,8 +95,8 @@ test('đổi từ route cũ sang mới: phòng chưa thấy của tin cũ không
 
 test('phí, cọc viết bằng đ không bị bộ kiểm tra coi là giá thuê', () => {
   const l = { ...marketingToListings(mkt)[0], eligible: true };
-  const text = `Studio – Cầu Giấy\n💰 3,5 triệu/tháng\n⚡ ${l.details.fees.join(' • ')}\n${l.details.deposit}\n${l.link}`;
+  const text = `Studio – Cầu Giấy\n💰 3,5 triệu/tháng\n⚡ ${l.details.fees.join(' • ')}\n${l.details.deposit}`;
   const input = { targets: [{ id: 'wall:fb1:0', kind: 'wall', variants: 1 }], listings: [l] };
-  const posts = { posts: [{ targetId: 'wall:fb1:0', type: 'x', postCodes: ['T1302'], variants: [{ key: 'A', text, images: l.images.map((i) => i.url) }] }] };
+  const posts = { posts: [{ targetId: 'wall:fb1:0', type: 'x', postCodes: ['T1302'], variants: [{ key: 'A', text, comment: `Chi tiết và ảnh: ${l.link}`, images: l.images.map((i) => i.url) }] }] };
   assert.deepEqual(validatePosts(posts, input).errors, []);
 });

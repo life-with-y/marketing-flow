@@ -154,7 +154,7 @@ test('Kiểu bài tab: one card per type, first open, fields, FB-style example, 
   assert.match(p, /<details class="sec ctype" open>\s*<summary>Phòng nổi bật/);
   for (const s of ['Kênh', 'Số tin mỗi bài', 'Cách chọn tin', 'Cấu trúc', 'Ảnh', 'Ví dụ', 'Tường cá nhân · Page · Threads · Nhóm']) assert.ok(p.includes(s), s);
   assert.ok(p.includes('<ol>') && p.includes('<li>Lời mời nói chuyện.</li>'));
-  assert.ok(p.includes('class="text"') && p.includes('🔥 STUDIO 25M²'));
+  assert.ok(p.includes('class="text"') && p.includes('🏡 Studio 25m² có bếp riêng'));
   assert.ok(p.includes('data-seed="Kiểu Gom theo khu: "') && p.includes('Sửa kiểu này'));
   assert.ok(p.includes('+ Thêm kiểu bài') && p.includes('Thêm kiểu bài mới: tên …, kênh …, số tin …, cấu trúc …'));
   const missing = home({ contentTypes: '## Trống\n\n- **Kênh**: page\n' });
@@ -255,4 +255,63 @@ test('malformed slot files are skipped with a note; other slots intact', () => {
   // only bad slots: still a page with the note
   const only = renderHome({ cfg: cfg(), outputDir: out, slots: [], badSlots: ['2026-11-19_1100'], today: THU });
   assert.ok(only.includes('Không đọc được khung 2026-11-19_1100') && only.includes('Chưa có bài nào'));
+});
+
+test('comment đầu tiên: hộp riêng dưới nội dung, nút Copy comment, ẩn khi bản không có comment', () => {
+  const evil = 'Chi tiết <b>x</b> & "q": https://homematch.vn/p/T1';
+  const p1 = post('2026-11-19_1100', 1, 'group:g1', ['một', 'hai']);
+  p1.variants[1].comment = evil;
+  const p2 = post('2026-11-19_1100', 2, 'group:g1', ['ba']);
+  p2.variants[0].comment = 'Xem: https://homematch.vn/p/T2';
+  const p3 = post('2026-11-19_1100', 3, 'threads:th:0', ['hi']);
+  const html = home({ slots: [slotData('2026-11-19_1100', { posts: [p1, p2, p3] })] });
+  const cards = html.split('<article class="post"').slice(1).map((c) => c.split('</article>')[0]);
+  // bài 1: chỉ bản B có comment; nút có nhưng ẩn lúc đầu (bản A đang hiện)
+  assert.equal((cards[0].match(/class="cmt"/g) || []).length, 1);
+  assert.ok(cards[0].includes('Comment đầu tiên (ghim lại)'));
+  assert.ok(cards[0].includes('data-raw="Chi tiết &lt;b&gt;x&lt;/b&gt; &amp; &quot;q&quot;: https://homematch.vn/p/T1"'));
+  assert.ok(!cards[0].includes('<b>x</b>'));
+  assert.match(cards[0], /<button type="button" class="btn" data-act="copy-comment" hidden>Copy comment<\/button>/);
+  // bài 2: bản duy nhất có comment, nút hiện, đứng ngay sau Copy nội dung
+  assert.match(cards[1], /data-act="copy-text">Copy nội dung<\/button>\s*<button type="button" class="btn" data-act="copy-comment">Copy comment<\/button>/);
+  // bài 3: không có comment nào thì không có hộp, không có nút
+  assert.ok(!cards[2].includes('class="cmt"') && !cards[2].includes('copy-comment'));
+  // JS: copy đúng data-raw của bản đang hiện, đổi bản thì ẩn/hiện nút
+  assert.ok(html.includes(`$('.cmt-t', active(post))`));
+  assert.ok(html.includes('cc.hidden = !$(\'.cmt-t\', active(post))'));
+});
+
+test('Kiểu bài tab: mục "Hướng dẫn nền tảng" cuối tab, mỗi nền tảng 1 thẻ, markdown đơn giản đã escape', () => {
+  const guides = [
+    { kind: 'page', md: '# Page <b>x</b>\n\n## Link\n\n- Không <script>alert(1)</script> link\n- Ý & hai\n\nĐoạn "thường"\n' },
+    { kind: 'threads', md: '## Emoji\n- 0–2 emoji\n' },
+  ];
+  const html = home({ platformGuides: guides });
+  const p = html.slice(html.indexOf('id="p-types"'), html.indexOf('id="p-daily"'));
+  const at = p.indexOf('<details class="sec platforms">');
+  assert.ok(at > p.lastIndexOf('<details class="sec ctype"'), 'sau các kiểu bài');
+  assert.match(p, /<summary>Hướng dẫn nền tảng/);
+  assert.equal((p.match(/<section class="pguide"/g) || []).length, 2);
+  assert.ok(p.includes('<h3>Page &lt;b&gt;x&lt;/b&gt;</h3>'));
+  assert.ok(p.includes('<h4>Link</h4>'));
+  assert.ok(p.includes('<ul><li>Không &lt;script&gt;alert(1)&lt;/script&gt; link</li><li>Ý &amp; hai</li></ul>'));
+  assert.ok(p.includes('<p>Đoạn &quot;thường&quot;</p>'));
+  assert.ok(!p.includes('<script>alert'));
+  // không có tiêu đề # thì dùng tên kênh
+  assert.ok(p.includes('<h3>Threads</h3>'));
+  assert.ok(!home().includes('class="sec platforms"'), 'không có guide thì không có mục');
+});
+
+test('writeHome: 4 thẻ hướng dẫn từ plugin, file cá nhân ghi đè', () => {
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hm-home-pg-'));
+  const dir = path.join(homeDir, '.homematch-marketing');
+  fs.mkdirSync(path.join(dir, 'platforms'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'platforms', 'threads.md'), '# Threads của tôi\n\n- riêng\n');
+  const out = path.join(homeDir, 'out');
+  const html = fs.readFileSync(writeHome({ dir, cfg: cfg({ outputDir: out }), home: homeDir, now: THU }), 'utf8');
+  const p = html.slice(html.indexOf('id="p-types"'), html.indexOf('id="p-daily"'));
+  assert.equal((p.match(/<section class="pguide"/g) || []).length, 4);
+  for (const k of ['page', 'wall', 'group', 'threads']) assert.ok(p.includes(`data-kind="${k}"`), k);
+  assert.ok(p.includes('<h3>Facebook Page</h3>') && p.includes('<h3>Threads của tôi</h3>'));
+  assert.ok(p.includes('<h4>Mục tiêu</h4>'));
 });

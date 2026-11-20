@@ -9,10 +9,7 @@
 
 ## Theo kênh
 
-| Kênh | Giới hạn |
-|---|---|
-| Threads | ≤ 500 ký tự (tính cả emoji, xuống dòng) |
-| FB cá nhân, FB Page, nhóm FB | không giới hạn cứng; ưu tiên ngắn, dễ đọc trên điện thoại |
+Link, số điện thoại, emoji, hashtag, câu mở đầu, độ dài, CTA của từng kênh nằm trong `rules/platforms/` (`input.paths.platforms`): `facebook-page.md`, `facebook-profile.md`, `facebook-groups.md`, `threads.md`. Khi mâu thuẫn, hướng dẫn nền tảng đứng trên file này.
 
 ## Ngôn ngữ
 

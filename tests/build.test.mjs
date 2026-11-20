@@ -41,7 +41,7 @@ function mk({ badImages = false } = {}) {
   };
   const posts = {
     slot: SLOT,
-    posts: [{ targetId: input.targets[0].id, type: 'Phòng mới', postCodes: ['T1'], variants: [{ key: 'A', text: 'Cầu Giấy 3,8 triệu, nhắn mình.', images: input.listings[0].images.map((i) => i.url) }] }],
+    posts: [{ targetId: input.targets[0].id, type: 'Phòng mới', postCodes: ['T1'], variants: [{ key: 'A', text: 'Cầu Giấy 3,8 triệu, nhắn mình.', comment: 'Chi tiết và ảnh: https://homematch.vn/t1', images: input.listings[0].images.map((i) => i.url) }] }],
     skipped: [],
   };
   fs.writeFileSync(path.join(runDir, 'input.json'), JSON.stringify(input));
@@ -63,6 +63,7 @@ test('success: page-data.json + home index.html, no per-slot index, prepared lin
   assert.equal(data.posts.length, 1);
   assert.deepEqual([data.posts[0].type, data.posts[0].label, data.posts[0].postCodes], ['Phòng mới', 'NEW', ['T1']]);
   assert.deepEqual(data.posts[0].variants[0].files, ['1.jpg', '2.jpg', '3.jpg']);
+  assert.equal(data.posts[0].variants[0].comment, 'Chi tiết và ảnh: https://homematch.vn/t1');
   assert.deepEqual(data.targets.map((t) => t.id), ['group:https://fb/g1']);
   assert.deepEqual(data.accounts, [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }]);
   assert.deepEqual([data.skipped, data.pending, data.notes], [[], ['Liên hệ nhóm chưa chốt'], ['Trends: lỗi']]);

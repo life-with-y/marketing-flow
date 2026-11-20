@@ -150,3 +150,35 @@ test('--slot không còn trong schedule -> exit 4', async () => {
   assert.equal(r.message, 'Khung 17:30 không còn trong lịch');
   assert.ok(!fs.existsSync(path.join(dir, 'snapshots')));
 });
+
+test('paths.platforms: page/wall/group/threads trỏ guide plugin, file cá nhân ghi đè', async () => {
+  const { home, dir } = mkHome();
+  fs.mkdirSync(path.join(dir, 'platforms'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'platforms', 'threads.md'), '# Threads riêng');
+  const r = await runPrepare({ home, now: NOW, fetchImpl: ok });
+  assert.equal(r.exitCode, 0);
+  const { platforms } = JSON.parse(fs.readFileSync(r.inputPath, 'utf8')).paths;
+  assert.deepEqual(Object.keys(platforms).sort(), ['group', 'page', 'threads', 'wall']);
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  assert.equal(platforms.page, path.join(root, 'rules', 'platforms', 'facebook-page.md'));
+  assert.equal(platforms.wall, path.join(root, 'rules', 'platforms', 'facebook-profile.md'));
+  assert.equal(platforms.group, path.join(root, 'rules', 'platforms', 'facebook-groups.md'));
+  assert.equal(platforms.threads, path.join(dir, 'platforms', 'threads.md'));
+  for (const p of Object.values(platforms)) assert.ok(path.isAbsolute(p) && fs.existsSync(p));
+});
+
+test('paths.platforms: file cá nhân rỗng/chỉ khoảng trắng hoặc là thư mục -> dùng guide plugin', async () => {
+  const { home, dir } = mkHome();
+  const pd = path.join(dir, 'platforms');
+  fs.mkdirSync(path.join(pd, 'facebook-page.md'), { recursive: true });
+  fs.writeFileSync(path.join(pd, 'threads.md'), '  \n\t\n');
+  fs.writeFileSync(path.join(pd, 'facebook-groups.md'), '');
+  fs.writeFileSync(path.join(pd, 'facebook-profile.md'), '# Tường riêng');
+  const r = await runPrepare({ home, now: NOW, fetchImpl: ok });
+  const { platforms } = JSON.parse(fs.readFileSync(r.inputPath, 'utf8')).paths;
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  assert.equal(platforms.page, path.join(root, 'rules', 'platforms', 'facebook-page.md'));
+  assert.equal(platforms.threads, path.join(root, 'rules', 'platforms', 'threads.md'));
+  assert.equal(platforms.group, path.join(root, 'rules', 'platforms', 'facebook-groups.md'));
+  assert.equal(platforms.wall, path.join(pd, 'facebook-profile.md'));
+});
