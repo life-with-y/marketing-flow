@@ -30,7 +30,8 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 
 ## Liên hệ và lời mời
 
-- Liên hệ một lần, không lặp số. Kèm mã tin, rồi link tin ở dòng cuối.
+- Liên hệ một lần, không lặp số. Kèm mã tin.
+- Link tin: Facebook (wall, page) không để link trong thân bài; thân bài ghi "link chi tiết ở comment", link tin (kèm mã) để ở comment đầu tiên (`comment`) rồi ghim. Threads: link tin ở dòng cuối thân bài. Nhóm: mặc định không link.
 - Lời mời nói chuyện là một câu hỏi dễ trả lời, đổi cách hỏi giữa các bài: "Bạn đang làm/học ở khu nào?", "Comment khu + tầm tiền, mình gửi thêm vài phòng", "Cần thêm phòng có máy giặt riêng thì comment 'máy giặt'", "Nhắn mình ngày bạn muốn chuyển vào".
 
 ---
@@ -45,7 +46,7 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
   2. Khối thông tin, mỗi dòng một ý: 🏠 địa chỉ, quận • 💰 giá/tháng (+ cọc) • ⏰ trạng thái • ✅ 2–4 điểm nổi bật • 🛋 nội thất gom gọn • 🧾 phí • 📌 lưu ý (nếu có). Threads: bỏ 🛋 và 📌, tối đa 6 dòng thông tin.
   3. Một câu "hợp với ai" theo nhóm người đọc, viết riêng cho phòng.
   4. Lời mời nói chuyện.
-  5. Liên hệ + mã tin, link.
+  5. Liên hệ + mã tin. Facebook (wall, page): thêm "link chi tiết ở comment", link tin để ở comment đầu tiên. Threads: link tin ở dòng cuối.
 - **Ảnh**: 5 ảnh của tin, ảnh bìa trước (tin 3–4 ảnh thì dùng đủ số đó).
 - **Ví dụ** (tường cá nhân, phòng giá thấp, liên hệ Zalo):
 
@@ -64,8 +65,10 @@ Hợp bạn sinh viên hoặc mới đi làm, đi xe điện, muốn tự nấu 
 
 Bạn học hay làm ở khu nào? Comment cho mình, mình gửi thêm vài phòng gần đó.
 
-Zalo 09xx xxx xxx, nhắn mã T1302 để xem thêm ảnh và hẹn lịch.
-<link của tin T1302>
+Zalo 09xx xxx xxx, nhắn mã T1302 để hẹn lịch, link chi tiết ở comment 👇
+
+Comment đầu tiên:
+Chi tiết và ảnh T1302: <link của tin T1302>
 ```
 
 ---

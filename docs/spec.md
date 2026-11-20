@@ -151,7 +151,9 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
    - Một tin có thể vào nhiều nhóm trong cùng khung, mỗi nhóm một phiên bản nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
    - **Ngôn ngữ** theo `language` của nhóm (mặc định `vi`). Các kênh không phải nhóm dùng `vi`.
    - **CTA** chọn theo thứ tự ưu tiên trong `contact`, lùi xuống kênh mà nhóm cho phép. Page dùng `pageContact`.
-   - **Quy định nhóm đang pending** (cách ghi liên hệ, link, tiền tố…): dùng mặc định an toàn: không SĐT, không link, CTA "nhắn tin / comment mã T…". `note` của nhóm luôn được tuân theo.
+   - **Quy định nhóm đang pending** (cách ghi liên hệ, link, tiền tố…): dùng mặc định an toàn: không SĐT, không link, CTA "nhắn tin / comment mã T…". `note` của nhóm luôn được tuân theo; nhóm cho phép link thì link để ở comment đầu tiên.
+   - **Link tin trên Facebook (Page, tường cá nhân, nhóm)**: thân bài không có link; CTA trỏ Zalo/inbox và ghi "link chi tiết ở comment"; link tin (kèm mã) nằm ở `comment` của bản (comment đầu tiên, người dùng dán rồi ghim, ≤ 300 ký tự, cùng luật chữ thường, giá, mã tin, link như thân bài). Threads được để link trong thân bài. Lý do: Facebook giảm tiếp cận bài có link ngoài trong thân bài, và Meta đang thử giới hạn 2 bài có link/tháng cho Page và trang cá nhân chuyên nghiệp chưa xác minh (link trong comment không bị tính); Threads không còn hạ tiếp cận link.
+   - **`posts.json`**: mỗi bài có `targetId`, `type`, `postCodes`, `variants[]`; mỗi bản có `key`, `text`, `images`, và `comment` (tuỳ chọn). build kiểm tra bằng luật cứng trước khi tải ảnh.
    - Bài thương hiệu cũng phải có ảnh, lấy từ tin thật trong snapshot.
    - Trends chỉ gợi ý cấu trúc (mở bài, định dạng, độ dài), không ghi đè persona.
    - **Phiên bản**: mỗi bài có số bản theo `variants` (mặc định 1, tối đa 3, đặt được theo kênh). Các bản khác nhau ở nội dung (mở bài, thứ tự ý, CTA) và thứ tự ảnh; dữ kiện, tin và bộ ảnh nguồn giữ nguyên. Không ghi nhận người dùng chọn bản nào.
@@ -160,6 +162,7 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
 4. **Tải ảnh (script)**:
    - Mỗi bài một thư mục `<outputDir>/<slot>/<NN>_<đích>_<post_code|brand>/`, chứa `post.txt` và ảnh đặt tên theo **thứ tự đăng**: `1.jpg`, `2.jpg`, `3.jpg`…; `1.jpg` luôn là ảnh đầu tiên (ảnh bìa). Người dùng chọn ảnh theo đúng thứ tự tên khi upload.
    - Bài 1 bản: ảnh và `post.txt` nằm thẳng trong thư mục bài. Bài nhiều bản: mỗi bản một thư mục con `A/`, `B/`, `C/`, mỗi thư mục có `post.txt` và ảnh đánh số lại theo thứ tự của bản đó (`1.jpg` là ảnh bìa của bản ấy).
+   - Bản có `comment` thì có thêm `comment.txt` cạnh `post.txt`; `page-data.json` mang `comment` theo từng bản.
    - **Bài 1 tin**: mục tiêu 5 ảnh, ảnh bìa trước. Tin có 3–4 ảnh thì dùng đủ số đó.
    - **Bài nhiều tin**: mục tiêu tổng 5 ảnh. Lấy ảnh bìa từng tin trước, còn chỗ thì thêm ảnh của tin đứng đầu. Bài hơn 5 tin thì mỗi tin 1 ảnh bìa, tối đa 10 ảnh.
    - Ảnh được đổi sang jpg trên Mac khi có thể (ảnh webp/png đổi bằng `sips`, giữ số thứ tự). Đổi lỗi hoặc không phải Mac thì giữ file gốc (`1.webp`, `2.png`…).
@@ -174,8 +177,9 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
      - ảnh thu nhỏ theo thứ tự đăng (ảnh `1.jpg` = bìa, hiện to), không đè chữ hay số lên ảnh; dưới ảnh ghi số ảnh và mã tin. Đường dẫn ảnh tương đối từ `<outputDir>/index.html` (vd `2026-11-20_1014/01_x/1.jpg`)
      - **bấm vào ảnh bất kỳ mở carousel** để xem lại trước khi đăng: ảnh lớn, số "n / tổng" và tên file, nút ← → và phím mũi tên, dải ảnh nhỏ để nhảy ảnh, Esc hoặc bấm nền để đóng
      - bài Threads có bộ đếm "n / 500 ký tự"
+     - bản có `comment`: hộp nhỏ hơn **Comment đầu tiên (ghim lại)** ngay dưới khung nội dung; bản không có comment thì không có hộp
    - Bài nhiều bản có tab **Bản A · B · C** trong thẻ; đổi tab thì đổi nội dung, thứ tự ảnh và thư mục ảnh.
-   - Nút **Copy nội dung**, **Copy thư mục ảnh** (của bản đang mở; dùng với ⌘⇧G trên Mac, dán vào ô đường dẫn trên Windows), link **Mở nhóm / Page / Threads ↗** (chỉ http/https), nút **Góp ý** (xem A8), nút **Sửa kiểu bài này** (điền sẵn vào ô yêu cầu `Kiểu <kiểu>: (bài <slot> số <n>, mã <mã>) `, không đổi tab).
+   - Nút **Copy nội dung**, **Copy comment** (chỉ hiện khi bản đang mở có comment; copy nguyên văn), **Copy thư mục ảnh** (của bản đang mở; dùng với ⌘⇧G trên Mac, dán vào ô đường dẫn trên Windows), link **Mở nhóm / Page / Threads ↗** (chỉ http/https), nút **Góp ý** (xem A8), nút **Sửa kiểu bài này** (điền sẵn vào ô yêu cầu `Kiểu <kiểu>: (bài <slot> số <n>, mã <mã>) `, không đổi tab).
    - Ô **Đã đăng** chỉ lưu bằng localStorage, riêng từng khung; tick thì thẻ thu gọn và tiến độ tăng. Không ảnh hưởng việc chọn tin.
    - Cuối khung, thu gọn được: các bài bị bỏ và lý do; các mục pending đang ảnh hưởng tới bài; ghi chú.
 6. **Ghi nhật ký và báo**:
@@ -195,8 +199,9 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
   - Không bịa dữ kiện: diện tích, loại phòng, phí, số phòng còn trống… chỉ khi có trong tin; không bao giờ lượt xem, "phòng cuối", "chốt nhanh".
   - Không đổi giá, trạng thái, mã T…, link.
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
+  - Facebook (Page, tường, nhóm): không link trong thân bài, link tin ở comment đầu tiên; Threads được để link trong thân bài.
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
-- `channel-format.md`: giới hạn từng kênh (vd Threads ≤ 500 ký tự), định dạng giá. Claude đề xuất, owner duyệt.
+- `channel-format.md`: giới hạn từng kênh (vd Threads ≤ 500 ký tự), chỗ đặt link tin (Facebook: comment đầu tiên; Threads: được trong thân bài), định dạng giá. Claude đề xuất, owner duyệt.
 - `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
 - `templates/content-types.example.md`: 4 kiểu bài khởi đầu, mục tiêu mở cuộc nói chuyện với người cần thuê (mỗi bài kết bằng một câu hỏi dễ trả lời), chọn góc viết theo người đọc (phòng giá thấp: sinh viên / mới đi làm; từ 5 triệu: người đi làm):
   1. **Phòng nổi bật**: 1 tin, tiêu đề loại phòng + diện tích + điểm đắt, khối thông tin có icon (địa chỉ, giá + cọc, trạng thái, điểm nổi bật, nội thất, phí, lưu ý)

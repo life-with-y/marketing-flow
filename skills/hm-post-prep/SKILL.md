@@ -131,8 +131,10 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
 | `inbox` | "Nhắn tin cho mình" (Page: "nhắn tin cho Page") |
 | `comment-code` | "Comment mã T…" (mã tin trong bài) |
 
-- `wall`, `threads`, `page`: dùng mục đầu tiên của `contact` (có thể thêm mục thứ hai làm phương án phụ). `contact` rỗng thì CTA "nhắn tin / comment mã T…". Được đặt link tin.
-- `group`: quy định đăng của nhóm (cách ghi liên hệ, link, tiền tố) đang **pending** cho tới khi có quy định rõ (xem `library.pending`). Khi chưa có quy định cho nhóm, dùng **mặc định an toàn**: không SĐT (kể cả số Zalo), không link, CTA "nhắn tin / comment mã T…". Chỉ dùng loại liên hệ khác khi `target.note` ghi rõ nhóm cho phép; khi đó chọn theo thứ tự trong `contact`, lùi xuống loại nhóm cho phép.
+- `wall`, `threads`, `page`: dùng mục đầu tiên của `contact` (có thể thêm mục thứ hai làm phương án phụ). `contact` rỗng thì CTA "nhắn tin / comment mã T…".
+- **Link tin trên Facebook (`page`, `wall`)**: thân bài (`text`) **không có link**. CTA trong thân bài trỏ về Zalo / inbox theo `contact` và nói "link chi tiết ở comment". Đặt `link` (có thể kèm mã tin) vào `comment` của bản, vd `Chi tiết và ảnh: <link>`; người dùng dán làm comment đầu tiên rồi ghim. Lý do: Facebook giảm tiếp cận bài có link ngoài trong thân bài, và Meta đang thử giới hạn 2 bài có link/tháng cho Page và trang cá nhân chuyên nghiệp chưa xác minh (link trong comment không bị tính).
+- **Threads**: được đặt link tin trong `text` (Threads không còn hạ tiếp cận bài có link). Không cần `comment`.
+- `group`: quy định đăng của nhóm (cách ghi liên hệ, link, tiền tố) đang **pending** cho tới khi có quy định rõ (xem `library.pending`). Khi chưa có quy định cho nhóm, dùng **mặc định an toàn**: không SĐT (kể cả số Zalo), không link ở đâu cả (cả `text` lẫn `comment`), CTA "nhắn tin / comment mã T…". Chỉ dùng loại liên hệ khác khi `target.note` ghi rõ nhóm cho phép; khi đó chọn theo thứ tự trong `contact`, lùi xuống loại nhóm cho phép. Nhóm cho phép link thì link vẫn để trong `comment`, không để trong thân bài.
 - `target.note` luôn được tuân theo (vd tiền tố bắt buộc, cấm link), trừ khi nó trái luật cứng.
 
 ### 3.6 Viết nội dung (`text`)
@@ -145,7 +147,8 @@ Luật cứng (bài vi phạm sẽ bị script trả về ở bước 4):
 2. **Giá**: mỗi tin trong bài phải có ít nhất một `priceText` của phòng xuất hiện **nguyên văn** (vd `3,5 triệu`; không `3tr5`, `3.5tr`, `3 triệu rưỡi`). Ngay trước giá không đặt chữ số, `,` hay `.`; ngay sau giá không đặt chữ số, `rưỡi`, hay `,5` (viết `3,5 triệu/tháng`). Không viết khoảng giá kiểu `3,5 đến 4,2 triệu` (số đầu không phải `priceText`); ghi giá từng phòng. Mọi giá khác nhắc tới cũng phải đúng `priceText` của phòng. Đích `en`: được ghi `3.5 million VND` hoặc `3,500,000 VND` (đúng số `price`), hoặc `priceText`.
 3. **Hợp với ai / không hợp với ai** chỉ được suy ra từ dữ liệu API trong `input.json` (giá, nội thất, dịch vụ, quận, trạng thái / ngày trống, và nếu có: loại phòng, diện tích, `capacity`, `facts`, `landmarks`). Không nói số người ở, diện tích, tầng khi trường đó không có (vd không viết "hợp 1 người" khi không có `capacity`, "phòng rộng" khi không có `areaSqm`).
 4. **Trạng thái** dùng đúng `statusText`. **Mã tin** dùng đúng `code`. Không ghi số phòng nếu không cần (mã tin là đủ).
-5. **Link**: mọi chuỗi chứa `homematch.vn` (kể cả không có `https://`) phải bằng đúng `link` của một tin trong bài. Không viết tên miền `homematch.vn` trần, không link quận, không rút gọn. Bài thương hiệu không đặt link tin. Nhóm theo mặc định an toàn: không link.
+5. **Link**: đích `page`, `wall`, `group`: thân bài (`text`) không có chuỗi `homematch.vn` nào (kể cả không có `https://`); link tin chỉ để trong `comment`. Đích `threads`: link được để trong `text`. Ở đâu thì mọi chuỗi chứa `homematch.vn` cũng phải bằng đúng `link` của một tin trong bài. Không viết tên miền `homematch.vn` trần, không link quận, không rút gọn. Bài thương hiệu không đặt link tin, `comment` (nếu có) không có link homematch, không có mã tin. Nhóm theo mặc định an toàn: không link ở đâu cả.
+   - **`comment`** (tuỳ chọn, comment đầu tiên sẽ ghim): ngắn, tối đa 300 ký tự; cùng luật như `text` về link, mã tin (chỉ mã trong `postCodes`), chữ thường (luật 6) và giá (có ghi giá thì phải đúng `priceText`).
 6. **Chỉ văn bản thường**: không `**`, không `__`, không `_…_`, không dòng bắt đầu bằng `#` kèm khoảng trắng (tiêu đề markdown), không chữ đậm/nghiêng giả bằng ký tự Unicode (U+1D400–U+1D7FF). Được dùng xuống dòng, emoji, gạch đầu dòng `•`. Hashtag viết liền (`#phongtrohanoi`) thì được.
 7. **Threads** ≤ 500 ký tự (đếm cả emoji và xuống dòng). Viết ngắn ngay từ đầu, đừng để sát giới hạn.
 8. Tuân theo `channel-format.md` và cấu trúc của kiểu bài.
@@ -163,7 +166,12 @@ Ghi vào `~/.homematch-marketing/runs/<slotId>/posts.json` (cùng thư mục v�
       "type": "Phòng mới / giảm giá",
       "postCodes": ["T1302"],
       "variants": [
-        { "key": "A", "text": "…", "images": ["<url ảnh bìa>", "<url>", "<url>", "<url>", "<url>"] }
+        {
+          "key": "A",
+          "text": "… Nhắn Zalo 09xx để xem phòng, link chi tiết ở comment.",
+          "comment": "T1302 · Chi tiết và ảnh: https://homematch.vn/…",
+          "images": ["<url ảnh bìa>", "<url>", "<url>", "<url>", "<url>"]
+        }
       ]
     }
   ],
@@ -177,6 +185,7 @@ Ghi vào `~/.homematch-marketing/runs/<slotId>/posts.json` (cùng thư mục v�
 - `postCodes`: mã các tin trong bài, theo thứ tự xuất hiện; `[]` cho bài thương hiệu. Không lặp mã.
 - `variants.length` = `target.variants`; `key` lần lượt `A`, `B`, `C`.
 - `text` xuống dòng bằng `\n` thật trong chuỗi JSON.
+- `comment` (tuỳ chọn): comment đầu tiên người dùng dán rồi ghim. Đích `page`, `wall` có link tin thì link nằm ở đây. Không có comment thì bỏ trường. Trang hiện hộp "Comment đầu tiên (ghim lại)" và nút "Copy comment"; build ghi thêm `comment.txt` cạnh `post.txt`.
 - `reason` trong `skipped` viết tiếng Việt, ngắn, người dùng đọc được.
 
 Trước khi ghi, tự soát từng bản theo luật 1–7 ở 3.6 và quy tắc ảnh ở 3.3.
