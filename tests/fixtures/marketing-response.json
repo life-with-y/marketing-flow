@@ -1,0 +1,79 @@
+{
+  "count": 2,
+  "listings": [
+    {
+      "code": "T1302",
+      "share_link": "https://homematch.vn/vi/listings/studio-ban-cong-cau-giay-t1302",
+      "title": "Studio ban công thoáng, đủ đồ",
+      "title_en": null,
+      "badge_key": null,
+      "renewed_at": "2026-11-18T03:00:00.000Z",
+      "price_verified_at": "2026-11-18T03:00:00.000Z",
+      "availability_verified_at": "2026-11-19T03:00:00.000Z",
+      "media_verified_at": null,
+      "rent_min": 3500000,
+      "rent_max": 3800000,
+      "available_units_count": 2,
+      "media": [
+        { "url": "https://cdn.example.test/img/1.jpg", "media_type": "IMAGE", "is_cover": false },
+        { "url": "https://cdn.example.test/img/2.jpg", "media_type": "IMAGE", "is_cover": true },
+        { "url": "https://cdn.example.test/vid/1.mp4", "media_type": "VIDEO", "is_cover": false },
+        { "url": "https://cdn.example.test/img/1.jpg", "media_type": "IMAGE", "is_cover": false },
+        { "url": "https://cdn.example.test/img/3.jpg", "media_type": "IMAGE", "is_cover": false }
+      ],
+      "building": {
+        "display_address": "ngõ 100 Trần Thái Tông",
+        "ward": "Dịch Vọng Hậu",
+        "district": "Cầu Giấy",
+        "district_link": null,
+        "deposit": { "rent_multiplier": 1, "amount_vnd": null },
+        "fees": [
+          { "fee_key": "ELECTRICITY", "billing_unit_key": "PER_KWH", "amount_vnd": 3990 },
+          { "fee_key": "WATER", "billing_unit_key": "PER_M3", "amount_vnd": 35000 },
+          { "fee_key": "SERVICE", "billing_unit_key": "PER_PERSON_MONTH", "amount_vnd": 150000 },
+          { "fee_key": "INTERNET", "billing_unit_key": "PER_ROOM_MONTH", "amount_vnd": 0 }
+        ],
+        "amenities": [{ "key": "ELEVATOR", "label": "Thang máy" }, { "key": "WASHING_MACHINE_SHARED", "label": null }],
+        "survey": {
+          "has_elevator": true, "allows_ebike_parking": false, "pet_policy": "CAT", "allows_foreigners": null,
+          "car_stop_distance_m": 0, "has_car_parking_lot": null, "car_parking_lot_distance_m": null,
+          "road_width_m": 3.5, "access_type": "Ngõ ô tô", "has_security": null, "lives_with_owner": false,
+          "allows_short_stay": null, "min_contract_months": 6, "payment_cycle_months": 1, "max_occupants": 2
+        },
+        "landmarks": [
+          { "name": "ĐH Quốc gia Hà Nội", "category_key": "UNIVERSITY", "distance_m": 1200, "duration_seconds": 300, "travel_mode": "TWO_WHEELER" },
+          { "name": "ĐH Sư phạm Hà Nội", "category_key": "UNIVERSITY", "distance_m": 800, "duration_seconds": 600, "travel_mode": "WALK" },
+          { "name": "Công viên Cầu Giấy", "category_key": "PARK", "distance_m": 2500, "duration_seconds": 480, "travel_mode": "UNKNOWN" },
+          { "name": "Bỏ qua", "category_key": "PARK", "distance_m": 3000, "duration_seconds": 600, "travel_mode": "WALK" }
+        ]
+      },
+      "rooms": [
+        { "room_number": "301", "unit_type_key": "STUDIO", "room_type": null, "area_sqm": 25, "capacity": 2, "floor": "3",
+          "rent_vnd": 3500000, "availability_status": "AVAILABLE", "available_from": null,
+          "furniture": ["Giường", "Tủ quần áo"], "amenities": [{ "key": "BALCONY", "label": "Ban công" }], "image_url": null },
+        { "room_number": "402", "unit_type_key": "ONE_BEDROOM", "room_type": null, "area_sqm": 32.5, "capacity": null, "floor": null,
+          "rent_vnd": 3800000, "availability_status": "COMING_SOON", "available_from": "2026-12-01",
+          "furniture": [], "amenities": [], "image_url": null }
+      ]
+    },
+    {
+      "code": "T1417",
+      "share_link": "https://homematch.vn/vi/listings/phong-tro-t1417",
+      "title": "Phòng trọ",
+      "title_en": null, "badge_key": null,
+      "renewed_at": "2026-11-18T03:00:00.000Z",
+      "price_verified_at": null, "availability_verified_at": null, "media_verified_at": null,
+      "rent_min": 3000000, "rent_max": 3000000, "available_units_count": 1,
+      "media": [],
+      "building": {
+        "display_address": "ngõ 68 Cầu Giấy", "ward": null, "district": "Cầu Giấy", "district_link": null,
+        "deposit": null, "fees": [], "amenities": [], "survey": null, "landmarks": []
+      },
+      "rooms": [
+        { "room_number": "1", "unit_type_key": "NEW_TYPE", "room_type": null, "area_sqm": null, "capacity": null, "floor": null,
+          "rent_vnd": 3000000, "availability_status": "COMING_SOON", "available_from": null,
+          "furniture": [], "amenities": [], "image_url": null }
+      ]
+    }
+  ]
+}

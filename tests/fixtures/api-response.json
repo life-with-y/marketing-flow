@@ -1,0 +1,347 @@
+{
+  "data": [
+    {
+      "customer_id": 1,
+      "areas_count": 3,
+      "buildings_count": 4,
+      "units_count": 5,
+      "areas": [
+        {
+          "district": "Cầu Giấy",
+          "district_link": "https://homematch.vn/d/C%E1%BA%A7u%20Gi%E1%BA%A5y",
+          "buildings_count": 2,
+          "units_count": 3,
+          "buildings": [
+            {
+              "building_id": 11,
+              "building_ids": [
+                11
+              ],
+              "building_name": "Tòa Dịch Vọng",
+              "address_text": "12 ngõ 100 Trần Thái Tông, Cầu Giấy",
+              "address_texts": [
+                "12 ngõ 100 Trần Thái Tông, Cầu Giấy"
+              ],
+              "media_cover": "https://cdn.example.test/img/1.jpg",
+              "units_count": 2,
+              "rooms": [
+                {
+                  "post_id": 1,
+                  "post_code": "T1302",
+                  "share_link": "https://homematch.vn/p/T1302",
+                  "room_number": "301",
+                  "so_phong": "301",
+                  "rent_price": 3500000,
+                  "gia_thue": "3,5 triệu",
+                  "availability_status": "AVAILABLE",
+                  "availability_text": "Còn trống",
+                  "priority": 0,
+                  "services": [
+                    "Wifi",
+                    "Giữ xe"
+                  ],
+                  "furniture": [
+                    "Giường",
+                    "Tủ quần áo"
+                  ],
+                  "image_url": "https://cdn.example.test/img/1.jpg",
+                  "media": [
+                    {
+                      "url": "https://cdn.example.test/img/1.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 2
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/2.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": true,
+                      "sort_order": 1
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/3.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 3
+                    },
+                    {
+                      "url": "https://cdn.example.test/vid/100.mp4",
+                      "media_type": "VIDEO",
+                      "is_cover": false,
+                      "sort_order": 9
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/4.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 4
+                    }
+                  ],
+                  "media_count": 5,
+                  "video_count": 1,
+                  "image_count": 4
+                },
+                {
+                  "post_id": 2,
+                  "post_code": "T1302",
+                  "share_link": "https://homematch.vn/p/T1302",
+                  "room_number": "302",
+                  "so_phong": "302",
+                  "rent_price": 3550000,
+                  "gia_thue": "3,55 triệu",
+                  "availability_status": "AVAILABLE",
+                  "availability_text": "Còn trống",
+                  "priority": 0,
+                  "services": [
+                    "Wifi",
+                    "Giữ xe"
+                  ],
+                  "furniture": [
+                    "Giường",
+                    "Tủ quần áo"
+                  ],
+                  "image_url": "https://cdn.example.test/img/2.jpg",
+                  "media": [
+                    {
+                      "url": "https://cdn.example.test/img/2.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": true,
+                      "sort_order": 1
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/3.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 3
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/5.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 5
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/6.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 6
+                    }
+                  ],
+                  "media_count": 4,
+                  "video_count": 0,
+                  "image_count": 4
+                }
+              ]
+            },
+            {
+              "building_id": 12,
+              "building_ids": [
+                12
+              ],
+              "building_name": "Tòa Mai Dịch",
+              "address_text": "5 Phạm Hùng, Cầu Giấy",
+              "address_texts": [
+                "5 Phạm Hùng, Cầu Giấy"
+              ],
+              "media_cover": "https://cdn.example.test/img/21.jpg",
+              "units_count": 1,
+              "rooms": [
+                {
+                  "post_id": 3,
+                  "post_code": "T1299",
+                  "share_link": "https://homematch.vn/p/T1299",
+                  "room_number": "201",
+                  "so_phong": "201",
+                  "rent_price": 4000000,
+                  "gia_thue": "4 triệu",
+                  "availability_status": "AVAILABLE",
+                  "availability_text": "Còn trống",
+                  "priority": 0,
+                  "services": [
+                    "Wifi",
+                    "Giữ xe"
+                  ],
+                  "furniture": [
+                    "Giường",
+                    "Tủ quần áo"
+                  ],
+                  "image_url": "https://cdn.example.test/img/21.jpg",
+                  "media": [
+                    {
+                      "url": "https://cdn.example.test/img/21.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": true,
+                      "sort_order": 1
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/22.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 2
+                    }
+                  ],
+                  "media_count": 2,
+                  "video_count": 0,
+                  "image_count": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "district": "Đống Đa",
+          "district_link": "https://homematch.vn/d/%C4%90%E1%BB%91ng%20%C4%90a",
+          "buildings_count": 1,
+          "units_count": 1,
+          "buildings": [
+            {
+              "building_id": 21,
+              "building_ids": [
+                21
+              ],
+              "building_name": "Tòa Láng Hạ",
+              "address_text": "88 Láng Hạ, Đống Đa",
+              "address_texts": [
+                "88 Láng Hạ, Đống Đa"
+              ],
+              "media_cover": "https://cdn.example.test/img/31.jpg",
+              "units_count": 1,
+              "rooms": [
+                {
+                  "post_id": 4,
+                  "post_code": "T1288",
+                  "share_link": "https://homematch.vn/p/T1288",
+                  "room_number": "501",
+                  "so_phong": "501",
+                  "rent_price": 5200000,
+                  "gia_thue": "5,2 triệu",
+                  "availability_status": "AVAILABLE",
+                  "availability_text": "Còn trống",
+                  "priority": 0,
+                  "services": [
+                    "Wifi",
+                    "Giữ xe"
+                  ],
+                  "furniture": [
+                    "Giường",
+                    "Tủ quần áo"
+                  ],
+                  "image_url": "https://cdn.example.test/img/31.jpg",
+                  "media": [
+                    {
+                      "url": "https://cdn.example.test/img/31.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": true,
+                      "sort_order": 1
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/32.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 2
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/33.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 3
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/34.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 4
+                    },
+                    {
+                      "url": "https://cdn.example.test/vid/101.mp4",
+                      "media_type": "VIDEO",
+                      "is_cover": false,
+                      "sort_order": 8
+                    }
+                  ],
+                  "media_count": 5,
+                  "video_count": 1,
+                  "image_count": 4
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "district": "Thanh Xuân",
+          "district_link": "https://homematch.vn/d/Thanh%20Xu%C3%A2n",
+          "buildings_count": 1,
+          "units_count": 1,
+          "buildings": [
+            {
+              "building_id": 31,
+              "building_ids": [
+                31
+              ],
+              "building_name": "Tòa Nguyễn Trãi",
+              "address_text": "20 Nguyễn Trãi, Thanh Xuân",
+              "address_texts": [
+                "20 Nguyễn Trãi, Thanh Xuân"
+              ],
+              "media_cover": "https://cdn.example.test/img/41.jpg",
+              "units_count": 1,
+              "rooms": [
+                {
+                  "post_id": 5,
+                  "post_code": "T1275",
+                  "share_link": "https://homematch.vn/p/T1275",
+                  "room_number": "401",
+                  "so_phong": "401",
+                  "rent_price": 3000000,
+                  "gia_thue": "3 triệu",
+                  "availability_status": "COMING_SOON",
+                  "availability_text": "Sắp trống",
+                  "priority": 0,
+                  "services": [
+                    "Wifi",
+                    "Giữ xe"
+                  ],
+                  "furniture": [
+                    "Giường",
+                    "Tủ quần áo"
+                  ],
+                  "image_url": "https://cdn.example.test/img/41.jpg",
+                  "media": [
+                    {
+                      "url": "https://cdn.example.test/img/41.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": true,
+                      "sort_order": 1
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/42.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 2
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/43.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 3
+                    },
+                    {
+                      "url": "https://cdn.example.test/img/44.jpg",
+                      "media_type": "IMAGE",
+                      "is_cover": false,
+                      "sort_order": 4
+                    }
+                  ],
+                  "media_count": 4,
+                  "video_count": 0,
+                  "image_count": 4
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "count": 5
+}

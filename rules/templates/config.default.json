@@ -1,0 +1,18 @@
+{
+  "outputDir": "~/HomeMatch-Posts",
+  "schedule": ["11:00", "17:30"],
+  "contact": [],
+  "pageContact": [],
+  "library": {},
+  "leadScan": { "enabled": false },
+  "perSlot": {},
+  "variants": { "default": 1 },
+  "feedback": {
+    "formUrl": "",
+    "fields": { "person": "", "slot": "", "post": "", "variant": "", "codes": "", "text": "" }
+  },
+  "channelMix": {
+    "page": { "listing": 50, "brand": 50 },
+    "personal": { "listing": 70, "brand": 30 }
+  }
+}

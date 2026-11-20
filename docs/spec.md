@@ -79,7 +79,7 @@ Kênh: FB cá nhân (có thể nhiều tài khoản), FB Page HomeMatch, Threads
 Claude Code plugin.
 - **Script (Node, chạy được Mac và Windows)**: các bước cố định (fetch, so sánh, tải ảnh, dựng HTML, ghi nhật ký).
 - **Claude (skill)**: chọn tin cho từng kênh/nhóm, soạn nội dung, sửa config theo góp ý.
-- **Lịch**: scheduled task của app Claude desktop trên máy từng người, model mặc định Sonnet (đổi được trong config). Máy phải bật và app phải mở lúc đến giờ. **Bỏ lỡ thì bỏ qua**, không chạy bù.
+- **Lịch**: scheduled task của app Claude desktop trên máy từng người, dùng model mặc định của app Claude (scheduled task không đặt được model trong config; muốn đổi thì sửa trong cài đặt task ở mục Scheduled). Máy phải bật và app phải mở lúc đến giờ. **Bỏ lỡ thì bỏ qua**, không chạy bù.
 - **Trang cấu hình**: `lavish-axi` (chạy qua `npx`), chỉ trên máy.
 
 ```
@@ -97,9 +97,10 @@ marketing-flow/
 │   ├─ fetch.mjs
 │   ├─ diff.mjs
 │   ├─ download.mjs
-│   ├─ render.mjs                   index.html
-│   └─ render-config.mjs            trang cấu hình
-├─ assets/config-board/             template + css trang cấu hình (cố định)
+│   ├─ build.mjs                    page-data.json + trang chủ
+│   ├─ config-cli.mjs               hồ sơ, history, render-board
+│   └─ lib/render-home.mjs          trang chủ index.html (dùng render-posts, render-config, content-types)
+├─ assets/home/                     template + css trang chủ (cố định)
 ├─ rules/
 │   ├─ hard-rules.md
 │   ├─ selection.md
@@ -116,7 +117,7 @@ marketing-flow/
 
 ## A3. Nguồn dữ liệu
 
-`GET {apiBaseUrl}/public/building-listing-posts-unit`, header `x-public-api-token`.
+`GET {apiBaseUrl}/public/marketing-listings` (route riêng cho marketing, whitelist trường không nhạy cảm), header `x-public-api-token`. Máy chủ trả 404 (chưa deploy) thì lùi về route cũ `GET {apiBaseUrl}/public/building-listing-posts-unit`. Mỗi tin ghi `source` (`marketing` | thiếu = route cũ).
 
 - API trả mọi phòng `AVAILABLE` / `COMING_SOON` của tin đang hiển thị, nhóm theo quận → toà → phòng.
 - Trường plugin dùng:
@@ -125,7 +126,7 @@ marketing-flow/
   - phòng: `post_code`, `share_link`, `room_number`, `rent_price`, `availability_status`, `availability_text`, `services`, `furniture`, `media[]` (url, media_type, is_cover, sort_order)
 - **Tin** là tập phòng cùng `post_code` (cùng `share_link`). Plugin gom phòng thành tin ngay sau fetch.
 - API quyết định trường nào được lộ ra. Plugin không lọc lại; muốn che thêm thì sửa API.
-- API không có diện tích, loại phòng, tiêu đề tin, nên nội dung không nhắc tới các thông tin này.
+- Route mới trả thêm: tiêu đề, loại phòng, diện tích, sức chứa, tầng, ngày trống, tiện ích phòng/toà, phí (điện, nước, dịch vụ…), cọc, khảo sát toà (thang máy, xe điện, thú cưng, đường vào, chung chủ, hợp đồng…), mốc gần đó, số phòng trống, mốc kiểm tra. Plugin chuẩn hoá sang chuỗi tiếng Việt (`details.fees`, `details.facts`, `details.landmarks`…); phí/cọc viết bằng `đ` để không lẫn với giá thuê. Route cũ không có các trường này, nên tin từ route cũ không nhắc tới.
 - Link dùng nguyên `share_link`, không gắn mã giới thiệu.
 
 ## A4. Luồng một lần chạy
@@ -134,7 +135,7 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
 
 1. **Fetch (script)**: gọi API, lưu `snapshots/<slot>.json`, giữ 30 bản gần nhất.
 2. **So sánh (script)**:
-   - Khoá phòng là `post_code + room_number`. So với snapshot liền trước, gắn nhãn phòng: `NEW`, `PRICE_DOWN` / `PRICE_UP`, `NOW_AVAILABLE` (`COMING_SOON` → `AVAILABLE`), `UNCHANGED`. Lần đầu chạy thì mọi phòng là `NEW`.
+   - Khoá phòng là `post_code + room_number`. So với snapshot liền trước, gắn nhãn phòng: `NEW`, `PRICE_DOWN` / `PRICE_UP`, `NOW_AVAILABLE` (`COMING_SOON` → `AVAILABLE`), `UNCHANGED`. Lần đầu chạy thì mọi phòng là `UNCHANGED` (chưa có bản trước nên không biết gì là mới).
    - Nhãn tin là nhãn mạnh nhất trong các phòng của nó, theo thứ tự ưu tiên ở bước 3.
    - Đọc `prepared.jsonl` để biết lần gần nhất mỗi tin được soạn cho mỗi đích.
 3. **Chọn và soạn (Claude)**:
@@ -161,24 +162,26 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
    - Bài 1 bản: ảnh và `post.txt` nằm thẳng trong thư mục bài. Bài nhiều bản: mỗi bản một thư mục con `A/`, `B/`, `C/`, mỗi thư mục có `post.txt` và ảnh đánh số lại theo thứ tự của bản đó (`1.jpg` là ảnh bìa của bản ấy).
    - **Bài 1 tin**: mục tiêu 5 ảnh, ảnh bìa trước. Tin có 3–4 ảnh thì dùng đủ số đó.
    - **Bài nhiều tin**: mục tiêu tổng 5 ảnh. Lấy ảnh bìa từng tin trước, còn chỗ thì thêm ảnh của tin đứng đầu. Bài hơn 5 tin thì mỗi tin 1 ảnh bìa, tối đa 10 ảnh.
+   - Ảnh được đổi sang jpg trên Mac khi có thể (ảnh webp/png đổi bằng `sips`, giữ số thứ tự). Đổi lỗi hoặc không phải Mac thì giữ file gốc (`1.webp`, `2.png`…).
    - Ảnh tải lỗi thì bỏ ảnh. Tin còn dưới 3 ảnh (bài 1 tin) hoặc tin mất ảnh bìa (bài nhiều tin) thì Claude thay tin một lần, vẫn thiếu thì bỏ bài.
-5. **Trang bài đăng (script)**: `<outputDir>/<slot>/index.html`, file tĩnh, mở không cần server. Kiểu chữ trang theo house style của trang cấu hình (serif, mực đen trên giấy trắng).
-   - **Thanh trên cùng luôn hiện**: giờ khung, ngày, giờ soạn xong, tiến độ "đã đăng x / N" kèm thanh mảnh, bộ lọc theo tài khoản, dòng nhắc thư mục khung giờ đã mở trong Finder.
+5. **Trang chủ (script)**: build ghi `<outputDir>/<slot>/page-data.json` (bài kèm file ảnh, đích và tài khoản liên quan, bài bị bỏ, pending, ghi chú, giờ soạn xong) rồi dựng lại **một trang chủ** `<outputDir>/index.html` từ hồ sơ và mọi `page-data.json`. Không còn `index.html` riêng trong thư mục khung. File tĩnh, mở không cần server, không cần mạng (pending lấy từ dữ liệu đã có). Kiểu chữ: serif, mực đen trên giấy trắng. Chi tiết trang ở A6 `/hm-config`; tab **Bài đăng** gồm:
+   - **Chọn khung**: `‹ dd/mm HH:MM ▾ ›` trên 14 khung gần nhất có trong `outputDir`, mặc định khung mới nhất.
+   - **Thanh trên của khung luôn hiện**: giờ khung, ngày, giờ soạn xong, tiến độ "đã đăng x / N" kèm thanh mảnh, bộ lọc theo tài khoản, dòng ghi thư mục ảnh của khung.
    - **Mỗi bài một thẻ**, theo thứ tự đăng:
      - số thứ tự (trùng tiền tố thư mục `NN_`), đích, tài khoản đăng
      - nhãn thay đổi (Mới / Giảm giá / Vừa trống) và kiểu bài
      - **khung xem trước nội dung giống bài trên Facebook/Threads**: font hệ thống (`-apple-system, system-ui, "Segoe UI", Helvetica, Arial`), 15px, nền trắng viền xám, dòng tên người đăng ở đầu khung; dòng tên không nằm trong phần được copy
-     - ảnh thu nhỏ theo thứ tự đăng (ảnh `1.jpg` = bìa, hiện to), không đè chữ hay số lên ảnh; dưới ảnh ghi số ảnh và mã tin
+     - ảnh thu nhỏ theo thứ tự đăng (ảnh `1.jpg` = bìa, hiện to), không đè chữ hay số lên ảnh; dưới ảnh ghi số ảnh và mã tin. Đường dẫn ảnh tương đối từ `<outputDir>/index.html` (vd `2026-11-20_1014/01_x/1.jpg`)
      - **bấm vào ảnh bất kỳ mở carousel** để xem lại trước khi đăng: ảnh lớn, số "n / tổng" và tên file, nút ← → và phím mũi tên, dải ảnh nhỏ để nhảy ảnh, Esc hoặc bấm nền để đóng
      - bài Threads có bộ đếm "n / 500 ký tự"
    - Bài nhiều bản có tab **Bản A · B · C** trong thẻ; đổi tab thì đổi nội dung, thứ tự ảnh và thư mục ảnh.
-   - Nút **Copy nội dung**, **Copy thư mục ảnh** (của bản đang mở; dùng với ⌘⇧G trên Mac, dán vào ô đường dẫn trên Windows), link **Mở nhóm / Page / Threads ↗**, nút **Góp ý** (xem A8).
-   - Ô **Đã đăng** chỉ lưu bằng localStorage; tick thì thẻ thu gọn và tiến độ tăng. Không ảnh hưởng việc chọn tin.
-   - Cuối trang, thu gọn được: các bài bị bỏ và lý do; các mục pending đang ảnh hưởng tới bài.
+   - Nút **Copy nội dung**, **Copy thư mục ảnh** (của bản đang mở; dùng với ⌘⇧G trên Mac, dán vào ô đường dẫn trên Windows), link **Mở nhóm / Page / Threads ↗** (chỉ http/https), nút **Góp ý** (xem A8), nút **Sửa kiểu bài này** (điền sẵn vào ô yêu cầu `Kiểu <kiểu>: (bài <slot> số <n>, mã <mã>) `, không đổi tab).
+   - Ô **Đã đăng** chỉ lưu bằng localStorage, riêng từng khung; tick thì thẻ thu gọn và tiến độ tăng. Không ảnh hưởng việc chọn tin.
+   - Cuối khung, thu gọn được: các bài bị bỏ và lý do; các mục pending đang ảnh hưởng tới bài; ghi chú.
 6. **Ghi nhật ký và báo**:
    - Thêm vào `prepared.jsonl` một dòng mỗi bài (`slot`, `account`, `target`, `post_codes`, `type`). Nhật ký chỉ dùng để xoay vòng; không ghi nhận bài đã đăng hay chưa.
    - Mở thư mục `<outputDir>/<slot>/` trong Finder (Mac) hoặc Explorer (Windows). Trang không có nút mở thư mục từng bài, vì trình duyệt không cho trang tĩnh mở Finder.
-   - Gửi thông báo hệ thống: "Đã soạn N bài lúc HH:MM".
+   - Báo và gửi thông báo hệ thống: "Đã soạn N bài lúc HH:MM: `<outputDir>/index.html`".
    - Không tự xoá thư mục cũ; người dùng tự xoá.
 
 ## A5. Cấu hình
@@ -189,16 +192,17 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
 
 - `hard-rules.md` (không ai ghi đè):
   - Chỉ dùng dữ kiện có trong API.
-  - Không bịa dữ kiện (diện tích, số phòng còn lại, lượt xem, "phòng cuối"…).
+  - Không bịa dữ kiện: diện tích, loại phòng, phí, số phòng còn trống… chỉ khi có trong tin; không bao giờ lượt xem, "phòng cuối", "chốt nhanh".
   - Không đổi giá, trạng thái, mã T…, link.
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
 - `channel-format.md`: giới hạn từng kênh (vd Threads ≤ 500 ký tự), định dạng giá. Claude đề xuất, owner duyệt.
-- `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, model, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
-- `templates/content-types.example.md`: 3 kiểu bài khởi đầu:
-  1. **Phòng mới / giảm giá**: 1 tin, ảnh, giá, khu, link
-  2. **Gom theo khu**: nhiều tin cùng khu/tầm giá, ảnh bìa mỗi tin
-  3. **Thương hiệu "phòng thật, giá thật"**: ảnh phòng thật
+- `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
+- `templates/content-types.example.md`: 4 kiểu bài khởi đầu, mục tiêu mở cuộc nói chuyện với người cần thuê (mỗi bài kết bằng một câu hỏi dễ trả lời), chọn góc viết theo người đọc (phòng giá thấp: sinh viên / mới đi làm; từ 5 triệu: người đi làm):
+  1. **Phòng nổi bật**: 1 tin, tiêu đề loại phòng + diện tích + điểm đắt, khối thông tin có icon (địa chỉ, giá + cọc, trạng thái, điểm nổi bật, nội thất, phí, lưu ý)
+  2. **Gom theo khu**: 3–5 tin cùng quận, cùng nhóm người đọc, ảnh bìa mỗi tin
+  3. **Gom theo nhu cầu**: 2–4 tin cùng một điểm khách hay hỏi (xe điện, máy giặt riêng, 1 ngủ 1 khách…)
+  4. **Hỏi nhu cầu**: không gắn tin, ảnh phòng thật, hỏi khu + tầm tiền + ngày vào ở
 
   Mỗi kiểu khai: tên, kênh dùng được, số tin mỗi bài (vd `1` hoặc `3–5`), cách chọn tin, cấu trúc, 1 ví dụ.
 - `templates/persona.example.md`, `templates/presets/`: persona mẫu.
@@ -212,7 +216,6 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
     "apiBaseUrl": "https://…",
     "outputDir": "~/HomeMatch-Posts",
     "schedule": ["11:00", "17:30"],
-    "model": "sonnet",
     "contact": [                                  // thứ tự ưu tiên
       { "type": "zalo", "value": "…" },
       { "type": "inbox" },
@@ -263,18 +266,22 @@ Chạy lại `/hm-setup` để đổi token hoặc dựng lại lịch và quy�
 
 ### `/hm-config` (mọi thay đổi sau đó)
 
-- Dựng một trang từ template cố định trong `assets/config-board/`, mở bằng `lavish-axi`, theo house style của board `/vision` (serif, mực đen trên giấy trắng). Trang có 2 tab, cột phải dùng chung:
-  - **Tab Hằng ngày** (mặc định), những thứ hay sửa:
+- **Một trang chủ** `<outputDir>/index.html` cho cả bài đăng và cấu hình, dựng từ template cố định `assets/home/template.html` (`config-cli render-board` và `build.mjs` cùng dựng trang này). Theo house style của board `/vision` (serif, mực đen trên giấy trắng). 4 tab theo thứ tự, cột phải dùng chung:
+  - **Tab Bài đăng** (mặc định): bài của các khung, xem A4 bước 5.
+  - **Tab Kiểu bài**: thư viện đọc từ `content-types.md` của hồ sơ (chưa có thì dùng mẫu). Mỗi kiểu một thẻ thu gọn được (thẻ đầu mở sẵn): tên, Kênh, Số tin mỗi bài, Cách chọn tin, Cấu trúc (danh sách đánh số), Ảnh, Ví dụ hiện trong khung giống bài Facebook (chữ thường, giữ xuống dòng). Thiếu trường thì hiện "—". Nút **Sửa kiểu này** (điền `Kiểu <tên>: `) và **+ Thêm kiểu bài** (điền `Thêm kiểu bài mới: tên …, kênh …, số tin …, cấu trúc …`).
+  - **Tab Hằng ngày**, những thứ hay sửa:
     - **Hôm nay sẽ soạn**: mỗi khung giờ một ô, số bài và kênh
     - **Nhóm**: mỗi nhóm một dòng gọn (tên · khung · tài khoản · bật/tạm ngừng), bấm mở thêm quận, ngày, ngôn ngữ, ghi chú; lọc "Hôm nay" (mặc định) / "Tất cả"
     - **Số bài mỗi khung** cho tường cá nhân, Page, Threads
     - **Mục đang chờ quy định**, thu gọn một dòng
   - **Tab Hồ sơ** (ít sửa), mỗi mục thu gọn được, chỉ Persona mở sẵn:
     - Persona
-    - Kiểu bài
     - Tài khoản & liên hệ
-    - Lịch & cài đặt (giờ chạy, tỉ lệ, model, thư mục, quét nhóm, token chỉ hiện "đã cài")
-  - **Cột phải**: ô "Muốn đổi gì?" (nút gợi ý nhanh: tạm ngừng / bật lại nhóm, thêm nhóm, bỏ một nhóm hôm nay; ô gõ lời thường; danh sách chờ gửi; nút "Gửi cho Claude sửa") và "Lần sửa gần nhất" thu gọn, có nút hoàn tác; dưới cùng là nút **Báo lỗi / góp ý plugin** (xem A8).
+    - Lịch & cài đặt (giờ chạy, tỉ lệ, thư mục, quét nhóm, token chỉ hiện "đã cài")
+  - **Cột phải** (mọi tab): ô "Muốn đổi gì?" (nút gợi ý nhanh: tạm ngừng / bật lại nhóm, thêm nhóm, bỏ một nhóm hôm nay; ô gõ lời thường; danh sách chờ gửi) và "Lần sửa gần nhất" thu gọn; dưới cùng là nút **Báo lỗi / góp ý plugin** (xem A8).
+- **Hai chế độ**, trang tự nhận biết khi mở:
+  - Mở bằng `lavish-axi` (có `window.lavish`): **Đang sửa cùng Claude**. Nút "Gửi cho Claude sửa" gửi danh sách yêu cầu; "Lần sửa gần nhất" có nút hoàn tác.
+  - Mở thẳng file (sau khi build hoặc từ Finder): **Chỉ xem**. Ô yêu cầu vẫn dùng được; nút thành **Copy yêu cầu**, copy `/hm-config <các yêu cầu nối bằng "; ">` để dán vào chat Claude. Ẩn nút hoàn tác; nút Báo lỗi (Form) vẫn còn.
 - Người dùng chú thích lên mục hoặc gõ yêu cầu (vd "tạm ngừng nhóm Cầu Giấy", "đổi 17:30 thành 18:00", "thêm nhóm: <tên> <link>").
 - Claude **sửa ngay**: lưu bản sao vào `history/`, ghi file, dựng lại trang, hiện changelog (vd "Nhóm Cầu Giấy: active true → false"). Có lệnh "hoàn tác lần sửa trước".
 - Đổi giờ chạy thì Claude tạo, xoá hoặc dời scheduled task tương ứng.
@@ -322,7 +329,7 @@ Plugin không chứa token GitHub. Không có đường tạo issue thẳng cho 
   - `diff.mjs`: nhãn phòng, nhãn tin, lần đầu chạy, khoá phòng
   - `download.mjs`: tên thư mục, thứ tự ảnh, quy tắc 5 ảnh cho bài 1 tin và nhiều tin, bỏ bài thiếu ảnh
   - phần chọn đích của khung giờ: `active`, `days`, `slots`, 1 bài mỗi nhóm
-- Snapshot test `render.mjs` và `render-config.mjs`, đảm bảo token không xuất hiện.
+- Test `render-home.mjs` (4 tab, chọn khung, 2 chế độ, escape, đường dẫn ảnh) và `parseContentTypes`, đảm bảo token không xuất hiện.
 - End-to-end trên máy owner với token thật:
   - `/hm-setup` → `/hm-config` (sửa vài mục, hoàn tác, đổi giờ và kiểm tra scheduled task)
   - `/hm-prep-now`: dữ kiện mỗi bài khớp API, ảnh đúng quy tắc, copy được nội dung
@@ -331,7 +338,7 @@ Plugin không chứa token GitHub. Không có đường tạo issue thẳng cho 
 
 ## A10. Còn mở
 
-- Kiểu bài và tỉ lệ trộn: owner quy định sau; bản đầu dùng 3 kiểu mẫu.
+- Kiểu bài và tỉ lệ trộn: owner quy định sau; bản đầu dùng 4 kiểu mẫu.
 - Quy định đăng theo nhóm (liên hệ, link, tiền tố): pending, ghi ở tab Cần tìm hiểu.
 - Danh sách nhóm: owner nhập qua `/hm-config`.
 - `apiBaseUrl` production: điền khi có.
@@ -364,7 +371,6 @@ Plugin không chứa token GitHub. Không có đường tạo issue thẳng cho 
 
 ## Mockup
 
-- `docs/mockups/hm-config.html`: trang cấu hình
-- `docs/mockups/posts.html`: trang bài đăng một khung giờ
+- `docs/mockups/home.html`: trang chủ (bài đăng + cấu hình), dựng từ dữ liệu mẫu bằng chính `renderHome`
 
 Dữ liệu trong mockup là dữ liệu mẫu.

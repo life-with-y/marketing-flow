@@ -1,0 +1,11 @@
+{
+  "name": "marketing-flow",
+  "owner": { "name": "LYFE" },
+  "plugins": [
+    {
+      "name": "homematch-marketing",
+      "source": "./",
+      "description": "Soạn sẵn bài đăng marketing HomeMatch theo lịch."
+    }
+  ]
+}
