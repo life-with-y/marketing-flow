@@ -2,7 +2,7 @@
 
 Áp dụng cho mọi bài, mọi kênh, mọi persona. Không ai ghi đè: không persona, không kiểu bài, không Trends, không ghi chú nhóm.
 
-Thứ tự ưu tiên khi các nguồn mâu thuẫn: luật cứng > hồ sơ cá nhân > mặc định chung > Trends (Trends chỉ ảnh hưởng cấu trúc).
+Thứ tự ưu tiên khi các nguồn mâu thuẫn: luật cứng > hướng dẫn nền tảng (`rules/platforms/`) > hồ sơ cá nhân > mặc định chung > Trends (Trends chỉ ảnh hưởng cấu trúc).
 
 ## 4 điều
 

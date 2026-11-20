@@ -190,7 +190,7 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
 
 ## A5. Cấu hình
 
-Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > Trends (Trends chỉ ảnh hưởng cấu trúc).
+Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) > hồ sơ cá nhân > mặc định chung > Trends (Trends chỉ ảnh hưởng cấu trúc).
 
 ### A5.1 Chung (repo, owner sửa)
 
@@ -201,7 +201,15 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
   - Facebook (Page, tường, nhóm): không link trong thân bài, link tin ở comment đầu tiên; Threads được để link trong thân bài.
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
-- `channel-format.md`: giới hạn từng kênh (vd Threads ≤ 500 ký tự), chỗ đặt link tin (Facebook: comment đầu tiên; Threads: được trong thân bài), định dạng giá. Claude đề xuất, owner duyệt.
+- `channel-format.md`: định dạng chung (giá, `•`, link nguyên văn, ngôn ngữ); phần riêng từng kênh nằm ở `platforms/`. Claude đề xuất, owner duyệt.
+- `platforms/` (hướng dẫn đăng theo nền tảng, luật Claude theo khi viết; mỗi file các mục Mục tiêu, Link, Số điện thoại, Emoji, Hashtag/tag, Câu mở đầu, Độ dài & định dạng, Lời mời (CTA), Tránh):
+  - `facebook-page.md` (`page`): link ở comment đầu tiên, giọng thương hiệu, không emoji, 0–2 hashtag, 1–2 dòng đầu nói khu + giá + hợp với ai.
+  - `facebook-profile.md` (`wall`): link ở comment, giọng persona, 1–3 emoji làm dấu mốc, SĐT một lần chữ số thường.
+  - `facebook-groups.md` (`group`): theo quy định nhóm (`target.note`), mặc định không SĐT, không link, CTA inbox / comment mã.
+  - `threads.md` (`threads`): chữ là chính, link trong thân bài khi cần bấm, tối đa một `#tag`, ≤ 500 ký tự (nên ≤ 350).
+  - `prepare.mjs` ghi `input.paths.platforms` (`{ page, wall, group, threads }`); file cùng tên trong `~/.homematch-marketing/platforms/` ghi đè file plugin. Trang chủ hiện các hướng dẫn ở mục "Hướng dẫn nền tảng" cuối tab Kiểu bài.
+  - Thứ tự ưu tiên khi soạn: `hard-rules` > hướng dẫn nền tảng > persona / kiểu bài > `channel-format` / Trends.
+  - `build.mjs` kiểm thêm: không số dạng icon (U+20E3) ở `text`/`comment`; Threads tối đa một `#tag`. Emoji chỉ ở mức hướng dẫn, không kiểm.
 - `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
 - `templates/content-types.example.md`: 4 kiểu bài khởi đầu, mục tiêu mở cuộc nói chuyện với người cần thuê (mỗi bài kết bằng một câu hỏi dễ trả lời), chọn góc viết theo người đọc (phòng giá thấp: sinh viên / mới đi làm; từ 5 triệu: người đi làm):
   1. **Phòng nổi bật**: 1 tin, tiêu đề loại phòng + diện tích + điểm đắt, khối thông tin có icon (địa chỉ, giá + cọc, trạng thái, điểm nổi bật, nội thất, phí, lưu ý)
