@@ -56,6 +56,11 @@ function findCeilings(text, used) {
   return out;
 }
 
+// Giá che: phần triệu (làm tròn xuống) + "xxx", vd 4.400.000 → "4xxx".
+const MASK_RE = /(?<![\p{L}\p{N}])(\d+)xxx(?![\p{L}\p{N}])/giu;
+const maskedOf = (r) => { const p = roomPrice(r); return p == null ? null : `${Math.floor(p / 1e6)}xxx`; };
+const hasMasked = (text, tok) => [...text.matchAll(MASK_RE)].some((m) => m[0].toLowerCase() === tok);
+
 // Bỏ các mức trần khỏi đoạn chữ (để mức trần không thay cho giá thật của tin).
 const stripCeilings = (text) => text.replace(CEIL_RE, (m) => ' '.repeat(m.length));
 
@@ -89,7 +94,7 @@ const FACEBOOK_KINDS = new Set(['page', 'wall', 'group']);
 const COMMENT_MAX = 300;
 
 // Luật định dạng (5), giá ghi trong bài (6b), mã tin (6c), link (7) cho một đoạn chữ.
-function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listings, postCodes, language, checkLinks, linksOn }) {
+function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listings, postCodes, language, checkLinks, linksOn, masked }) {
   if (text.includes('**')) err(pi, `${vk}: văn bản có "**" (chỉ dùng chữ thường).`);
   if (text.includes('__')) err(pi, `${vk}: văn bản có "__" (chỉ dùng chữ thường).`);
   if (/^\s*#{1,6}\s/m.test(text)) err(pi, `${vk}: có dòng tiêu đề markdown bắt đầu bằng "#".`);
@@ -107,9 +112,17 @@ function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listin
       else if (ce) {
         if (!ce.ok) err(pi, `${vk}: mức "${ce.phrase}" sai, có phòng trong bài giá cao hơn ${ce.x}.`);
         else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
-      }
+      } else if (masked) err(pi, `${vk}: kênh này che giá (ghi dạng 4xxx), không ghi giá "${tok}".`);
       else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
       else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
+    }
+    // 6b'. giá che "4xxx": chỉ ở kênh che giá, và phải khớp một phòng của tin trong bài
+    const maskedOk = new Set(used.flatMap((l) => (l.rooms || []).map(maskedOf)).filter(Boolean));
+    for (const m of text.matchAll(MASK_RE)) {
+      const tok = m[0];
+      if (isBrand) err(pi, `${vk}: bài thương hiệu không được ghi giá thuê ("${tok}").`);
+      else if (!masked) err(pi, `${vk}: kênh này ghi giá đầy đủ, không dùng dạng "${tok}".`);
+      else if (!maskedOk.has(tok.toLowerCase())) err(pi, `${vk}: giá "${tok}" không khớp phòng nào trong bài.`);
     }
     // 6c. mọi mã tin trong bài phải nằm trong postCodes (bỏ qua token trùng số phòng của tin trong bài)
     const roomNames = new Set(codes.flatMap((c) => (listings.get(c)?.rooms || []).map((r) => String(r.room ?? '').toUpperCase())));
@@ -197,7 +210,8 @@ export function validatePosts(posts, input) {
       // 5–7. văn bản (thân bài) và comment đầu tiên dùng chung luật định dạng, giá, mã tin, link
       const fb = target && FACEBOOK_KINDS.has(target.kind);
       const linksOn = target?.links === true;
-      const ctx = { pi, err, isBrand, codesOk, used, codes, listings, postCodes: post.postCodes, language: target?.language, linksOn };
+      const masked = target?.priceStyle === 'masked' && target?.kind !== 'page';
+      const ctx = { pi, err, isBrand, codesOk, used, codes, listings, postCodes: post.postCodes, language: target?.language, linksOn, masked };
       const text = typeof v.text === 'string' ? v.text.normalize('NFC') : null;
       if (text === null) {
         err(pi, `${vk}: thiếu văn bản "text".`);
@@ -213,8 +227,15 @@ export function validatePosts(posts, input) {
           if (tags > 1) err(pi, `${vk}: Threads có ${tags} hashtag, tối đa 1 tag chủ đề.`);
         }
 
-        // 6. giá: mỗi tin trong bài phải có một giá đúng nguyên văn trong thân bài
-        if (!isBrand && codesOk) {
+        // 6. giá: mỗi tin trong bài phải có một giá đúng nguyên văn (kênh che giá: dạng 4xxx) trong thân bài
+        if (!isBrand && codesOk && masked) {
+          for (const l of used) {
+            const toks = [...new Set((l.rooms || []).map(maskedOf).filter(Boolean))];
+            if (!toks.some((t) => hasMasked(text, t))) {
+              err(pi, `${vk}: tin ${l.code} không có giá dạng che nào trong bài (cần một trong: ${toks.join('; ')}).`);
+            }
+          }
+        } else if (!isBrand && codesOk) {
           for (const l of used) {
             const bare = stripCeilings(text);
             const ok = (l.rooms || []).some((r) => priceForms(r, target?.language).some((f) => appearsExact(bare, f)));
