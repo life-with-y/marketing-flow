@@ -8,8 +8,12 @@
 
 ## Link
 
-- Được để link tin trong thân bài, nhưng chỉ khi người đọc thật sự cần bấm (xem ảnh, chi tiết phòng).
-- Không cần `comment`.
+- Theo công tắc `target.links` (config `links.threads`, mặc định tắt). Tắt: không link `homematch.vn` ở đâu cả.
+- Bật: được để link tin trong thân bài, nhưng chỉ khi người đọc thật sự cần bấm (xem ảnh, chi tiết phòng). Không cần `comment`.
+
+## Giá
+
+- Theo `target.priceStyle` (config `priceStyle.threads`): `full` ghi `priceText`; `masked` ghi `4xxx/tháng` và mời nhắn để có giá chính xác.
 
 ## Số điện thoại
 

@@ -24,11 +24,14 @@ Nội dung phải dán được nguyên lên Facebook/Threads:
 
 - Giá chép đúng `priceText` (vd `3,5 triệu`); bài tiếng Anh được dùng thêm `3.5 million VND` hoặc `3,500,000 VND`. Không viết `tr`, không viết giá nào khác.
 - Ngay sau giá không đặt số hay chữ đọc giá (`5`, `rưỡi`, `một`, `tư`, `lẻ`…). Viết `3 triệu/tháng`, không viết `3 triệu một tháng`.
+- Mức trần: được viết "dưới X triệu" / "tầm X triệu" (X dạng `priceText`) chỉ khi mọi phòng của mọi tin trong bài có giá ≤ X; không thay cho giá riêng của tin; bài thương hiệu không ghi.
+- Giá che: kênh có `priceStyle` = `masked` ghi `4xxx` (phần triệu làm tròn xuống + `xxx`, vd 4.400.000 → `4xxx/tháng`) thay `priceText`; không ghi giá đầy đủ ở thân bài lẫn comment; `…xxx` phải khớp một phòng trong bài. Kênh `full` không dùng `…xxx`. Page nên để giá đầy đủ (che được nhưng có cảnh báo).
 - Chỉ ghi mã T… của tin có trong bài. Bài thương hiệu không ghi giá thuê, không ghi mã tin.
 - Phí và cọc lấy từ `details.fees` / `details.deposit`, giữ đúng số tiền và đơn vị (viết bằng `đ`, vd `3.990đ/số`, `Cọc 1 tháng`); được bỏ dấu ":" giữa tên phí và số. Không đổi sang `triệu`/`k`, không cộng gộp, không tính tổng chi phí.
 
 ## Link tin (build.mjs kiểm tra)
 
+- Công tắc link theo kênh (config `links`: `page`, `wall`, `threads`, `group`, mặc định đều tắt). Tắt: không có link `homematch.vn` nào ở thân bài lẫn comment (kể cả không `https://`); CTA dùng Zalo / comment mã / inbox. Nhóm: chỉ có link khi công tắc bật và ghi chú nhóm cho phép. Các luật dưới đây áp khi công tắc bật.
 - Facebook (`page`, `wall`, `group`): thân bài không có link `homematch.vn` (kể cả không có `https://`). Link tin để trong comment đầu tiên (`comment`), người đăng ghim lại. Lý do: Facebook giảm tiếp cận bài có link ngoài trong thân bài, Meta đang thử giới hạn 2 bài có link/tháng cho Page và trang cá nhân chuyên nghiệp chưa xác minh (link trong comment không bị tính).
 - Threads: được để link trong thân bài.
 - Link ở đâu cũng phải đúng `link` của tin trong bài. Comment ngắn (≤ 300 ký tự), cùng luật chữ thường, giá, mã tin như thân bài. Bài thương hiệu: comment không có link homematch, không có mã tin.

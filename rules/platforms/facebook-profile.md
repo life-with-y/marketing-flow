@@ -8,8 +8,12 @@
 
 ## Link
 
-- Thân bài không có link. Link tin để ở comment đầu tiên (`comment`), người đăng ghim lại.
-- Thân bài nói "link chi tiết ở comment".
+- Theo công tắc `target.links` (config `links.wall`, mặc định tắt). Tắt: không link `homematch.vn` ở đâu cả, CTA trỏ Zalo / inbox / comment mã; `comment` bỏ hoặc chỉ ghi mã tin.
+- Bật: thân bài không có link. Link tin để ở comment đầu tiên (`comment`), người đăng ghim lại; thân bài nói "link chi tiết ở comment".
+
+## Giá
+
+- Theo `target.priceStyle` (config `priceStyle.wall`): `full` ghi `priceText`; `masked` ghi `4xxx/tháng` và mời "nhắn mình để có giá chính xác" (không "comment để nhận giá").
 
 ## Số điện thoại
 
@@ -37,7 +41,7 @@
 
 ## Lời mời (CTA)
 
-- Nhắn Zalo / inbox theo `contact`, kèm "link chi tiết ở comment".
+- Nhắn Zalo / inbox theo `contact`; công tắc link bật thì kèm "link chi tiết ở comment".
 - Dấu hiệu tin cậy chỉ lấy từ dữ liệu: ảnh thật của phòng, giá ghi rõ.
 
 ## Tránh
