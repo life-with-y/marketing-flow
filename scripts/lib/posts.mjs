@@ -188,6 +188,8 @@ export function validatePosts(posts, input) {
       else used.push(l);
     }
     const isBrand = Array.isArray(post.postCodes) && codes.length === 0;
+    // Kiểu "Gợi ý 4–5 phòng cùng phân khúc": ảnh chỉ là bìa từng tin.
+    const isSegment = typeof post.type === 'string' && post.type.normalize('NFC').toLowerCase().includes('phân khúc');
     const k = codes.length;
 
     // 3. variants
@@ -289,6 +291,7 @@ export function validatePosts(posts, input) {
             const maxTotal = k <= 5 ? 5 : k;
             if (imgs.length > maxTotal) err(pi, `${vk}: bài gom ${k} tin tối đa ${maxTotal} ảnh, có ${imgs.length}.`);
             if (k > 5 && imgs.length !== k) err(pi, `${vk}: bài gom ${k} tin (>5) cần đúng ${k} ảnh (1 bìa/tin), có ${imgs.length}.`);
+            else if (isSegment && imgs.length !== k) err(pi, `${vk}: bài phân khúc cần đúng ${k} ảnh bìa (1 ảnh/tin, theo thứ tự postCodes, không ảnh phụ), có ${imgs.length}.`);
             used.forEach((l, i) => {
               const cover = (l.images || [])[0]?.url;
               if (imgs[i] !== cover) err(pi, `${vk}: ảnh thứ ${i + 1} phải là bìa của tin ${l.code}.`);

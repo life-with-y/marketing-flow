@@ -423,3 +423,18 @@ test('giá che (masked): "4xxx" thay giá đầy đủ, không ghi priceText', (
   // bài thương hiệu: không giá che
   assert.ok(run('wall:m', 'Phòng 4xxx', null, []).some((m) => /bài thương hiệu không được ghi giá/.test(m)));
 });
+
+test('bài "phân khúc": đúng 1 ảnh bìa mỗi tin, theo thứ tự postCodes, không ảnh phụ', () => {
+  const codes = ['KA', 'KB', 'KC', 'KD'];
+  const covers = codes.map((c) => fi(c, 3)[0]);
+  const seg = (images, type = 'Gợi ý 4–5 phòng cùng phân khúc', cs = codes) => msgs({ posts: [{ targetId: 'wall:1', type, postCodes: cs,
+    variants: [{ key: 'A', text: cs.map(() => '2 triệu').join(', '), images }] }] });
+  assert.deepEqual(seg(covers), []);
+  assert.deepEqual(seg([...covers, fi('KE', 3)[0]], 'Gợi ý 4–5 phòng cùng phân khúc', [...codes, 'KE']), []);
+  assert.deepEqual(seg(covers, 'PHÂN KHÚC studio'), []);
+  assert.ok(seg([...covers, fi('KA', 3)[1]]).some((e) => /bài phân khúc cần đúng 4 ảnh bìa.*có 5/.test(e.message)));
+  assert.ok(seg([covers[1], covers[0], covers[2], covers[3]]).some((e) => /phải là bìa của tin KA/.test(e.message)));
+  assert.ok(seg(covers.slice(0, 3)).some((e) => /bài phân khúc cần đúng 4 ảnh bìa/.test(e.message)));
+  // kiểu khác vẫn được thêm ảnh phụ
+  assert.deepEqual(seg([...covers, fi('KA', 3)[1]], 'Gom theo khu'), []);
+});
