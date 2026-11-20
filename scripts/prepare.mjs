@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import { profileDir } from './lib/paths.mjs';
 import { loadConfig, loadToken, ConfigError } from './lib/config.mjs';
-import { fetchListingsRaw, ApiError } from './lib/api.mjs';
-import { toListings } from './lib/listings.mjs';
+import { fetchListings, ApiError } from './lib/api.mjs';
+import { normalizeListings } from './lib/listings.mjs';
 import { saveSnapshot, latestSnapshot } from './lib/snapshot.mjs';
 import { labelListings } from './lib/diff.mjs';
 import { targetsForSlot, fold } from './lib/targets.mjs';
@@ -81,22 +81,22 @@ export async function runPrepare({
   const targets = targetsForSlot(cfg, slotTime, hhmm, onlyGroups);
   if (!targets.length) return { exitCode: 4, message: 'Không có đích nào cần đăng hôm nay' };
 
-  const call = () => fetchListingsRaw({ baseUrl: cfg.apiBaseUrl, token, fetchImpl });
-  let raw;
+  const call = () => fetchListings({ baseUrl: cfg.apiBaseUrl, token, fetchImpl });
+  let fetched;
   try {
     try {
-      raw = await call();
+      fetched = await call();
     } catch (e) {
       if (!(e instanceof ApiError) || e.kind !== 'network') throw e;
       await new Promise((r) => setTimeout(r, retryDelayMs));
-      raw = await call();
+      fetched = await call();
     }
   } catch (e) {
     if (e instanceof ApiError) return { exitCode: 2, message: API_MSG[e.kind] || e.message };
     throw e;
   }
 
-  const current = toListings(raw);
+  const current = normalizeListings(fetched);
   const labeled = labelListings(latestSnapshot(dir, slotId), current);
   saveSnapshot(dir, slotId, current);
 

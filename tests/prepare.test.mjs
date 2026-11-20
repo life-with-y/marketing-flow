@@ -24,7 +24,10 @@ function mkHome(cfgOver = {}) {
   fs.writeFileSync(path.join(dir, 'secrets.json'), JSON.stringify({ token: TOKEN }));
   return { home, dir };
 }
-const ok = async () => ({ ok: true, status: 200, json: async () => JSON.parse(FIX), text: async () => '' });
+// Máy chủ chỉ có route cũ: route mới trả 404, plugin lùi về route cũ.
+const ok = async (u) => (String(u).includes('/marketing-listings')
+  ? { ok: false, status: 404, json: async () => ({}), text: async () => '' }
+  : { ok: true, status: 200, json: async () => JSON.parse(FIX), text: async () => '' });
 const status = (s) => async () => ({ ok: false, status: s, json: async () => ({}) });
 
 test('first run writes input.json with UNCHANGED labels, eligibility, no token', async () => {
@@ -61,9 +64,9 @@ test('401 exits 2 with token message and no retry', async () => {
 test('network error once then ok exits 0', async () => {
   const { home } = mkHome();
   let n = 0;
-  const r = await runPrepare({ home, now: NOW, retryDelayMs: 0, fetchImpl: async () => { if (n++ === 0) throw new Error('boom'); return ok(); } });
+  const r = await runPrepare({ home, now: NOW, retryDelayMs: 0, fetchImpl: async (u) => { if (n++ === 0) throw new Error('boom'); return ok(u); } });
   assert.equal(r.exitCode, 0);
-  assert.equal(n, 2);
+  assert.equal(n, 3); // lỗi, rồi route mới 404, rồi route cũ
 });
 
 test('network error twice exits 2 and writes no snapshot', async () => {

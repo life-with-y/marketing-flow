@@ -3,7 +3,7 @@
 ## Điều kiện tin
 
 - Tin đủ điều kiện khi có ít nhất 3 ảnh `IMAGE` (`eligible: true` trong `input.json`). Tin không đủ điều kiện không bao giờ vào bài.
-- API không có diện tích, loại phòng, tiêu đề tin, nên nội dung không nhắc tới các thông tin này.
+- Tin từ route mới (`source: "marketing"`) có thêm tiêu đề, loại phòng, diện tích, phí, cọc, khảo sát toà, mốc gần đó. Tin từ route cũ (`source` thiếu) không có các trường này, nên nội dung không nhắc tới.
 
 ## Đích của khung giờ
 

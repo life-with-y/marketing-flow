@@ -61,6 +61,10 @@ Thứ tự ưu tiên khi mâu thuẫn: luật cứng > hồ sơ cá nhân (perso
 - `listings[]`: **đã sắp theo thứ tự ưu tiên chung** (khớp leads > `NEW` > `PRICE_DOWN` > `NOW_AVAILABLE` > `UNCHANGED`/`PRICE_UP`). Mỗi tin:
   - `code` (mã T…), `link`, `district`, `buildingName`, `address`, `label`, `eligible`, `imageCount`
   - `rooms[]`: `room`, `price` (số đồng), `priceText` (vd `3,5 triệu`), `status`, `statusText`, `services[]`, `furniture[]`
+  - Chỉ khi `source` là `"marketing"` (route mới), có thêm (trường `null` = không biết, bỏ qua):
+    - `title` (tiêu đề tin), `availableUnitsCount` (số phòng trống của tin)
+    - `rooms[]`: `unitTypeText` (vd `Studio`, `1 ngủ 1 khách`), `areaSqm`, `capacity`, `floor`, `availableFrom`, `amenities[]`
+    - `details`: `ward`, `deposit` (vd `Cọc 1 tháng`), `fees[]` (vd `Điện: 3.990đ/số`), `amenities[]` (tiện ích toà), `facts[]` (câu dữ kiện có sẵn: lối vào, thang máy, xe điện, thú cưng, chung chủ, hợp đồng…), `landmarks[]` (vd `ĐH Quốc gia Hà Nội: 1,2 km, khoảng 5 phút xe máy`), `availabilityVerified`, `priceVerified`
   - `images[]`: `url`, `isCover`, `order`; **đã sắp, `images[0]` là ảnh bìa**
   - `lastPrepared`: `{ <targetId>: <ISO lần soạn gần nhất> }`; thiếu khoá = chưa từng soạn cho đích đó
 - `leads`: nhu cầu hôm nay (`demands[]` với `district`, `maxPrice`…) hoặc `null`.
@@ -136,9 +140,9 @@ Mỗi đích có đúng `target.variants` bản, khoá `A`, `B`, `C` theo thứ 
 
 Luật cứng (bài vi phạm sẽ bị script trả về ở bước 4):
 
-1. Chỉ dữ kiện có trong `input.json`: quận, toà, địa chỉ, phòng, giá, trạng thái, dịch vụ, nội thất, mã tin, link. Không bịa diện tích, loại phòng, tiêu đề, số phòng còn lại, lượt xem, "phòng cuối"… Không nói hay ám chỉ tin được ưu tiên vì chủ nhà trả tiền.
+1. Chỉ dữ kiện có trong `input.json`: quận, toà, địa chỉ, phòng, giá, trạng thái, dịch vụ, nội thất, mã tin, link, và (tin route mới) các trường ở trên. Trường thiếu hoặc `null` thì không nhắc; tin route cũ không có diện tích, loại phòng, tiêu đề, phí. Phí, cọc, mốc gần đó, `facts` chép nguyên chuỗi. Không bịa lượt xem, "hot", "chốt nhanh", "phòng cuối"… Không nói hay ám chỉ tin được ưu tiên vì chủ nhà trả tiền.
 2. **Giá**: mỗi tin trong bài phải có ít nhất một `priceText` của phòng xuất hiện **nguyên văn** (vd `3,5 triệu`; không `3tr5`, `3.5tr`, `3 triệu rưỡi`). Ngay trước giá không đặt chữ số, `,` hay `.`; ngay sau giá không đặt chữ số, `rưỡi`, hay `,5` (viết `3,5 triệu/tháng`). Không viết khoảng giá kiểu `3,5 đến 4,2 triệu` (số đầu không phải `priceText`); ghi giá từng phòng. Mọi giá khác nhắc tới cũng phải đúng `priceText` của phòng. Đích `en`: được ghi `3.5 million VND` hoặc `3,500,000 VND` (đúng số `price`), hoặc `priceText`.
-3. **Hợp với ai / không hợp với ai** chỉ được suy ra từ dữ liệu API trong `input.json` (giá, nội thất, dịch vụ, quận, trạng thái / ngày trống). Không bao giờ nói số người ở, diện tích, tầng, hay bất cứ điều gì không có trong input (vd không viết "hợp 1 người", "phòng rộng", "tầng cao").
+3. **Hợp với ai / không hợp với ai** chỉ được suy ra từ dữ liệu API trong `input.json` (giá, nội thất, dịch vụ, quận, trạng thái / ngày trống, và nếu có: loại phòng, diện tích, `capacity`, `facts`, `landmarks`). Không nói số người ở, diện tích, tầng khi trường đó không có (vd không viết "hợp 1 người" khi không có `capacity`, "phòng rộng" khi không có `areaSqm`).
 4. **Trạng thái** dùng đúng `statusText`. **Mã tin** dùng đúng `code`. Không ghi số phòng nếu không cần (mã tin là đủ).
 5. **Link**: mọi chuỗi chứa `homematch.vn` (kể cả không có `https://`) phải bằng đúng `link` của một tin trong bài. Không viết tên miền `homematch.vn` trần, không link quận, không rút gọn. Bài thương hiệu không đặt link tin. Nhóm theo mặc định an toàn: không link.
 6. **Chỉ văn bản thường**: không `**`, không `__`, không `_…_`, không dòng bắt đầu bằng `#` kèm khoảng trắng (tiêu đề markdown), không chữ đậm/nghiêng giả bằng ký tự Unicode (U+1D400–U+1D7FF). Được dùng xuống dòng, emoji, gạch đầu dòng `•`. Hashtag viết liền (`#phongtrohanoi`) thì được.

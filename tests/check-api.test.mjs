@@ -9,7 +9,9 @@ import { checkApi, main } from '../scripts/check-api.mjs';
 const FIX = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'api-response.json'), 'utf8');
 const TOKEN = 'sekret-token-xyz';
 const BASE = 'https://api.example.test';
-const okFetch = async () => ({ ok: true, status: 200, json: async () => JSON.parse(FIX) });
+const okFetch = async (u) => (String(u).includes('/marketing-listings')
+  ? { ok: false, status: 404, json: async () => ({}) }
+  : { ok: true, status: 200, json: async () => JSON.parse(FIX) });
 const status = (s) => async () => ({ ok: false, status: s, json: async () => ({}) });
 
 function run(argv, { stdin = TOKEN + '\n', fetchImpl = okFetch, home } = {}) {

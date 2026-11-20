@@ -7,7 +7,7 @@ Thứ tự ưu tiên khi các nguồn mâu thuẫn: luật cứng > hồ sơ cá
 ## 4 điều
 
 1. Chỉ dùng dữ kiện có trong API (trong `input.json`).
-2. Không bịa dữ kiện (diện tích, số phòng còn lại, lượt xem, "phòng cuối"…).
+2. Không bịa dữ kiện. Diện tích, loại phòng, số phòng còn trống, phí, cọc, thang máy, thú cưng, xe điện, đường vào, mốc gần đó chỉ được ghi khi có trong tin (`title`, `rooms[]`, `details`, `availableUnitsCount`); trường `null`/rỗng hay tin từ route cũ thì không nhắc. Không bao giờ bịa lượt xem, "hot", "chốt nhanh", "phòng cuối" (khi `availableUnitsCount` là 1 thì được viết "tin này còn 1 phòng trống").
 3. Không đổi giá, trạng thái, mã T…, link.
 4. Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
 
@@ -24,3 +24,4 @@ Nội dung phải dán được nguyên lên Facebook/Threads:
 - Giá chép đúng `priceText` (vd `3,5 triệu`); bài tiếng Anh được dùng thêm `3.5 million VND` hoặc `3,500,000 VND`. Không viết `tr`, không viết giá nào khác.
 - Ngay sau giá không đặt số hay chữ đọc giá (`5`, `rưỡi`, `một`, `tư`, `lẻ`…). Viết `3 triệu/tháng`, không viết `3 triệu một tháng`.
 - Chỉ ghi mã T… của tin có trong bài. Bài thương hiệu không ghi giá thuê, không ghi mã tin.
+- Phí và cọc chép đúng chuỗi trong `details.fees` / `details.deposit` (viết bằng `đ`, vd `3.990đ/số`, `Cọc 1 tháng`). Không đổi sang `triệu`/`k`, không cộng gộp.

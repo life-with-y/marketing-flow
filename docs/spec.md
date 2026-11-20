@@ -117,7 +117,7 @@ marketing-flow/
 
 ## A3. Nguồn dữ liệu
 
-`GET {apiBaseUrl}/public/building-listing-posts-unit`, header `x-public-api-token`.
+`GET {apiBaseUrl}/public/marketing-listings` (route riêng cho marketing, whitelist trường không nhạy cảm), header `x-public-api-token`. Máy chủ trả 404 (chưa deploy) thì lùi về route cũ `GET {apiBaseUrl}/public/building-listing-posts-unit`. Mỗi tin ghi `source` (`marketing` | thiếu = route cũ).
 
 - API trả mọi phòng `AVAILABLE` / `COMING_SOON` của tin đang hiển thị, nhóm theo quận → toà → phòng.
 - Trường plugin dùng:
@@ -126,7 +126,7 @@ marketing-flow/
   - phòng: `post_code`, `share_link`, `room_number`, `rent_price`, `availability_status`, `availability_text`, `services`, `furniture`, `media[]` (url, media_type, is_cover, sort_order)
 - **Tin** là tập phòng cùng `post_code` (cùng `share_link`). Plugin gom phòng thành tin ngay sau fetch.
 - API quyết định trường nào được lộ ra. Plugin không lọc lại; muốn che thêm thì sửa API.
-- API không có diện tích, loại phòng, tiêu đề tin, nên nội dung không nhắc tới các thông tin này.
+- Route mới trả thêm: tiêu đề, loại phòng, diện tích, sức chứa, tầng, ngày trống, tiện ích phòng/toà, phí (điện, nước, dịch vụ…), cọc, khảo sát toà (thang máy, xe điện, thú cưng, đường vào, chung chủ, hợp đồng…), mốc gần đó, số phòng trống, mốc kiểm tra. Plugin chuẩn hoá sang chuỗi tiếng Việt (`details.fees`, `details.facts`, `details.landmarks`…); phí/cọc viết bằng `đ` để không lẫn với giá thuê. Route cũ không có các trường này, nên tin từ route cũ không nhắc tới.
 - Link dùng nguyên `share_link`, không gắn mã giới thiệu.
 
 ## A4. Luồng một lần chạy
@@ -192,7 +192,7 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
 
 - `hard-rules.md` (không ai ghi đè):
   - Chỉ dùng dữ kiện có trong API.
-  - Không bịa dữ kiện (diện tích, số phòng còn lại, lượt xem, "phòng cuối"…).
+  - Không bịa dữ kiện: diện tích, loại phòng, phí, số phòng còn trống… chỉ khi có trong tin; không bao giờ lượt xem, "phòng cuối", "chốt nhanh".
   - Không đổi giá, trạng thái, mã T…, link.
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.

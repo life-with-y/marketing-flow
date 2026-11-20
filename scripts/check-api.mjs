@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fetchListingsRaw, ApiError } from './lib/api.mjs';
-import { toListings } from './lib/listings.mjs';
+import { fetchListings, ApiError } from './lib/api.mjs';
+import { normalizeListings } from './lib/listings.mjs';
 import { profileDir } from './lib/paths.mjs';
 import { init } from './config-cli.mjs';
 
@@ -16,8 +16,8 @@ const MESSAGES = {
 
 export async function checkApi({ baseUrl, token, fetchImpl = fetch }) {
   try {
-    const raw = await fetchListingsRaw({ baseUrl, token, fetchImpl });
-    return { ok: true, listingCount: toListings(raw).length };
+    const fetched = await fetchListings({ baseUrl, token, fetchImpl });
+    return { ok: true, listingCount: normalizeListings(fetched).length, source: fetched.source };
   } catch (e) {
     if (e instanceof ApiError) return { ok: false, message: MESSAGES[e.kind] ?? MESSAGES.network };
     return { ok: false, message: MESSAGES.network };
