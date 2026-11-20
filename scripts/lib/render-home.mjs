@@ -8,6 +8,7 @@ import { parseContentTypes } from './content-types.mjs';
 import { modeView } from './home-mode.mjs';
 import { readText, lastChange as readLastChange, tokenLabel as readTokenLabel } from './profile.mjs';
 import { expandHome } from './paths.mjs';
+import { platformGuidePaths } from './platforms.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEMPLATE = path.join(PLUGIN_ROOT, 'assets', 'home', 'template.html');
@@ -95,9 +96,42 @@ function typesPanel(md) {
   return { n: types.length, html: `${cards.join('\n    ')}\n    <p>${add}</p>` };
 }
 
+// Markdown đơn giản -> HTML: chỉ "# ", "## ", "- " và đoạn thường; mọi chữ đều escape.
+function guideBody(md) {
+  const out = [];
+  let list = [];
+  const flush = () => { if (list.length) out.push(`<ul>${list.join('')}</ul>`); list = []; };
+  for (const raw of String(md).split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line.startsWith('- ')) { list.push(`<li>${esc(line.slice(2).trim())}</li>`); continue; }
+    flush();
+    if (!line) continue;
+    if (line.startsWith('## ')) out.push(`<h4>${esc(line.slice(3).trim())}</h4>`);
+    else if (line.startsWith('# ')) out.push(`<h3>${esc(line.slice(2).trim())}</h3>`);
+    else out.push(`<p>${esc(line)}</p>`);
+  }
+  flush();
+  return out.join('');
+}
+
+function guidesSection(guides) {
+  const list = arr(guides).filter((g) => g && typeof g.md === 'string' && g.md.trim());
+  if (!list.length) return '';
+  const cards = list.map((g) => {
+    const head = /^\s*# /.test(g.md) ? '' : `<h3>${esc(CHANNEL[g.kind] || g.kind)}</h3>`;
+    return `<section class="pguide" data-kind="${esc(g.kind)}">${head}${guideBody(g.md)}</section>`;
+  });
+  return `\n    <details class="sec platforms">
+      <summary>Hướng dẫn nền tảng <small>${list.length} nền tảng</small></summary>
+      <div class="body">
+        ${cards.join('\n        ')}
+      </div>
+    </details>`;
+}
+
 export function renderHome({
   cfg = {}, errors, persona = null, contentTypes = null, pending = [], pendingError = null,
-  today = new Date(), lastChange = null, tokenLabel = null, outputDir, slots = [], badSlots = [],
+  today = new Date(), lastChange = null, tokenLabel = null, outputDir, slots = [], badSlots = [], platformGuides = [],
 } = {}) {
   const c = cfg && typeof cfg === 'object' ? cfg : {};
   const board = boardParts({ cfg: c, persona, pending, pendingError, today, lastChange, tokenLabel, errors });
@@ -108,7 +142,7 @@ export function renderHome({
     POSTS_COUNT: `${posts.n} bài`,
     POSTS_PANEL: posts.html,
     TYPES_COUNT: `${types.n} kiểu`,
-    TYPES_PANEL: types.html,
+    TYPES_PANEL: types.html + guidesSection(platformGuides),
     MODE_FN: `const modeView = ${modeView.toString()};`,
   };
   return fs.readFileSync(TEMPLATE, 'utf8').replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
@@ -127,6 +161,7 @@ export function writeHome({ dir, cfg, errors = [], home, now = new Date(), root 
   const html = renderHome({
     cfg, errors, persona: readText(path.join(dir, 'persona.md')), contentTypes, pending, pendingError,
     today: now, lastChange: readLastChange(dir, now), tokenLabel: readTokenLabel(dir), outputDir, slots, badSlots: bad,
+    platformGuides: Object.entries(platformGuidePaths(dir, root)).map(([kind, p]) => ({ kind, md: readText(p) })),
   });
   fs.mkdirSync(outputDir, { recursive: true });
   const file = path.join(outputDir, 'index.html');

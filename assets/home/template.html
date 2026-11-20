@@ -184,6 +184,11 @@ details.sec[open] > summary::after { content: "–"; }
 details.sec > summary small { margin-left: auto; }
 details.sec > .body { padding: 0 0 16px; }
 .ctype .text { max-width: 520px; }
+.pguide { border-top: var(--hair); padding: 4px 0 12px; max-width: 640px; }
+.pguide:first-child { border-top: 0; }
+.pguide h3 { font-size: 16px; margin: 12px 0 4px; }
+.pguide ul { margin: 0; padding-left: 20px; }
+.pguide p { margin: 4px 0; }
 blockquote { margin: 6px 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--ink); }
 .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-top: 10px; }
 @media (max-width: 600px) { .cols { grid-template-columns: minmax(0, 1fr); } }

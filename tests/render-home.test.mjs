@@ -280,3 +280,38 @@ test('comment đầu tiên: hộp riêng dưới nội dung, nút Copy comment, 
   assert.ok(html.includes(`$('.cmt-t', active(post))`));
   assert.ok(html.includes('cc.hidden = !$(\'.cmt-t\', active(post))'));
 });
+
+test('Kiểu bài tab: mục "Hướng dẫn nền tảng" cuối tab, mỗi nền tảng 1 thẻ, markdown đơn giản đã escape', () => {
+  const guides = [
+    { kind: 'page', md: '# Page <b>x</b>\n\n## Link\n\n- Không <script>alert(1)</script> link\n- Ý & hai\n\nĐoạn "thường"\n' },
+    { kind: 'threads', md: '## Emoji\n- 0–2 emoji\n' },
+  ];
+  const html = home({ platformGuides: guides });
+  const p = html.slice(html.indexOf('id="p-types"'), html.indexOf('id="p-daily"'));
+  const at = p.indexOf('<details class="sec platforms">');
+  assert.ok(at > p.lastIndexOf('<details class="sec ctype"'), 'sau các kiểu bài');
+  assert.match(p, /<summary>Hướng dẫn nền tảng/);
+  assert.equal((p.match(/<section class="pguide"/g) || []).length, 2);
+  assert.ok(p.includes('<h3>Page &lt;b&gt;x&lt;/b&gt;</h3>'));
+  assert.ok(p.includes('<h4>Link</h4>'));
+  assert.ok(p.includes('<ul><li>Không &lt;script&gt;alert(1)&lt;/script&gt; link</li><li>Ý &amp; hai</li></ul>'));
+  assert.ok(p.includes('<p>Đoạn &quot;thường&quot;</p>'));
+  assert.ok(!p.includes('<script>alert'));
+  // không có tiêu đề # thì dùng tên kênh
+  assert.ok(p.includes('<h3>Threads</h3>'));
+  assert.ok(!home().includes('class="sec platforms"'), 'không có guide thì không có mục');
+});
+
+test('writeHome: 4 thẻ hướng dẫn từ plugin, file cá nhân ghi đè', () => {
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hm-home-pg-'));
+  const dir = path.join(homeDir, '.homematch-marketing');
+  fs.mkdirSync(path.join(dir, 'platforms'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'platforms', 'threads.md'), '# Threads của tôi\n\n- riêng\n');
+  const out = path.join(homeDir, 'out');
+  const html = fs.readFileSync(writeHome({ dir, cfg: cfg({ outputDir: out }), home: homeDir, now: THU }), 'utf8');
+  const p = html.slice(html.indexOf('id="p-types"'), html.indexOf('id="p-daily"'));
+  assert.equal((p.match(/<section class="pguide"/g) || []).length, 4);
+  for (const k of ['page', 'wall', 'group', 'threads']) assert.ok(p.includes(`data-kind="${k}"`), k);
+  assert.ok(p.includes('<h3>Facebook Page</h3>') && p.includes('<h3>Threads của tôi</h3>'));
+  assert.ok(p.includes('<h4>Mục tiêu</h4>'));
+});
