@@ -130,7 +130,10 @@ export async function downloadPosts({ posts, input, outRoot, fetchImpl = fetch, 
         return toJpg(vdir, name, platform, run);
       });
       fs.writeFileSync(path.join(vdir, 'post.txt'), v.text, 'utf8');
-      return { key: v.key, dir: vdir, text: v.text, files };
+      const hasComment = typeof v.comment === 'string' && v.comment !== '';
+      // Comment đầu tiên (dán rồi ghim) nằm cạnh post.txt
+      if (hasComment) fs.writeFileSync(path.join(vdir, 'comment.txt'), v.comment, 'utf8');
+      return { key: v.key, dir: vdir, text: v.text, ...(hasComment ? { comment: v.comment } : {}), files };
     });
     done.push({ n, dir, targetId: post.targetId, variants });
   });

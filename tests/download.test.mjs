@@ -75,7 +75,7 @@ test('two variants -> A/ and B/, B/1.jpg is images[0] of B; ext by content-type;
   const input = { targets, listings: [listing('T1', 5)] };
   const A = [0, 1, 2].map((i) => u(`/ok/T1/${i}`));
   const B = [u('/png/b0'), u('/ok/T1/1'), u('/ok/T1/2')];
-  const posts = [{ targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 'a', images: A }, { key: 'B', text: 'b', images: B }] }];
+  const posts = [{ targetId: 't1', type: 'single', postCodes: ['T1'], variants: [{ key: 'A', text: 'a', images: A }, { key: 'B', text: 'b', comment: 'Chi tiết: https://homematch.vn/p/T1\n', images: B }] }];
   const r = await downloadPosts({ posts, input, outRoot: path.join(out, 'slot'), platform: 'linux' });
   const dir = r.posts[0].dir;
   assert.equal(fs.readFileSync(path.join(dir, 'A', '1.jpg'), 'utf8'), 'JPG/ok/T1/0');
@@ -83,6 +83,11 @@ test('two variants -> A/ and B/, B/1.jpg is images[0] of B; ext by content-type;
   assert.equal(fs.readFileSync(path.join(dir, 'B', 'post.txt'), 'utf8'), 'b');
   assert.equal(hits['/ok/T1/1'], 1);
   assert.deepEqual(r.posts[0].variants.map((v) => v.key), ['A', 'B']);
+  // comment đầu tiên: chỉ bản có comment mới có comment.txt, nguyên văn
+  assert.equal(fs.readFileSync(path.join(dir, 'B', 'comment.txt'), 'utf8'), 'Chi tiết: https://homematch.vn/p/T1\n');
+  assert.ok(!fs.existsSync(path.join(dir, 'A', 'comment.txt')));
+  assert.deepEqual(r.posts[0].variants.map((v) => v.comment), [undefined, 'Chi tiết: https://homematch.vn/p/T1\n']);
+  assert.ok(!('comment' in r.posts[0].variants[0]));
 });
 
 test('multi-listing post missing a cover -> replacement; brand <3 -> replacement', async () => {
