@@ -58,6 +58,41 @@ function priceForms(room, language) {
   return f.filter((x) => typeof x === 'string' && x).map((x) => x.normalize('NFC'));
 }
 
+const FACEBOOK_KINDS = new Set(['page', 'wall', 'group']);
+const COMMENT_MAX = 300;
+
+// Luật định dạng (5), giá ghi trong bài (6b), mã tin (6c), link (7) cho một đoạn chữ.
+function checkContent(text, vk, { pi, err, isBrand, codesOk, used, codes, listings, postCodes, language, checkLinks }) {
+  if (text.includes('**')) err(pi, `${vk}: văn bản có "**" (chỉ dùng chữ thường).`);
+  if (text.includes('__')) err(pi, `${vk}: văn bản có "__" (chỉ dùng chữ thường).`);
+  if (/^\s*#{1,6}\s/m.test(text)) err(pi, `${vk}: có dòng tiêu đề markdown bắt đầu bằng "#".`);
+  if (MATH_ALNUM.test(text)) err(pi, `${vk}: có ký tự chữ toán học Unicode (U+1D400–U+1D7FF).`);
+
+  // 6b. mọi giá ghi trong bài phải là giá thật của tin trong bài (bài thương hiệu: không có giá)
+  if (Array.isArray(postCodes)) {
+    const allowed = new Set(used.flatMap((l) => (l.rooms || []).flatMap((r) => priceForms(r, language))));
+    for (const m of text.matchAll(PRICE_TOKEN_RE)) {
+      const tok = m[0];
+      if (isBrand) err(pi, `${vk}: bài thương hiệu không được ghi giá thuê ("${tok}").`);
+      else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
+      else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
+    }
+    // 6c. mọi mã tin trong bài phải nằm trong postCodes (bỏ qua token trùng số phòng của tin trong bài)
+    const roomNames = new Set(codes.flatMap((c) => (listings.get(c)?.rooms || []).map((r) => String(r.room ?? '').toUpperCase())));
+    for (const m of new Set(text.match(CODE_RE) || [])) {
+      if (!codes.includes(m) && !roomNames.has(m.toUpperCase())) err(pi, `${vk}: mã tin ${m} không nằm trong postCodes của bài.`);
+    }
+  }
+
+  // 7. link homematch phải là link của tin trong bài
+  if (checkLinks && !isBrand && codesOk) {
+    const allowed = new Set(used.map((l) => normUrl(l.link)));
+    for (const u of findHomematchUrls(text)) {
+      if (!allowed.has(normUrl(u))) err(pi, `${vk}: link ${u} không khớp link của tin nào trong bài.`);
+    }
+  }
+}
+
 export function validatePosts(posts, input) {
   const errors = [];
   const err = (postIndex, message) => errors.push({ postIndex, message });
@@ -120,21 +155,23 @@ export function validatePosts(posts, input) {
       }
       const vk = `${label}, bản ${v.key ?? KEYS[vi] ?? vi + 1}`;
 
-      // 5. văn bản
+      // 5–7. văn bản (thân bài) và comment đầu tiên dùng chung luật định dạng, giá, mã tin, link
+      const fb = target && FACEBOOK_KINDS.has(target.kind);
+      const ctx = { pi, err, isBrand, codesOk, used, codes, listings, postCodes: post.postCodes, language: target?.language };
       const text = typeof v.text === 'string' ? v.text.normalize('NFC') : null;
       if (text === null) {
         err(pi, `${vk}: thiếu văn bản "text".`);
       } else {
-        if (text.includes('**')) err(pi, `${vk}: văn bản có "**" (chỉ dùng chữ thường).`);
-        if (text.includes('__')) err(pi, `${vk}: văn bản có "__" (chỉ dùng chữ thường).`);
-        if (/^\s*#{1,6}\s/m.test(text)) err(pi, `${vk}: có dòng tiêu đề markdown bắt đầu bằng "#".`);
-        if (MATH_ALNUM.test(text)) err(pi, `${vk}: có ký tự chữ toán học Unicode (U+1D400–U+1D7FF).`);
+        checkContent(text, vk, { ...ctx, checkLinks: !fb });
+        if (fb && findHomematchUrls(text).length) {
+          err(pi, `${vk}: link tin để ở comment đầu tiên, không để trong thân bài.`);
+        }
         if (target && target.kind === 'threads') {
           const len = [...text].length;
           if (len > 500) err(pi, `${vk}: văn bản Threads dài ${len} ký tự, tối đa 500.`);
         }
 
-        // 6. giá
+        // 6. giá: mỗi tin trong bài phải có một giá đúng nguyên văn trong thân bài
         if (!isBrand && codesOk) {
           for (const l of used) {
             const ok = (l.rooms || []).some((r) => priceForms(r, target?.language).some((f) => appearsExact(text, f)));
@@ -143,30 +180,20 @@ export function validatePosts(posts, input) {
             }
           }
         }
+      }
 
-        // 6b. mọi giá ghi trong bài phải là giá thật của tin trong bài (bài thương hiệu: không có giá)
-        if (Array.isArray(post.postCodes)) {
-          const allowed = new Set(used.flatMap((l) => (l.rooms || []).flatMap((r) => priceForms(r, target?.language))));
-          for (const m of text.matchAll(PRICE_TOKEN_RE)) {
-            const tok = m[0];
-            if (isBrand) err(pi, `${vk}: bài thương hiệu không được ghi giá thuê ("${tok}").`);
-            else if (!allowed.has(tok)) err(pi, `${vk}: giá "${tok}" không phải giá của tin nào trong bài.`);
-            else if (hasTrail(text.slice(m.index + tok.length))) err(pi, `${vk}: giá "${tok}" bị nối thêm số hoặc chữ đọc giá phía sau.`);
-          }
-          // 6c. mọi mã tin trong bài phải nằm trong postCodes (bỏ qua token trùng số phòng của tin trong bài)
-          const roomNames = new Set(codes.flatMap((c) => (listings.get(c)?.rooms || []).map((r) => String(r.room ?? '').toUpperCase())));
-          for (const m of new Set(text.match(CODE_RE) || [])) {
-            if (!codes.includes(m) && !roomNames.has(m.toUpperCase())) err(pi, `${vk}: mã tin ${m} không nằm trong postCodes của bài.`);
-          }
-        }
-
-        // 7. link
-        if (!isBrand && codesOk) {
-          const allowed = new Set(used.map((l) => normUrl(l.link)));
-          for (const u of findHomematchUrls(text)) {
-            if (!allowed.has(normUrl(u))) {
-              err(pi, `${vk}: link ${u} không khớp link của tin nào trong bài.`);
-            }
+      // comment đầu tiên (tuỳ chọn): người dùng dán và ghim
+      if (v.comment !== undefined && v.comment !== null) {
+        if (typeof v.comment !== 'string') {
+          err(pi, `${vk}: "comment" phải là chuỗi.`);
+        } else {
+          const comment = v.comment.normalize('NFC');
+          const cl = `${vk} (comment)`;
+          const len = [...comment].length;
+          if (len > COMMENT_MAX) err(pi, `${cl}: comment dài ${len} ký tự, tối đa ${COMMENT_MAX}.`);
+          checkContent(comment, cl, { ...ctx, checkLinks: true });
+          if (isBrand && findHomematchUrls(comment).length) {
+            err(pi, `${cl}: bài thương hiệu, comment không để link homematch.`);
           }
         }
       }

@@ -27,7 +27,10 @@ const input = {
   listings: [...listings, fake('F1', 6), fake('F2', 4), { ...fake('T2142', 5), rooms: [{ room: 'T101', priceText: '2 triệu', status: 'AVAILABLE', label: '' }] }, ...'ABCDEFGHIJK'.split('').map((c) => fake('K' + c, 3))],
 };
 const l2 = L('T1302');
-const goodText = `Phòng ${l2.rooms[0].priceText} ${l2.link}`;
+const goodText = `Phòng ${l2.rooms[0].priceText}`;
+// Threads được để link trong thân bài
+const th = (text) => mk({ targetId: 'threads:1' }, { text });
+const thGood = `${goodText} ${l2.link}`;
 const mk = (over = {}, vover = {}) => ({
   posts: [{
     targetId: 'group:1', type: 't', postCodes: ['T1302'],
@@ -73,7 +76,7 @@ test('luật 3: số bản và key', () => {
 test('luật 4: ảnh bài 1 tin', () => {
   assert.ok(has(mk({}, { images: imgs('T1302', 2) }), /ít nhất 3 ảnh/));
   assert.ok(has(mk({}, { images: ['https://x/y.jpg', ...imgs('T1302', 2)] }), /không thuộc tin nào/));
-  const f = (n) => ({ posts: [{ targetId: 'wall:1', type: 't', postCodes: ['F1'], variants: [{ key: 'A', text: 'giá 2 triệu https://homematch.vn/p/F1', images: fi('F1', n) }] }] });
+  const f = (n) => ({ posts: [{ targetId: 'wall:1', type: 't', postCodes: ['F1'], variants: [{ key: 'A', text: 'giá 2 triệu', images: fi('F1', n) }] }] });
   assert.deepEqual(msgs(f(5)), []);
   assert.ok(has(f(4), /đúng 5 ảnh/));
   // biến thể B đổi thứ tự, không bắt buộc bìa đầu
@@ -90,14 +93,14 @@ test('luật 4: bài thương hiệu 3-5 ảnh của tin eligible', () => {
 });
 
 test('luật 4: bài gom tin', () => {
-  const g = (codes, images) => ({ posts: [{ targetId: 'wall:1', type: 'g', postCodes: codes, variants: [{ key: 'A', text: 'giá 2 triệu https://homematch.vn/p/F1 https://homematch.vn/p/F2', images }] }] });
+  const g = (codes, images) => ({ posts: [{ targetId: 'wall:1', type: 'g', postCodes: codes, variants: [{ key: 'A', text: 'giá 2 triệu', images }] }] });
   assert.deepEqual(msgs(g(['F1', 'F2'], [fi('F1', 6)[0], fi('F2', 4)[0], fi('F1', 6)[1], fi('F1', 6)[2], fi('F2', 4)[1]])), []);
   assert.ok(has(g(['F1', 'F2'], [fi('F2', 4)[0], fi('F1', 6)[0], fi('F1', 6)[1]]), /phải là bìa/));
   assert.ok(has(g(['F1', 'F2'], [...fi('F1', 6), fi('F2', 4)[0]]), /tối đa 5 ảnh/));
   // > 5 tin
   const six = ['KA', 'KB', 'KC', 'KD', 'KE', 'KF'];
   const covers = six.map((c) => fi(c, 3)[0]);
-  const gk = (codes, images) => ({ posts: [{ targetId: 'wall:1', type: 'g', postCodes: codes, variants: [{ key: 'A', text: codes.map((c) => `2 triệu https://homematch.vn/p/${c}`).join(' '), images }] }] });
+  const gk = (codes, images) => ({ posts: [{ targetId: 'wall:1', type: 'g', postCodes: codes, variants: [{ key: 'A', text: codes.map(() => '2 triệu').join(', '), images }] }] });
   assert.deepEqual(msgs(gk(six, covers)), []);
   assert.ok(has(gk(six, [...covers, fi('KA', 3)[1]]), /đúng 6 ảnh/));
   assert.ok(has(gk(six, covers.slice(0, 5)), /đúng 6 ảnh/));
@@ -125,14 +128,14 @@ test('luật 5: Threads <= 500 code point', () => {
 });
 
 test('luật 6: giá nguyên văn', () => {
-  assert.ok(has(mk({}, { text: `Phòng 3tr5 ${l2.link}` }), /giá nào đúng nguyên văn/));
-  assert.ok(has(mk({}, { text: `Phòng 13,5 triệu ${l2.link}` }), /giá nào đúng nguyên văn/));
+  assert.ok(has(mk({}, { text: 'Phòng 3tr5' }), /giá nào đúng nguyên văn/));
+  assert.ok(has(mk({}, { text: 'Phòng 13,5 triệu' }), /giá nào đúng nguyên văn/));
   // một trong các phòng là đủ (listing 2 phòng dựng tay)
   const two = { ...fake('TW', 3), rooms: [
     { room: '1', price: 3000000, priceText: '3 triệu', status: 'AVAILABLE', label: '' },
     { room: '2', price: 4500000, priceText: '4,5 triệu', status: 'AVAILABLE', label: '' }] };
   const inp2 = { ...input, listings: [...input.listings, two] };
-  const pt = (text, tid = 'wall:1') => ({ posts: [{ targetId: tid, type: 't', postCodes: ['TW'], variants: [{ key: 'A', text: `${text} https://homematch.vn/p/TW`, images: fi('TW', 3) }] }] });
+  const pt = (text, tid = 'wall:1') => ({ posts: [{ targetId: tid, type: 't', postCodes: ['TW'], variants: [{ key: 'A', text, images: fi('TW', 3) }] }] });
   const m2 = (p, i = inp2) => validatePosts(p, i).errors;
   assert.deepEqual(m2(pt('phòng 4,5 triệu')), []);
   assert.deepEqual(m2(pt('phòng 3 triệu/tháng')), []);
@@ -146,15 +149,16 @@ test('luật 6: giá nguyên văn', () => {
   assert.deepEqual(msgs(b), []);
 });
 
-test('luật 7: URL homematch.vn', () => {
-  assert.ok(has(mk({}, { text: goodText + ' https://homematch.vn/p/T9999' }), /không khớp link/));
-  assert.ok(has(mk({}, { text: goodText + ' https://app.homematch.vn/x' }), /không khớp link/));
-  assert.deepEqual(msgs(mk({}, { text: goodText + '/ và https://example.com/x' })), []);
-  assert.deepEqual(msgs(mk({}, { text: `${l2.rooms[0].priceText} ${l2.link}/.` })), []);
+test('luật 7: URL homematch.vn (Threads, link trong thân bài)', () => {
+  assert.deepEqual(msgs(th(thGood)), []);
+  assert.ok(has(th(thGood + ' https://homematch.vn/p/T9999'), /không khớp link/));
+  assert.ok(has(th(thGood + ' https://app.homematch.vn/x'), /không khớp link/));
+  assert.deepEqual(msgs(th(thGood + '/ và https://example.com/x')), []);
+  assert.deepEqual(msgs(th(`${l2.rooms[0].priceText} ${l2.link}/.`)), []);
   // host giả không tính
-  assert.deepEqual(msgs(mk({}, { text: goodText + ' https://nothomematch.vn/a' })), []);
-  // bài thương hiệu bỏ qua luật link
-  const b = { posts: [{ targetId: 'wall:1', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'https://homematch.vn', images: fi('F1', 3) }] }] };
+  assert.deepEqual(msgs(th(thGood + ' https://nothomematch.vn/a')), []);
+  // bài thương hiệu trên Threads bỏ qua luật link
+  const b = { posts: [{ targetId: 'threads:1', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'https://homematch.vn', images: fi('F1', 3) }] }] };
   assert.deepEqual(msgs(b), []);
 });
 
@@ -167,7 +171,7 @@ test('R12: tiếng Anh nhận dạng giá từ room.price', () => {
   const mkRoom = (price, priceText) => ({ ...fake('EN', 3), rooms: [{ room: '1', price, priceText, status: 'AVAILABLE', label: '' }] });
   const run = (lang, text, price = 3500000, pText = '3,5 triệu') => {
     const inp = { targets: [{ id: 'wall:1', kind: 'wall', name: 'W', variants: 1, ...(lang ? { language: lang } : {}) }], listings: [mkRoom(price, pText)] };
-    const p = { posts: [{ targetId: 'wall:1', type: 't', postCodes: ['EN'], variants: [{ key: 'A', text: `${text} https://homematch.vn/p/EN`, images: fi('EN', 3) }] }] };
+    const p = { posts: [{ targetId: 'wall:1', type: 't', postCodes: ['EN'], variants: [{ key: 'A', text, images: fi('EN', 3) }] }] };
     return validatePosts(p, inp).errors;
   };
   assert.deepEqual(run('en', 'Room 3.5 million VND'), []);
@@ -183,10 +187,10 @@ test('R12: tiếng Anh nhận dạng giá từ room.price', () => {
 });
 
 test('R13: link không scheme', () => {
-  assert.ok(has(mk({}, { text: goodText + ' homematch.vn/p/F9' }), /không khớp link/));
-  assert.ok(has(mk({}, { text: goodText + ' www.homematch.vn/p/F9…' }), /không khớp link/));
-  assert.deepEqual(msgs(mk({}, { text: `${l2.rooms[0].priceText} homematch.vn/p/T1302…` })), []);
-  assert.deepEqual(msgs(mk({}, { text: goodText + ' nothomematch.vn/a, mail a@homematch.vn' })), []);
+  assert.ok(has(th(thGood + ' homematch.vn/p/F9'), /không khớp link/));
+  assert.ok(has(th(thGood + ' www.homematch.vn/p/F9…'), /không khớp link/));
+  assert.deepEqual(msgs(th(`${l2.rooms[0].priceText} homematch.vn/p/T1302…`)), []);
+  assert.deepEqual(msgs(th(thGood + ' nothomematch.vn/a, mail a@homematch.vn')), []);
 });
 
 test('R13: # chỉ là tiêu đề markdown', () => {
@@ -200,27 +204,26 @@ test('R24: giá sai, mã sai, đuôi đọc giá đều bị chặn', () => {
   const inp = { ...input, listings: [...input.listings, four] };
   const run = (text, codes = ['TF'], tid = 'wall:1') => validatePosts({ posts: [{ targetId: tid, type: 't', postCodes: codes,
     variants: [{ key: 'A', text, images: codes.length ? fi('TF', 3) : fi('F1', 3) }] }] }, inp).errors;
-  const link = 'https://homematch.vn/p/TF';
   // giá thật vẫn qua
-  assert.deepEqual(run(`phòng 4 triệu ${link}`), []);
-  assert.deepEqual(run(`phòng 4 triệu, điện 4k/số, nước 100k ${link}`), []);
+  assert.deepEqual(run(`phòng 4 triệu`), []);
+  assert.deepEqual(run(`phòng 4 triệu, điện 4k/số, nước 100k`), []);
   // giá sai đứng cạnh giá thật hoặc thay giá thật
-  assert.ok(run(`phòng 101 giá 3,5 triệu, phòng 102 giá 3,8 triệu ${link}`).length > 0);
-  assert.ok(run(`phòng 101 giá 4 triệu, phòng 102 giá 3,8 triệu ${link}`).some((e) => /3,8 triệu/.test(e.message)));
+  assert.ok(run(`phòng 101 giá 3,5 triệu, phòng 102 giá 3,8 triệu`).length > 0);
+  assert.ok(run(`phòng 101 giá 4 triệu, phòng 102 giá 3,8 triệu`).some((e) => /3,8 triệu/.test(e.message)));
   // "tr" không bao giờ hợp lệ
-  assert.ok(run(`phòng 4 triệu (3,5tr) ${link}`).some((e) => /3,5tr/.test(e.message)));
-  assert.ok(run(`phòng 4 triệu, 4tr ${link}`).length > 0);
-  assert.ok(run(`phòng 4 triệu, giá3,5 triệu ${link}`).length > 0);
+  assert.ok(run(`phòng 4 triệu (3,5tr)`).some((e) => /3,5tr/.test(e.message)));
+  assert.ok(run(`phòng 4 triệu, 4tr`).length > 0);
+  assert.ok(run(`phòng 4 triệu, giá3,5 triệu`).length > 0);
   // đuôi đọc giá, không phân biệt hoa thường
-  assert.ok(run(`phòng 4 triệu Rưỡi ${link}`).length > 0);
-  assert.ok(run(`phòng 4 triệu RƯỠI ${link}`).length > 0);
+  assert.ok(run(`phòng 4 triệu Rưỡi`).length > 0);
+  assert.ok(run(`phòng 4 triệu RƯỠI`).length > 0);
   for (const w of ['một', 'mốt', 'hai', 'ba', 'bốn', 'tư', 'năm', 'lăm', 'sáu', 'bảy', 'tám', 'chín', 'lẻ', 'Tư', 'NĂM']) {
-    assert.ok(run(`phòng 4 triệu ${w} ${link}`).length > 0, w);
+    assert.ok(run(`phòng 4 triệu ${w}`).length > 0, w);
   }
-  assert.deepEqual(run(`phòng 4 triệu bao gồm phí ${link}`), []);
+  assert.deepEqual(run(`phòng 4 triệu bao gồm phí`), []);
   // NFD vẫn được chuẩn hoá trước khi so
-  assert.deepEqual(run(`phòng ${'4 triệu'.normalize('NFD')} ${link}`), []);
-  assert.ok(run(`phòng 4 triệu ${'rưỡi'.normalize('NFD')} ${link}`).length > 0);
+  assert.deepEqual(run(`phòng ${'4 triệu'.normalize('NFD')}`), []);
+  assert.ok(run(`phòng 4 triệu ${'rưỡi'.normalize('NFD')}`).length > 0);
   // mã tin lạ
   assert.ok(has(mk({}, { text: `${goodText} Comment mã T1320` }), /T1320/));
   assert.deepEqual(msgs(mk({}, { text: `${goodText} Comment mã T1302` })), []);
@@ -234,16 +237,67 @@ test('R24: tiếng Anh chỉ nhận dạng chuẩn', () => {
   const en = { ...fake('EN2', 3, '3,5 triệu'), rooms: [{ room: '1', price: 3500000, priceText: '3,5 triệu', status: 'AVAILABLE', label: '' }] };
   const inp = { targets: [{ id: 'wall:1', kind: 'wall', name: 'W', variants: 1, language: 'en' }], listings: [en] };
   const run = (text) => validatePosts({ posts: [{ targetId: 'wall:1', type: 't', postCodes: ['EN2'],
-    variants: [{ key: 'A', text: `${text} https://homematch.vn/p/EN2`, images: fi('EN2', 3) }] }] }, inp).errors;
+    variants: [{ key: 'A', text, images: fi('EN2', 3) }] }] }, inp).errors;
   assert.deepEqual(run('Room 3.5 million VND, also 3,500,000 VND'), []);
   assert.ok(run('Room 3.5 million VND, other 3.8 million VND').length > 0);
   assert.ok(run('Room 3.5 million VND, other 4,000,000 VND').length > 0);
 });
 
 test('mã tin: token T… trùng số phòng của tin trong bài thì bỏ qua', () => {
-  const base = `Mã T2142, 2 triệu https://homematch.vn/p/T2142`;
+  const base = 'Mã T2142, 2 triệu';
   const p = (text) => ({ posts: [{ targetId: 'group:1', type: 't', postCodes: ['T2142'], variants: [{ key: 'A', text, images: fi('T2142', 5) }] }] });
   assert.deepEqual(msgs(p(`${base} phòng T101`)), []);
   assert.deepEqual(msgs(p(`${base} phòng t101`)), []);
   assert.ok(has(p(`${base} phòng T999`), /mã tin T999 không nằm trong postCodes/));
+});
+
+test('link Facebook: thân bài page/wall/group không có link, link ở comment', () => {
+  const inp = { ...input, targets: [...input.targets, { id: 'page:1', kind: 'page', name: 'P', variants: 1 }] };
+  const run = (tid, v) => validatePosts(mk({ targetId: tid }, v), inp).errors;
+  const body = /link tin để ở comment đầu tiên, không để trong thân bài/;
+  for (const tid of ['wall:1', 'page:1', 'group:1']) {
+    assert.ok(run(tid, { text: thGood }).some((e) => body.test(e.message)), tid);
+    assert.ok(run(tid, { text: `${goodText} homematch.vn/p/T1302` }).some((e) => body.test(e.message)), tid);
+    assert.deepEqual(run(tid, { comment: `Chi tiết và ảnh: ${l2.link}` }), [], tid);
+  }
+  assert.ok(run('wall:1', { text: thGood }).some((e) => /^Bài 1, bản A: link tin để ở comment/.test(e.message)));
+  // Threads: link trong thân vẫn được
+  assert.deepEqual(msgs(th(thGood)), []);
+  // bài thương hiệu cũng không để link trong thân bài Facebook
+  const b = { posts: [{ targetId: 'wall:1', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'ghé homematch.vn', images: fi('F1', 3) }] }] };
+  assert.ok(has(b, body));
+});
+
+test('comment: link, mã tin, định dạng, giá, độ dài', () => {
+  const c = (comment, over = {}) => mk(over, { comment });
+  assert.deepEqual(msgs(c(`Chi tiết và ảnh: ${l2.link}`)), []);
+  assert.deepEqual(msgs(c(`T1302 · ${l2.rooms[0].priceText}: homematch.vn/p/T1302`)), []);
+  // link sai
+  assert.ok(has(c('Chi tiết: https://homematch.vn/p/T9999'), /comment.*không khớp link/));
+  assert.ok(has(c('Chi tiết: app.homematch.vn/x'), /không khớp link/));
+  // mã tin lạ
+  assert.ok(has(c(`Mã T1320 ${l2.link}`), /comment.*mã tin T1320/));
+  // định dạng
+  assert.ok(has(c(`**Chi tiết** ${l2.link}`), /comment.*\*\*/));
+  assert.ok(has(c(`__x__ ${l2.link}`), /__/));
+  assert.ok(has(c(`# Xem\n${l2.link}`), /tiêu đề markdown/));
+  assert.ok(has(c(`\u{1D5EF} ${l2.link}`), /toán học/));
+  // giá: có thì phải đúng
+  assert.ok(has(c(`Giá 9 triệu ${l2.link}`), /comment.*giá "9 triệu"/));
+  assert.ok(has(c(`Giá 3tr ${l2.link}`), /giá "3tr"/));
+  // độ dài
+  const long = `${l2.link} ` + 'a'.repeat(300);
+  assert.ok(has(c(long), /comment dài \d+ ký tự, tối đa 300/));
+  assert.deepEqual(msgs(c('😀'.repeat(300))), []);
+  assert.ok(has(c('😀'.repeat(301)), /tối đa 300/));
+  // sai kiểu
+  assert.ok(has(c(42), /"comment" phải là chuỗi/));
+  assert.deepEqual(msgs(c(null)), []);
+});
+
+test('comment bài thương hiệu: không link homematch, không mã tin', () => {
+  const b = (comment) => ({ posts: [{ targetId: 'wall:1', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'xin chào', comment, images: fi('F1', 3) }] }] });
+  assert.deepEqual(msgs(b('Inbox Page để được tư vấn')), []);
+  assert.ok(has(b('Xem thêm homematch.vn'), /bài thương hiệu.*comment.*link/));
+  assert.ok(has(b('Xem mã T1302'), /comment.*T1302/));
 });
