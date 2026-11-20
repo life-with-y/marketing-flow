@@ -16,8 +16,11 @@ Persona chỉ quyết định giọng. Không persona nào được ghi đè `ha
 
 - <Vd: nói rõ phòng hợp với ai.>
 - <Vd: đưa số cụ thể: giá, khu, ngày trống.>
+- <Vd: phòng giá thấp nói với sinh viên, phòng từ 5 triệu nói với người đi làm.>
+- <Vd: kết bài bằng một câu hỏi để mở cuộc nói chuyện.>
 
 ## KHÔNG NÊN
 
 - <Vd: "siêu phẩm", "giá sốc".>
-- <Vd: emoji dày đặc.>
+- <Vd: emoji dày đặc trong câu văn.>
+- <Vd: lặp số điện thoại hai lần.>

@@ -149,12 +149,12 @@ test('Góp ý only with formUrl; params encoded, text cut at 1500', () => {
 test('Kiểu bài tab: one card per type, first open, fields, FB-style example, buttons', () => {
   const html = home();
   const p = html.slice(html.indexOf('id="p-types"'), html.indexOf('id="p-daily"'));
-  assert.equal((p.match(/<details class="sec ctype"/g) || []).length, 3);
+  assert.equal((p.match(/<details class="sec ctype"/g) || []).length, 4);
   assert.equal((p.match(/<details class="sec ctype" open>/g) || []).length, 1);
-  assert.match(p, /<details class="sec ctype" open>\s*<summary>Phòng mới \/ giảm giá/);
+  assert.match(p, /<details class="sec ctype" open>\s*<summary>Phòng nổi bật/);
   for (const s of ['Kênh', 'Số tin mỗi bài', 'Cách chọn tin', 'Cấu trúc', 'Ảnh', 'Ví dụ', 'Tường cá nhân · Page · Threads · Nhóm']) assert.ok(p.includes(s), s);
-  assert.ok(p.includes('<ol>') && p.includes('<li>Khu + địa chỉ</li>'));
-  assert.ok(p.includes('class="text"') && p.includes('Phòng vừa trống ở Cầu Giấy.\n\n📍'));
+  assert.ok(p.includes('<ol>') && p.includes('<li>Lời mời nói chuyện.</li>'));
+  assert.ok(p.includes('class="text"') && p.includes('🔥 STUDIO 25M²'));
   assert.ok(p.includes('data-seed="Kiểu Gom theo khu: "') && p.includes('Sửa kiểu này'));
   assert.ok(p.includes('+ Thêm kiểu bài') && p.includes('Thêm kiểu bài mới: tên …, kênh …, số tin …, cấu trúc …'));
   const missing = home({ contentTypes: '## Trống\n\n- **Kênh**: page\n' });

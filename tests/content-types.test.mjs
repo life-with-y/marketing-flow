@@ -8,29 +8,31 @@ import { parseContentTypes } from '../scripts/lib/content-types.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXAMPLE = fs.readFileSync(path.join(ROOT, 'rules', 'templates', 'content-types.example.md'), 'utf8');
 
-test('parses the example template into 3 types with all fields', () => {
+test('parses the example template into 4 types with all fields', () => {
   const ts = parseContentTypes(EXAMPLE);
-  assert.equal(ts.length, 3);
-  const [a, b, c] = ts;
-  assert.equal(a.name, 'Phòng mới / giảm giá');
+  assert.equal(ts.length, 4);
+  const [a, b, c, d] = ts;
+  assert.equal(a.name, 'Phòng nổi bật');
   assert.deepEqual(a.channels, ['wall', 'page', 'threads', 'group']);
   assert.equal(a.listings, '1');
   assert.match(a.howToPick, /^tin đầu tiên theo thứ tự ưu tiên/);
   assert.equal(a.structure.length, 5);
-  assert.match(a.structure[0], /^Mở bài: điều mới/);
-  assert.match(a.structure[4], /^CTA theo liên hệ/);
+  assert.match(a.structure[0], /^Dòng tiêu đề:/);
+  assert.match(a.structure[4], /^Liên hệ \+ mã tin/);
   assert.match(a.images, /^5 ảnh của tin/);
-  assert.equal(a.exampleNote, 'tường cá nhân, liên hệ Zalo');
-  assert.ok(a.example.startsWith('Phòng vừa trống ở Cầu Giấy.\n\n📍'));
+  assert.equal(a.exampleNote, 'tường cá nhân, phòng giá thấp, liên hệ Zalo');
+  assert.ok(a.example.startsWith('🔥 STUDIO 25M²'));
   assert.ok(a.example.endsWith('<link của tin T1302>'));
   assert.ok(!a.example.includes('```'));
   assert.equal(b.name, 'Gom theo khu');
   assert.equal(b.listings, '3–5');
   assert.equal(b.structure.length, 3);
-  assert.equal(c.name, 'Thương hiệu "phòng thật, giá thật"');
-  assert.deepEqual(c.channels, ['wall', 'page', 'threads']);
-  assert.match(c.listings, /^0/);
-  assert.equal(c.exampleNote, 'Threads');
+  assert.equal(c.name, 'Gom theo nhu cầu');
+  assert.equal(c.listings, '2–4');
+  assert.equal(d.name, 'Hỏi nhu cầu');
+  assert.deepEqual(d.channels, ['wall', 'page', 'threads']);
+  assert.match(d.listings, /^0/);
+  assert.equal(d.exampleNote, 'Threads');
 });
 
 test('tolerates missing fields and odd input', () => {

@@ -72,7 +72,7 @@ test('success: page-data.json + home index.html, no per-slot index, prepared lin
   assert.ok(html.includes('Trends: lỗi'));
   assert.ok(html.includes('Liên hệ nhóm chưa chốt'));
   assert.ok(html.includes(`src="${SLOT}/01_phong-tro-cau-giay_T1/1.jpg"`));
-  assert.ok(html.includes('Kiểu bài') && html.includes('Phòng mới / giảm giá'));
+  assert.ok(html.includes('Kiểu bài') && html.includes('Phòng nổi bật'));
   assert.ok(!html.includes('sekret-token'));
   const lines = fs.readFileSync(path.join(dir, 'prepared.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(lines.length, 1);

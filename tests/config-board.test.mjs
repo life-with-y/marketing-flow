@@ -113,7 +113,7 @@ test('render-board writes the home page at outputDir/index.html with slots, toke
   assert.ok(html.includes('đã cài · mkt-minh') && html.includes('Giờ chạy: 17:00 → 17:30'));
   assert.ok(html.includes('Nội dung bài &lt;b&gt;') && html.includes('src="2026-11-19_1100/01_x_T1/1.jpg"'));
   // no content-types.md in profile -> template library
-  assert.ok(html.includes('Phòng mới / giảm giá'));
+  assert.ok(html.includes('Phòng nổi bật'));
   // invalid config still renders; default outputDir resolves under home (temp)
   fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apiBaseUrl: '', accounts: [], groups: [] }));
   const r2 = await run(['render-board'], dir);

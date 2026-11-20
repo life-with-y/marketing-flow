@@ -198,10 +198,11 @@ Thứ tự ưu tiên: `hard-rules` > hồ sơ cá nhân > mặc định chung > 
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
 - `channel-format.md`: giới hạn từng kênh (vd Threads ≤ 500 ký tự), định dạng giá. Claude đề xuất, owner duyệt.
 - `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
-- `templates/content-types.example.md`: 3 kiểu bài khởi đầu:
-  1. **Phòng mới / giảm giá**: 1 tin, ảnh, giá, khu, link
-  2. **Gom theo khu**: nhiều tin cùng khu/tầm giá, ảnh bìa mỗi tin
-  3. **Thương hiệu "phòng thật, giá thật"**: ảnh phòng thật
+- `templates/content-types.example.md`: 4 kiểu bài khởi đầu, mục tiêu mở cuộc nói chuyện với người cần thuê (mỗi bài kết bằng một câu hỏi dễ trả lời), chọn góc viết theo người đọc (phòng giá thấp: sinh viên / mới đi làm; từ 5 triệu: người đi làm):
+  1. **Phòng nổi bật**: 1 tin, tiêu đề loại phòng + diện tích + điểm đắt, khối thông tin có icon (địa chỉ, giá + cọc, trạng thái, điểm nổi bật, nội thất, phí, lưu ý)
+  2. **Gom theo khu**: 3–5 tin cùng quận, cùng nhóm người đọc, ảnh bìa mỗi tin
+  3. **Gom theo nhu cầu**: 2–4 tin cùng một điểm khách hay hỏi (xe điện, máy giặt riêng, 1 ngủ 1 khách…)
+  4. **Hỏi nhu cầu**: không gắn tin, ảnh phòng thật, hỏi khu + tầm tiền + ngày vào ở
 
   Mỗi kiểu khai: tên, kênh dùng được, số tin mỗi bài (vd `1` hoặc `3–5`), cách chọn tin, cấu trúc, 1 ví dụ.
 - `templates/persona.example.md`, `templates/presets/`: persona mẫu.
@@ -337,7 +338,7 @@ Plugin không chứa token GitHub. Không có đường tạo issue thẳng cho 
 
 ## A10. Còn mở
 
-- Kiểu bài và tỉ lệ trộn: owner quy định sau; bản đầu dùng 3 kiểu mẫu.
+- Kiểu bài và tỉ lệ trộn: owner quy định sau; bản đầu dùng 4 kiểu mẫu.
 - Quy định đăng theo nhóm (liên hệ, link, tiền tố): pending, ghi ở tab Cần tìm hiểu.
 - Danh sách nhóm: owner nhập qua `/hm-config`.
 - `apiBaseUrl` production: điền khi có.
