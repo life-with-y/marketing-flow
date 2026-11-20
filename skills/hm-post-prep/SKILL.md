@@ -14,6 +14,7 @@ Làm đúng thứ tự 1 → 5. Mọi chữ hiển thị cho người dùng bằ
 - Đọc, in hay nhắc nội dung `~/.homematch-marketing/secrets.json`. Script tự đọc token; bạn không cần nó.
 - Sửa `input.json`, snapshot, `prepared.jsonl`, hay file trong plugin.
 - Đăng bài lên bất kỳ kênh nào. Người dùng tự đăng tay.
+- Chạy lệnh shell nào khác ngoài đúng hai lệnh `prepare.mjs` (bước 1) và `build.mjs` (bước 4). Lượt chạy theo lịch có thể không có quyền chạy lệnh khác và sẽ dừng lại chờ. Đọc `input.json`, các file rule, persona, kiểu bài, `config.json`, `prepared.jsonl` bằng công cụ **Read**; ghi `posts.json` bằng công cụ **Write**. Không dùng `cat`, `python`, `node -e`, `jq`, `ls`, `wc`… để đọc, đếm hay kiểm tra; tự tính từ nội dung đã đọc.
 
 ## Bước 1: Chuẩn bị (script)
 
