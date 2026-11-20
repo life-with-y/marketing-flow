@@ -151,13 +151,17 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
    - Một tin có thể vào nhiều nhóm trong cùng khung, mỗi nhóm một phiên bản nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
    - **Ngôn ngữ** theo `language` của nhóm (mặc định `vi`). Các kênh không phải nhóm dùng `vi`.
    - **CTA** chọn theo thứ tự ưu tiên trong `contact`, lùi xuống kênh mà nhóm cho phép. Page dùng `pageContact`.
-   - **Quy định nhóm đang pending** (cách ghi liên hệ, link, tiền tố…): dùng mặc định an toàn: không SĐT, không link, CTA "nhắn tin / comment mã T…". `note` của nhóm luôn được tuân theo; nhóm cho phép link thì link để ở comment đầu tiên.
-   - **Link tin trên Facebook (Page, tường cá nhân, nhóm)**: thân bài không có link; CTA trỏ Zalo/inbox và ghi "link chi tiết ở comment"; link tin (kèm mã) nằm ở `comment` của bản (comment đầu tiên, người dùng dán rồi ghim, ≤ 300 ký tự, cùng luật chữ thường, giá, mã tin, link như thân bài). Threads được để link trong thân bài. Lý do: Facebook giảm tiếp cận bài có link ngoài trong thân bài, và Meta đang thử giới hạn 2 bài có link/tháng cho Page và trang cá nhân chuyên nghiệp chưa xác minh (link trong comment không bị tính); Threads không còn hạ tiếp cận link.
+   - **Quy định nhóm đang pending** (cách ghi liên hệ, link, tiền tố…): dùng mặc định an toàn: không SĐT, không link, CTA "nhắn tin / comment mã T…". `note` của nhóm luôn được tuân theo; nhóm chỉ có link khi công tắc `links.group` bật và `note` cho phép, link để ở comment đầu tiên.
+   - **Công tắc link theo kênh** (`config.links`: `page`, `wall`, `threads`, `group`; mặc định đều `false`): mỗi đích mang `links`. Tắt: không có link `homematch.vn` nào (có hay không `https://`, `www.`) ở thân bài lẫn comment, build báo lỗi "kênh này đang tắt link homematch.vn"; CTA trỏ Zalo / comment mã / inbox, `comment` bỏ hoặc chỉ ghi mã tin. Bật: áp luật đặt link dưới đây. Trang chủ hiện công tắc ở Hồ sơ › Lịch & cài đặt.
+   - **Link tin trên Facebook (Page, tường cá nhân, nhóm), khi công tắc bật**: thân bài không có link; CTA trỏ Zalo/inbox và ghi "link chi tiết ở comment"; link tin (kèm mã) nằm ở `comment` của bản (comment đầu tiên, người dùng dán rồi ghim, ≤ 300 ký tự, cùng luật chữ thường, giá, mã tin, link như thân bài). Threads được để link trong thân bài. Lý do: Facebook giảm tiếp cận bài có link ngoài trong thân bài, và Meta đang thử giới hạn 2 bài có link/tháng cho Page và trang cá nhân chuyên nghiệp chưa xác minh (link trong comment không bị tính); Threads không còn hạ tiếp cận link.
    - **`posts.json`**: mỗi bài có `targetId`, `type`, `postCodes`, `variants[]`; mỗi bản có `key`, `text`, `images`, và `comment` (tuỳ chọn). build kiểm tra bằng luật cứng trước khi tải ảnh.
    - Bài thương hiệu cũng phải có ảnh, lấy từ tin thật trong snapshot.
    - Trends chỉ gợi ý cấu trúc (mở bài, định dạng, độ dài), không ghi đè persona.
    - **Phiên bản**: mỗi bài có số bản theo `variants` (mặc định 1, tối đa 3, đặt được theo kênh). Các bản khác nhau ở nội dung (mở bài, thứ tự ý, CTA) và thứ tự ảnh; dữ kiện, tin và bộ ảnh nguồn giữ nguyên. Không ghi nhận người dùng chọn bản nào.
    - Giá ghi dạng `3,5 triệu`.
+   - **Mức trần**: được viết "dưới X triệu" / "tầm X triệu" (X dạng `priceText`, không phân biệt hoa thường) khi mọi phòng của mọi tin trong bài có giá ≤ X (kênh `masked`: X lớn hơn hẳn mọi giá phòng, để mức trần không lộ giá thật); ngoài điều kiện đó là lỗi. Mức trần không thay cho giá riêng của từng tin. Bài thương hiệu không ghi.
+   - **Giá che** (`config.priceStyle`: `page`, `wall`, `threads`, `group`, giá trị `full` | `masked`, mặc định `full`): đích mang `priceStyle`. `masked` ghi phần triệu làm tròn xuống + `xxx` (4.400.000 → `4xxx`, 12.000.000 → `12xxx`, vd "giá 4xxx/tháng"); mỗi tin cần dạng che của ít nhất một phòng trong thân bài; không giá đầy đủ (kể cả dạng tiếng Anh) ở thân bài lẫn comment; mọi `…xxx` phải khớp một phòng của tin trong bài; mức trần vẫn được. CTA mời nhắn Zalo / inbox để có giá chính xác, không "comment để nhận giá". Kênh `full`: `…xxx` là lỗi. Page nên để `full`; `masked` vẫn được nhưng trang chủ (cạnh dòng Giá) và cuối khung có bài Page che giá ghi cảnh báo "Page đang ẩn giá: khác với giá trị minh bạch của HomeMatch khi tư vấn — cân nhắc."
+   - **Bài phân khúc** (kiểu có tên chứa "phân khúc"): ảnh đúng 1 bìa mỗi tin theo thứ tự `postCodes`, không ảnh phụ (build kiểm tra).
    - **Chỉ văn bản thường** dán được nguyên lên Facebook/Threads: chữ thường, xuống dòng, emoji, gạch đầu dòng bằng ký tự `•`. Không dùng markdown (`**…**`, `#`, `_…_`) và không dùng chữ "đậm/nghiêng" giả bằng ký tự Unicode.
 4. **Tải ảnh (script)**:
    - Mỗi bài một thư mục `<outputDir>/<slot>/<NN>_<đích>_<post_code|brand>/`, chứa `post.txt` và ảnh đặt tên theo **thứ tự đăng**: `1.jpg`, `2.jpg`, `3.jpg`…; `1.jpg` luôn là ảnh đầu tiên (ảnh bìa). Người dùng chọn ảnh theo đúng thứ tự tên khi upload.
@@ -199,7 +203,8 @@ Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) 
   - Không bịa dữ kiện: diện tích, loại phòng, phí, số phòng còn trống… chỉ khi có trong tin; không bao giờ lượt xem, "phòng cuối", "chốt nhanh".
   - Không đổi giá, trạng thái, mã T…, link.
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
-  - Facebook (Page, tường, nhóm): không link trong thân bài, link tin ở comment đầu tiên; Threads được để link trong thân bài.
+  - Công tắc link theo kênh (mặc định tắt): tắt thì không link `homematch.vn` ở đâu cả. Bật: Facebook (Page, tường, nhóm) không link trong thân bài, link tin ở comment đầu tiên; Threads được để link trong thân bài.
+  - Mức trần "dưới/tầm X triệu" chỉ khi mọi phòng ≤ X; giá che `4xxx` chỉ ở kênh `priceStyle` = `masked`.
 - `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
 - `channel-format.md`: định dạng chung (giá, `•`, link nguyên văn, ngôn ngữ); phần riêng từng kênh nằm ở `platforms/`. Claude đề xuất, owner duyệt.
 - `platforms/` (hướng dẫn đăng theo nền tảng, luật Claude theo khi viết; mỗi file các mục Mục tiêu, Link, Số điện thoại, Emoji, Hashtag/tag, Câu mở đầu, Độ dài & định dạng, Lời mời (CTA), Tránh):
@@ -211,13 +216,14 @@ Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) 
   - Thứ tự ưu tiên khi soạn: `hard-rules` > hướng dẫn nền tảng > persona / kiểu bài > `channel-format` / Trends.
   - `build.mjs` kiểm thêm: không số dạng icon (U+20E3) ở `text`/`comment`; Threads tối đa một `#tag`. Emoji chỉ ở mức hướng dẫn, không kiểm.
 - `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.
-- `templates/content-types.example.md`: 4 kiểu bài khởi đầu, mục tiêu mở cuộc nói chuyện với người cần thuê (mỗi bài kết bằng một câu hỏi dễ trả lời), chọn góc viết theo người đọc (phòng giá thấp: sinh viên / mới đi làm; từ 5 triệu: người đi làm):
+- `templates/content-types.example.md`: 5 kiểu bài khởi đầu, mục tiêu mở cuộc nói chuyện với người cần thuê (mỗi bài kết bằng một câu hỏi dễ trả lời), chọn góc viết theo người đọc (phòng giá thấp: sinh viên / mới đi làm; từ 5 triệu: người đi làm):
   1. **Phòng nổi bật**: 1 tin, tiêu đề loại phòng + diện tích + điểm đắt, khối thông tin có icon (địa chỉ, giá + cọc, trạng thái, điểm nổi bật, nội thất, phí, lưu ý)
   2. **Gom theo khu**: 3–5 tin cùng quận, cùng nhóm người đọc, ảnh bìa mỗi tin
   3. **Gom theo nhu cầu**: 2–4 tin cùng một điểm khách hay hỏi (xe điện, máy giặt riêng, 1 ngủ 1 khách…)
   4. **Hỏi nhu cầu**: không gắn tin, ảnh phòng thật, hỏi khu + tầm tiền + ngày vào ở
+  5. **Gợi ý 4–5 phòng cùng phân khúc**: 4–5 tin cùng loại phòng, cùng khoảng giá (dưới 4 · 4–5 · 5–6,5 · trên 6,5 triệu), xen kẽ cùng khu / khác khu; mở bài phân khúc + mức trần, mỗi phòng một dòng đánh số, mời comment số hoặc nhắn Zalo kèm số; 1 ảnh bìa mỗi tin
 
-  Mỗi kiểu khai: tên, kênh dùng được, số tin mỗi bài (vd `1` hoặc `3–5`), cách chọn tin, cấu trúc, 1 ví dụ.
+  Mỗi kiểu khai: tên, kênh dùng được, số tin mỗi bài (vd `1` hoặc `3–5`), cách chọn tin, cấu trúc, 1 ví dụ (được nhiều ví dụ; trang hiện hết).
 - `templates/persona.example.md`, `templates/presets/`: persona mẫu.
 
 ### A5.2 Hồ sơ cá nhân (`~/.homematch-marketing/`, không commit)
@@ -252,6 +258,8 @@ Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) 
     ],
     "perSlot": { "fb1": 1, "page": 1, "th": 1 },
     "variants": { "default": 1 },                // vd { "default": 1, "page": 3, "groups": 2 }; tối đa 3
+    "links": { "page": false, "wall": false, "threads": false, "group": false },  // link homematch.vn theo kênh
+    "priceStyle": { "page": "full", "wall": "full", "threads": "full", "group": "full" },  // "masked" = ghi 4xxx
     "channelMix": null                            // null = dùng mặc định chung
   }
   ```

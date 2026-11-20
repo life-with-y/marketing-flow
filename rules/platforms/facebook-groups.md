@@ -8,8 +8,12 @@
 
 ## Link
 
-- Theo quy định nhóm (`target.note`). Mặc định an toàn: không link ở đâu cả.
-- Nhóm cho phép link thì link để ở comment đầu tiên, không trong thân bài.
+- Mặc định an toàn: không link ở đâu cả.
+- Chỉ có link khi **cả** công tắc `target.links` bật (config `links.group`) **và** quy định nhóm (`target.note`) cho phép; khi đó link để ở comment đầu tiên, không trong thân bài.
+
+## Giá
+
+- Theo `target.priceStyle` (config `priceStyle.group`): `full` ghi `priceText`; `masked` ghi `4xxx/tháng` và mời inbox để có giá chính xác.
 
 ## Số điện thoại
 

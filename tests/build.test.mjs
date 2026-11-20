@@ -35,7 +35,7 @@ function mk({ badImages = false } = {}) {
   const img = (i) => ({ url: `${base}/${badImages && i > 0 ? 'bad' : 'ok'}/${i}`, isCover: i === 0 });
   const input = {
     slot: SLOT,
-    targets: [{ id: 'group:https://fb/g1', kind: 'group', account: 'fb1', name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', variants: 1, language: 'vi' }],
+    targets: [{ id: 'group:https://fb/g1', kind: 'group', account: 'fb1', name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', variants: 1, language: 'vi', links: true }],
     listings: [{ code: 'T1', link: 'https://homematch.vn/t1', label: 'NEW', eligible: true, imageCount: 3, rooms: [{ room: '1', price: 3800000, priceText: '3,8 triệu' }], images: [0, 1, 2].map(img) }],
     library: { approved: [], trends: [], pending: ['Liên hệ nhóm chưa chốt'], errors: ['Trends: lỗi'] },
   };

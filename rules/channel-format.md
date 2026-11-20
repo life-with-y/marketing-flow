@@ -5,7 +5,8 @@
 - Chỉ văn bản thường (xem `hard-rules.md`). Gạch đầu dòng bằng ký tự `•`.
 - Giá ghi dạng `3,5 triệu`: dấu phẩy thập phân, bỏ `,0` (`4 triệu`, không `4,0 triệu`). Dùng đúng `priceText` của phòng, không viết `3tr5`, `3.5tr`, `3 triệu rưỡi`.
 - Ngay sau giá không đặt chữ số (viết `3,5 triệu/tháng`, không `3,5 triệu 2 phòng`).
-- Link tin dùng nguyên `link` (`share_link`), không rút gọn, không gắn mã giới thiệu.
+- Link tin (khi công tắc `links` của kênh bật) dùng nguyên `link` (`share_link`), không rút gọn, không gắn mã giới thiệu.
+- Kênh `priceStyle` = `masked`: giá ghi `4xxx/tháng` thay `priceText` (xem `hard-rules.md`).
 
 ## Theo kênh
 

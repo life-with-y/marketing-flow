@@ -1,6 +1,8 @@
 // Phần "Bài đăng" của trang chủ: mỗi khung giờ một section, mỗi bài một thẻ (dữ liệu từ <slot>/page-data.json).
 import path from 'node:path';
 
+export const PAGE_MASKED_WARNING = 'Page đang ẩn giá: khác với giá trị minh bạch của HomeMatch khi tư vấn — cân nhắc.';
+
 const LABELS = { NEW: 'Mới', PRICE_DOWN: 'Giảm giá', NOW_AVAILABLE: 'Vừa trống' };
 const OPEN_TEXT = { group: 'Mở nhóm ↗', page: 'Mở Page ↗', threads: 'Mở Threads ↗' };
 const KIND_TEXT = { group: 'nhóm', page: 'trang', threads: '' };
@@ -173,7 +175,8 @@ export function slotSection(data, { outputDir, feedback = {}, person = '', hidde
   }
   const pending = arr(data.pending).filter((p) => pendingText(p));
   if (pending.length) footer.push(foot('Đang chờ quy định', pending.map((p) => `<li>${esc(pendingText(p))}</li>`)));
-  const notes = arr(data.notes);
+  const notes = arr(data.notes).slice();
+  if (posts.some((p) => { const t = tmap.get(p?.targetId); return t?.kind === 'page' && t?.priceStyle === 'masked'; })) notes.push(PAGE_MASKED_WARNING);
   if (notes.length) footer.push(foot('Ghi chú', notes.map((n) => `<li>${esc(n)}</li>`)));
 
   return `<section class="slotview" data-slot="${esc(slot)}" data-total="${posts.length}"${hidden ? ' hidden' : ''}>

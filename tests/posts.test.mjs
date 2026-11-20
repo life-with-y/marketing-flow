@@ -19,10 +19,11 @@ const fi = (c, n) => fake(c, n).images.map((i) => i.url);
 
 const input = {
   targets: [
-    { id: 'group:1', kind: 'group', name: 'G1', variants: 1 },
-    { id: 'group:2', kind: 'group', name: 'G2', variants: 2 },
-    { id: 'threads:1', kind: 'threads', name: 'Th', variants: 1 },
-    { id: 'wall:1', kind: 'wall', name: 'W', variants: 1 },
+    // links: true để thử luật đặt link; công tắc tắt có test riêng
+    { id: 'group:1', kind: 'group', name: 'G1', variants: 1, links: true },
+    { id: 'group:2', kind: 'group', name: 'G2', variants: 2, links: true },
+    { id: 'threads:1', kind: 'threads', name: 'Th', variants: 1, links: true },
+    { id: 'wall:1', kind: 'wall', name: 'W', variants: 1, links: true },
   ],
   listings: [...listings, fake('F1', 6), fake('F2', 4), { ...fake('T2142', 5), rooms: [{ room: 'T101', priceText: '2 triệu', status: 'AVAILABLE', label: '' }] }, ...'ABCDEFGHIJK'.split('').map((c) => fake('K' + c, 3))],
 };
@@ -252,7 +253,7 @@ test('mã tin: token T… trùng số phòng của tin trong bài thì bỏ qua'
 });
 
 test('link Facebook: thân bài page/wall/group không có link, link ở comment', () => {
-  const inp = { ...input, targets: [...input.targets, { id: 'page:1', kind: 'page', name: 'P', variants: 1 }] };
+  const inp = { ...input, targets: [...input.targets, { id: 'page:1', kind: 'page', name: 'P', variants: 1, links: true }] };
   const run = (tid, v) => validatePosts(mk({ targetId: tid }, v), inp).errors;
   const body = /link tin để ở comment đầu tiên, không để trong thân bài/;
   for (const tid of ['wall:1', 'page:1', 'group:1']) {
@@ -324,4 +325,125 @@ test('Threads: tối đa một #tag; Facebook không giới hạn ở validator'
 test('Threads: "#2", "#1" không phải hashtag (sau # phải là chữ)', () => {
   assert.deepEqual(msgs(th(`${thGood} #phongtro phòng #2 và #1`)), []);
   assert.ok(has(th(`${thGood} #phongtro #a1`), /tối đa 1/));
+});
+
+test('công tắc link tắt: mọi link homematch ở text hoặc comment đều lỗi, mọi kênh', () => {
+  const kinds = ['page', 'wall', 'threads', 'group'];
+  const inp = { ...input, targets: [...input.targets, ...kinds.map((k) => ({ id: `${k}:off`, kind: k, name: k, variants: 1, links: false })), { id: 'wall:nokey', kind: 'wall', name: 'W', variants: 1 }] };
+  const run = (tid, v) => validatePosts(mk({ targetId: tid }, v), inp).errors;
+  const off = /^Bài 1, bản A( \(comment\))?: kênh này đang tắt link homematch\.vn$/;
+  for (const tid of [...kinds.map((k) => `${k}:off`), 'wall:nokey']) {
+    for (const u of [l2.link, 'homematch.vn/p/T1302', 'www.homematch.vn/p/T1302', 'https://homematch.vn']) {
+      const e = run(tid, { text: `${goodText} ${u}` });
+      assert.equal(e.length, 1, `${tid} ${u} ${JSON.stringify(e)}`);
+      assert.match(e[0].message, off);
+      const c = run(tid, { comment: `Chi tiết: ${u}` });
+      assert.equal(c.length, 1, `${tid} comment ${u}`);
+      assert.match(c[0].message, /\(comment\): kênh này đang tắt link homematch\.vn$/);
+    }
+    // không link, comment chỉ ghi mã: qua
+    assert.deepEqual(run(tid, {}), [], tid);
+    assert.deepEqual(run(tid, { comment: 'Mã T1302, nhắn Zalo để xem phòng' }), [], tid);
+  }
+  // bài thương hiệu Threads có link homematch cũng bị chặn khi tắt
+  const b = { posts: [{ targetId: 'threads:off', type: 'b', postCodes: [], variants: [{ key: 'A', text: 'ghé homematch.vn', images: fi('F1', 3) }] }] };
+  assert.ok(validatePosts(b, inp).errors.some((e) => /kênh này đang tắt link/.test(e.message)));
+});
+
+test('mức trần "dưới X triệu" / "tầm X triệu": chỉ khi mọi phòng của mọi tin ≤ X', () => {
+  const room = (room, price, priceText) => ({ room, price, priceText, status: 'AVAILABLE', label: '' });
+  const A = { ...fake('CA', 3), rooms: [room('1', 3000000, '3 triệu'), room('2', 4500000, '4,5 triệu')] };
+  const B = { ...fake('CB', 3), rooms: [room('1', 5000000, '5 triệu')] };
+  const C = { ...fake('CC', 3), rooms: [room('1', 6000000, '6 triệu')] };
+  const inp = { ...input, listings: [...input.listings, A, B, C] };
+  const run = (text, codes = ['CA'], comment) => validatePosts({ posts: [{ targetId: 'wall:1', type: 't', postCodes: codes,
+    variants: [{ key: 'A', text, ...(comment ? { comment } : {}), images: codes.length === 1 ? fi(codes[0], 3) : codes.length ? codes.map((c) => fi(c, 3)[0]) : fi('F1', 3) }] }] }, inp).errors;
+  const one = (text, codes, comment) => run(text, codes, comment).map((e) => e.message);
+  // đúng: mọi phòng ≤ X (bằng X vẫn được)
+  assert.deepEqual(one('Phòng dưới 5 triệu: 3 triệu, 4,5 triệu'), []);
+  assert.deepEqual(one('Tầm 4,5 triệu: phòng 3 triệu'), []);
+  assert.deepEqual(one('DƯỚI 5 triệu, TẦM 5 triệu: 3 triệu'), []);
+  assert.deepEqual(one('Hai phòng dưới 5 triệu: 4,5 triệu và 5 triệu', ['CA', 'CB']), []);
+  assert.deepEqual(one('Phòng 3 triệu', ['CA'], 'Còn phòng dưới 5 triệu, nhắn mình'), []);
+  // sai: có phòng giá cao hơn X
+  assert.ok(one('Phòng dưới 4 triệu: 3 triệu').some((m) => /mức "dưới 4 triệu".*cao hơn/.test(m)));
+  assert.ok(one('Tầm 5 triệu: 4,5 triệu và 6 triệu', ['CA', 'CC']).some((m) => /mức "Tầm 5 triệu"/.test(m)));
+  assert.ok(one('Phòng 3 triệu', ['CA'], 'Phòng dưới 4 triệu').some((m) => /\(comment\).*mức "dưới 4 triệu"/.test(m)));
+  // mức trần không thay cho giá thật của tin
+  assert.ok(one('Phòng dưới 4,5 triệu').some((m) => /tin CA không có giá nào đúng nguyên văn/.test(m)));
+  // đuôi đọc giá, viết tắt vẫn bị chặn
+  assert.ok(one('Dưới 5 triệu rưỡi: 3 triệu').length > 0);
+  assert.ok(one('Dưới 5tr: 3 triệu').length > 0);
+  // từ khác trước số không phải mức trần
+  assert.ok(one('Trên 5 triệu: 3 triệu').some((m) => /giá "5 triệu" không phải giá/.test(m)));
+  // bài thương hiệu: không được
+  assert.ok(one('Nhiều phòng dưới 5 triệu', []).some((m) => /bài thương hiệu không được ghi giá/.test(m)));
+});
+
+test('giá che (masked): "4xxx" thay giá đầy đủ, không ghi priceText', () => {
+  const room = (room, price, priceText) => ({ room, price, priceText, status: 'AVAILABLE', label: '' });
+  const M = { ...fake('MA', 3), rooms: [room('1', 4400000, '4,4 triệu'), room('2', 12000000, '12 triệu')] };
+  const N = { ...fake('MB', 3), rooms: [room('1', 3000000, '3 triệu')] };
+  const inp = { ...input, listings: [...input.listings, M, N], targets: [
+    { id: 'wall:m', kind: 'wall', name: 'W', variants: 1, links: true, priceStyle: 'masked' },
+    { id: 'threads:m', kind: 'threads', name: 'T', variants: 1, links: true, priceStyle: 'masked' },
+    { id: 'group:m', kind: 'group', name: 'G', variants: 1, links: false, priceStyle: 'masked' },
+    { id: 'wall:f', kind: 'wall', name: 'W', variants: 1, links: true, priceStyle: 'full' },
+    { id: 'page:m', kind: 'page', name: 'P', variants: 1, links: true, priceStyle: 'masked' },
+    { id: 'page:f', kind: 'page', name: 'P', variants: 1, links: true },
+    { id: 'wall:en', kind: 'wall', name: 'W', variants: 1, language: 'en', priceStyle: 'masked' },
+  ] };
+  const run = (tid, text, comment, codes = ['MA']) => validatePosts({ posts: [{ targetId: tid, type: 't', postCodes: codes,
+    variants: [{ key: 'A', text, ...(comment ? { comment } : {}), images: codes.length === 1 ? fi(codes[0], 3) : codes.length ? codes.map((c) => fi(c, 3)[0]) : fi('F1', 3) }] }] }, inp).errors.map((e) => e.message);
+  for (const tid of ['wall:m', 'threads:m', 'group:m', 'page:m']) {
+    assert.deepEqual(run(tid, 'Studio giá 4xxx/tháng, nhắn mình để có giá chính xác'), [], tid);
+    assert.deepEqual(run(tid, 'Căn 12xxx'), [], tid);
+    assert.deepEqual(run(tid, 'Hai phòng: 4xxx và 3xxx', null, ['MA', 'MB']), [], tid);
+    // thiếu giá che của tin
+    assert.ok(run(tid, 'Studio đẹp').some((m) => /tin MA không có giá dạng che.*4xxx; 12xxx/.test(m)), tid);
+    assert.ok(run(tid, 'Hai phòng: 4xxx', null, ['MA', 'MB']).some((m) => /tin MB không có giá dạng che/.test(m)), tid);
+    // ghi giá đầy đủ ở text hoặc comment: lỗi
+    assert.ok(run(tid, 'Studio 4xxx, đúng ra 4,4 triệu').some((m) => /kênh này che giá.*"4,4 triệu"/.test(m)), tid);
+    assert.ok(run(tid, 'Studio 4xxx', 'Giá 4,4 triệu').some((m) => /\(comment\): kênh này che giá/.test(m)), tid);
+    // số che không khớp phòng nào
+    assert.ok(run(tid, 'Studio 4xxx, phòng khác 5xxx').some((m) => /"5xxx" không khớp phòng nào/.test(m)), tid);
+    assert.ok(run(tid, 'Studio 4xxx', 'Còn căn 7XXX').some((m) => /\(comment\).*"7XXX" không khớp/.test(m)), tid);
+    assert.deepEqual(run(tid, 'Studio 4xxx', 'Phòng 12xxx nữa'), [], tid);
+    // mức trần vẫn được, nhưng phải lớn hơn hẳn mọi giá phòng (không lộ giá thật)
+    assert.deepEqual(run(tid, 'Phòng dưới 13 triệu, có căn 4xxx'), [], tid);
+    assert.ok(run(tid, 'Căn 12xxx, tầm 12 triệu').some((m) => /mức "tầm 12 triệu".*kênh ẩn giá.*lớn hơn/.test(m)), tid);
+    assert.ok(run(tid, 'Căn 4xxx', 'Phòng dưới 12 triệu').some((m) => /\(comment\).*mức "dưới 12 triệu".*kênh ẩn giá/.test(m)), tid);
+  }
+  // tiếng Anh: không ghi dạng đầy đủ tiếng Anh
+  assert.ok(run('wall:en', 'Room 4xxx, 4.4 million VND').some((m) => /kênh này che giá/.test(m)));
+  assert.deepEqual(run('wall:en', 'Room 4xxx per month'), []);
+  // kênh giá đầy đủ (thiếu priceStyle = đầy đủ): "4xxx" là lỗi
+  for (const tid of ['wall:f', 'page:f']) {
+    assert.deepEqual(run(tid, 'Studio 4,4 triệu'), [], tid);
+    assert.ok(run(tid, 'Studio 4,4 triệu, giá 4xxx').some((m) => /kênh này ghi giá đầy đủ.*"4xxx"/.test(m)), tid);
+    assert.ok(run(tid, 'Studio 4,4 triệu', 'Giá 4xxx').some((m) => /\(comment\): kênh này ghi giá đầy đủ/.test(m)), tid);
+  }
+  // bài thương hiệu: không giá che
+  assert.ok(run('wall:m', 'Phòng 4xxx', null, []).some((m) => /bài thương hiệu không được ghi giá/.test(m)));
+  // tin không có giá dùng được: báo rõ, không để danh sách rỗng
+  const nop = { ...fake('MZ', 3), rooms: [{ room: '1', priceText: 'Liên hệ', status: 'AVAILABLE', label: '' }] };
+  const e = validatePosts({ posts: [{ targetId: 'wall:m', type: 't', postCodes: ['MZ'], variants: [{ key: 'A', text: 'Studio đẹp', images: fi('MZ', 3) }] }] },
+    { ...inp, listings: [...inp.listings, nop] }).errors.map((x) => x.message);
+  assert.ok(e.some((m) => /tin MZ không có giá để viết dạng ẩn/.test(m)), e.join('\n'));
+  assert.ok(!e.some((m) => /cần một trong: \)/.test(m)));
+});
+
+test('bài "phân khúc": đúng 1 ảnh bìa mỗi tin, theo thứ tự postCodes, không ảnh phụ', () => {
+  const codes = ['KA', 'KB', 'KC', 'KD'];
+  const covers = codes.map((c) => fi(c, 3)[0]);
+  const seg = (images, type = 'Gợi ý 4–5 phòng cùng phân khúc', cs = codes) => msgs({ posts: [{ targetId: 'wall:1', type, postCodes: cs,
+    variants: [{ key: 'A', text: cs.map(() => '2 triệu').join(', '), images }] }] });
+  assert.deepEqual(seg(covers), []);
+  assert.deepEqual(seg([...covers, fi('KE', 3)[0]], 'Gợi ý 4–5 phòng cùng phân khúc', [...codes, 'KE']), []);
+  assert.deepEqual(seg(covers, 'PHÂN KHÚC studio'), []);
+  assert.ok(seg([...covers, fi('KA', 3)[1]]).some((e) => /bài phân khúc cần đúng 4 ảnh bìa.*có 5/.test(e.message)));
+  assert.ok(seg([covers[1], covers[0], covers[2], covers[3]]).some((e) => /phải là bìa của tin KA/.test(e.message)));
+  assert.ok(seg(covers.slice(0, 3)).some((e) => /bài phân khúc cần đúng 4 ảnh bìa/.test(e.message)));
+  // kiểu khác vẫn được thêm ảnh phụ
+  assert.deepEqual(seg([...covers, fi('KA', 3)[1]], 'Gom theo khu'), []);
 });

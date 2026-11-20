@@ -16,7 +16,8 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 
 - Giá dưới 5 triệu: thường là sinh viên, người mới đi làm. Đánh vào: giá, chi phí hằng tháng rõ ràng (điện, nước, dịch vụ), đủ đồ cơ bản, vào ở luôn, để được xe điện. Câu ngắn, gần gũi.
 - Giá từ 5 triệu: thường là người đi làm. Đánh vào: loại phòng (1 ngủ 1 khách, studio rộng), diện tích, máy giặt riêng, bếp từ, sofa, thang máy, ngõ ô tô, an ninh (camera, vân tay cửa chính), không gian riêng. Câu gọn, chỉn chu.
-- Không viết "dưới 5 triệu", "tầm 4–5 triệu" hay giá nào khác ngoài `priceText` của phòng trong bài.
+- Giá trong bài chỉ là `priceText` của phòng trong bài. Ngoại lệ duy nhất: mức trần "dưới X triệu" / "tầm X triệu" (X viết như `priceText`, vd `5 triệu`, `4,5 triệu`) khi **mọi** phòng của **mọi** tin trong bài có giá ≤ X (kênh ẩn giá: X lớn hơn hẳn mọi giá phòng, không trùng giá thật); bài thương hiệu không ghi. Không viết khoảng giá ("4–5 triệu").
+- Kênh ẩn giá (`target.priceStyle` = `masked`): giá ghi dạng `4xxx` (phần triệu làm tròn xuống + `xxx`, vd 4.400.000 → `4xxx/tháng`, 12.000.000 → `12xxx`), không ghi `priceText`. Lời mời: "nhắn mình để có giá chính xác" (Zalo / inbox), không "comment để nhận giá".
 
 ## Dùng dữ liệu tin thế nào
 
@@ -31,7 +32,7 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 ## Liên hệ và lời mời
 
 - Liên hệ một lần, không lặp số. Kèm mã tin.
-- Link tin: Facebook (wall, page) không để link trong thân bài; thân bài ghi "link chi tiết ở comment", link tin (kèm mã) để ở comment đầu tiên (`comment`) rồi ghim. Threads: link tin ở dòng cuối thân bài. Nhóm: mặc định không link.
+- Link tin theo công tắc `target.links` (mặc định tắt mọi kênh). Tắt: không link `homematch.vn` ở đâu cả; CTA trỏ Zalo / comment mã / inbox, không nói "link ở comment"; `comment` bỏ hẳn hoặc chỉ ghi mã tin. Bật: Facebook (wall, page) không để link trong thân bài, thân bài ghi "link chi tiết ở comment", link tin (kèm mã) để ở comment đầu tiên (`comment`) rồi ghim; Threads: link tin ở dòng cuối thân bài; nhóm: chỉ khi `target.note` cho phép, và vẫn để ở comment.
 - Lời mời nói chuyện là một câu hỏi dễ trả lời, đổi cách hỏi giữa các bài: "Bạn đang làm/học ở khu nào?", "Comment khu + tầm tiền, mình gửi thêm vài phòng", "Cần thêm phòng có máy giặt riêng thì comment 'máy giặt'", "Nhắn mình ngày bạn muốn chuyển vào".
 
 ---
@@ -46,9 +47,9 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
   2. Khối thông tin, mỗi dòng một ý: 🏠 địa chỉ, quận • 💰 giá/tháng (+ cọc) • ⏰ trạng thái • ✅ 2–4 điểm nổi bật • 🛋 nội thất gom gọn • 🧾 phí • 📌 lưu ý (nếu có). Threads: bỏ 🛋 và 📌, tối đa 6 dòng thông tin.
   3. Một câu "hợp với ai" theo nhóm người đọc, viết riêng cho phòng.
   4. Lời mời nói chuyện.
-  5. Liên hệ + mã tin. Facebook (wall, page): thêm "link chi tiết ở comment", link tin để ở comment đầu tiên. Threads: link tin ở dòng cuối.
+  5. Liên hệ + mã tin. Link theo công tắc: Facebook (wall, page) bật thì thêm "link chi tiết ở comment", link tin để ở comment đầu tiên; Threads bật thì link tin ở dòng cuối.
 - **Ảnh**: 5 ảnh của tin, ảnh bìa trước (tin 3–4 ảnh thì dùng đủ số đó).
-- **Ví dụ** (tường cá nhân, phòng giá thấp, liên hệ Zalo):
+- **Ví dụ** (tường cá nhân, phòng giá thấp, liên hệ Zalo, link Tường bật):
 
 ```
 🏡 Studio 25m² có bếp riêng, Miêu Nha, Nam Từ Liêm · 3,9 triệu/tháng
@@ -147,4 +148,47 @@ Thuê phòng xong mới biết nước tính theo người, dịch vụ thêm v�
 Phòng mình gửi đều ghi rõ điện, nước, dịch vụ ngay từ đầu, ảnh chụp chính phòng đó, đang trống thật.
 
 Comment khu + tầm tiền + ngày muốn vào ở, mình gửi luôn vài phòng kèm bảng phí để bạn so.
+```
+
+---
+
+## 5. Gợi ý 4–5 phòng cùng phân khúc
+
+- **Kênh**: wall, page, threads, group
+- **Số tin mỗi bài**: 4–5
+- **Cách chọn tin**: các tin cùng `unitTypeText` và cùng khoảng giá (theo giá phòng: dưới 4 triệu · 4 đến dưới 5 triệu · 5 đến 6,5 triệu · trên 6,5 triệu). Hai biến thể, xen kẽ theo tài khoản (bài trước của tài khoản là cùng khu thì bài này khác khu, và ngược lại): **cùng khu** (1–2 quận liền nhau) và **khác khu** (mỗi tin một quận khác nhau). Nhóm có `districts` thì chỉ lấy tin trong các quận đó. Thứ tự ưu tiên và xoay vòng như các kiểu khác. Không đủ 4 tin thì dùng kiểu 2 (Gom theo khu).
+- **Cấu trúc**:
+  1. Mở bài: phân khúc + mức trần, vd "5 studio đủ đồ dưới 5 triệu, đang trống". Mức trần là mốc trên của khoảng giá ("dưới 4 triệu", "dưới 5 triệu", "dưới 6,5 triệu" hoặc "tầm 6,5 triệu"), chỉ khi mọi phòng của mọi tin ≤ mốc đó; khoảng trên 6,5 triệu thì không ghi mức trần.
+  2. Mỗi phòng một dòng, đánh số "1." … "5." (chữ số thường, không số dạng icon): "Loại + diện tích + điểm đắt – khu • giá/tháng • trạng thái". Thứ tự dòng = thứ tự `postCodes`.
+  3. Lời mời: "Thích phòng số mấy? Comment số hoặc nhắn Zalo kèm số…".
+  4. Link theo công tắc `target.links`. Facebook: `comment` chỉ ghi mã các tin theo số thứ tự, cộng link của phòng số 1 khi công tắc bật. Threads bật: link phòng số 1 ở dòng cuối.
+- **Ảnh**: đúng 1 ảnh bìa mỗi tin, cùng thứ tự đánh số, không ảnh phụ (build.mjs kiểm tra với mọi kiểu có tên chứa "phân khúc").
+- **Ví dụ** (Threads, khác khu, link tắt):
+
+```
+5 studio đủ đồ dưới 5 triệu, đang trống, mỗi phòng một khu:
+
+1. Studio 25m² bếp riêng – Nam Từ Liêm • 4,2 triệu/tháng • Còn trống
+2. Studio ban công 20m² – Bắc Từ Liêm • 4,4 triệu/tháng • Còn trống
+3. Studio 22m² cửa sổ thoáng – Cầu Giấy • 4,8 triệu/tháng • Còn trống
+4. Studio 24m² thang máy – Hoàng Mai • 4,5 triệu/tháng • Còn trống
+5. Studio 28m² bếp từ – Thanh Xuân • 4,9 triệu/tháng • Còn trống
+
+Thích phòng số mấy? Comment số hoặc nhắn Zalo 09xx xxx xxx kèm số, mình gửi ảnh và bảng phí.
+```
+
+- **Ví dụ** (tường cá nhân, cùng khu, link tắt):
+
+```
+🏡 4 căn 1 ngủ 1 khách tầm 6,5 triệu ở Cầu Giấy, Đống Đa, đang trống
+
+1. 1 ngủ 1 khách 35m², máy giặt riêng – Nguyễn Khả Trạc, Cầu Giấy • 5,8 triệu/tháng • Còn trống
+2. 1 ngủ 1 khách có bàn ăn, ngõ ô tô – Cầu Giấy • 5,9 triệu/tháng • Còn trống
+3. 1 ngủ 1 khách, sofa, máy giặt riêng – Phạm Văn Đồng, Cầu Giấy • 6,35 triệu/tháng • Còn trống
+4. 1 ngủ 1 khách ban công – Láng Hạ, Đống Đa • 6,2 triệu/tháng • Còn trống
+
+Thích căn số mấy? Comment số hoặc nhắn Zalo 09xx xxx xxx kèm số, mình gửi thêm ảnh, bảng phí và hẹn xem.
+
+Comment đầu tiên:
+Mã các căn: 1. T2211 · 2. T2111 · 3. T2125 · 4. T2230
 ```

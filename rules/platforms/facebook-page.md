@@ -9,9 +9,14 @@
 
 ## Link
 
-- Thân bài không có link. Link tin để ở comment đầu tiên (`comment`), người đăng ghim lại.
+- Theo công tắc `target.links` (config `links.page`, mặc định tắt). Tắt: không link `homematch.vn` ở đâu cả, CTA trỏ Zalo / inbox Page / comment mã; `comment` bỏ hoặc chỉ ghi mã tin.
+- Bật: thân bài không có link. Link tin để ở comment đầu tiên (`comment`), người đăng ghim lại; thân bài nói "link chi tiết ở comment".
 - Lý do: Meta đang thử giới hạn 2 bài có link/tháng cho Page chưa xác minh; link trong comment không bị tính.
-- Thân bài nói "link chi tiết ở comment".
+
+## Giá
+
+- Nên ghi giá đầy đủ (`priceText`): Page là giọng thương hiệu "phòng thật, giá thật".
+- Config `priceStyle.page` = `masked` vẫn được (ghi `4xxx/tháng`, mời nhắn Page để có giá chính xác), nhưng khác với giá trị minh bạch của HomeMatch khi tư vấn; trang chủ và trang bài đăng sẽ cảnh báo.
 
 ## Số điện thoại
 
@@ -39,7 +44,7 @@
 
 ## Lời mời (CTA)
 
-- Một lời mời rõ: nhắn Page hoặc Zalo theo `contact`, kèm "link chi tiết ở comment".
+- Một lời mời rõ: nhắn Page hoặc Zalo theo `contact`; công tắc link bật thì kèm "link chi tiết ở comment".
 
 ## Tránh
 

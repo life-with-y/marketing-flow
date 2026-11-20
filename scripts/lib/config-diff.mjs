@@ -75,6 +75,15 @@ export function diffConfig(oldCfg, newCfg) {
   const label = (id) => arr(n.accounts).concat(arr(o.accounts)).find((a) => a && a.id === id)?.label || id;
   out.push(...mapLines('Số bài mỗi khung', o.perSlot, n.perSlot, label));
   out.push(...mapLines('Số bản', o.variants, n.variants));
+  // Thiếu khoá = mặc định (tắt link, giá đầy đủ), để chỉ báo khi thật sự đổi.
+  const both = (a, b, f) => {
+    const ks = new Set([...Object.keys(a && typeof a === 'object' ? a : {}), ...Object.keys(b && typeof b === 'object' ? b : {})]);
+    const m = (x) => Object.fromEntries([...ks].map((k) => [k, f(x?.[k])]));
+    return [m(a), m(b)];
+  };
+  const kindName = (k) => ({ page: 'Page', wall: 'Tường', threads: 'Threads', group: 'Nhóm' }[k] ?? k);
+  out.push(...mapLines('Link homematch.vn', ...both(o.links, n.links, (v) => (v === true ? 'bật' : 'tắt')), kindName));
+  out.push(...mapLines('Giá', ...both(o.priceStyle, n.priceStyle, (v) => (v === 'masked' ? 'ẩn giá' : 'đầy đủ')), kindName));
   if (!same(o.contact, n.contact)) out.push(`Liên hệ: ${list(o.contact)} → ${list(n.contact)}`);
   if (!same(o.pageContact, n.pageContact)) out.push(`Liên hệ Page: ${list(o.pageContact)} → ${list(n.pageContact)}`);
   out.push(...accountLines(o.accounts, n.accounts));
