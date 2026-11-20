@@ -81,8 +81,9 @@ export function diffConfig(oldCfg, newCfg) {
     const m = (x) => Object.fromEntries([...ks].map((k) => [k, f(x?.[k])]));
     return [m(a), m(b)];
   };
-  out.push(...mapLines('Link homematch.vn', ...both(o.links, n.links, (v) => (v === true ? 'bật' : 'tắt'))));
-  out.push(...mapLines('Giá', ...both(o.priceStyle, n.priceStyle, (v) => (v === 'masked' ? 'ẩn giá' : 'đầy đủ'))));
+  const kindName = (k) => ({ page: 'Page', wall: 'Tường', threads: 'Threads', group: 'Nhóm' }[k] ?? k);
+  out.push(...mapLines('Link homematch.vn', ...both(o.links, n.links, (v) => (v === true ? 'bật' : 'tắt')), kindName));
+  out.push(...mapLines('Giá', ...both(o.priceStyle, n.priceStyle, (v) => (v === 'masked' ? 'ẩn giá' : 'đầy đủ')), kindName));
   if (!same(o.contact, n.contact)) out.push(`Liên hệ: ${list(o.contact)} → ${list(n.contact)}`);
   if (!same(o.pageContact, n.pageContact)) out.push(`Liên hệ Page: ${list(o.pageContact)} → ${list(n.pageContact)}`);
   out.push(...accountLines(o.accounts, n.accounts));

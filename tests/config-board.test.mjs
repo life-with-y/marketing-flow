@@ -195,6 +195,8 @@ test('model không còn trong bảng cấu hình và diff (lịch dùng model m�
 
 test('diffConfig: công tắc link, cách ghi giá', () => {
   const lines = diffConfig(cfg({ links: { page: false } }), cfg({ links: { page: true }, priceStyle: { wall: 'masked' } }));
-  assert.ok(lines.includes('Link homematch.vn page: tắt → bật'), lines.join('\n'));
-  assert.ok(lines.includes('Giá wall: đầy đủ → ẩn giá'), lines.join('\n'));
+  assert.ok(lines.includes('Link homematch.vn Page: tắt → bật'), lines.join('\n'));
+  assert.ok(lines.includes('Giá Tường: đầy đủ → ẩn giá'), lines.join('\n'));
+  const g = diffConfig(cfg(), cfg({ links: { threads: true, group: true } }));
+  assert.ok(g.includes('Link homematch.vn Threads: tắt → bật') && g.includes('Link homematch.vn Nhóm: tắt → bật'), g.join('\n'));
 });
