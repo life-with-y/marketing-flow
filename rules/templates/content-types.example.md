@@ -20,7 +20,7 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 
 ## Dùng dữ liệu tin thế nào
 
-- Dòng tiêu đề: dựa vào `title` của tin và `rooms[].unitTypeText`, thêm diện tích `areaSqm` nếu có. Được viết hoa cả dòng cho nổi (vd "STUDIO 25M² CÓ BẾP RIÊNG – MIÊU NHA"); không dùng chữ đậm giả bằng Unicode.
+- Dòng tiêu đề: dựa vào `title` của tin và `rooms[].unitTypeText`, thêm diện tích `areaSqm` nếu có. Viết thường, không viết hoa cả dòng (Facebook coi chữ hoa toàn bộ là giật tít) và không dùng chữ đậm giả bằng Unicode. Bài 1 tin đưa giá vào ngay dòng tiêu đề để giá nằm trong 2 dòng hiện trước "Xem thêm" (vd "Studio 25m² có bếp riêng, Miêu Nha · 3,9 triệu/tháng").
 - Loại phòng: `unitTypeText` (Studio, 1 ngủ 1 khách, Căn hộ gác lửng…). Không có thì lấy từ `title`.
 - Nội thất: tách 1–2 món "đắt" ra dòng ✅ (Máy giặt riêng, Bếp từ, Sofa, TV, Bàn ăn), phần còn lại gom gọn ở dòng 🛋. Ghi "Đủ đồ" chỉ khi có đủ Giường, Tủ quần áo, Điều hoà, Nóng lạnh, Tủ lạnh. Không viết "full đồ".
 - Tiện ích toà (`details.amenities`) và dữ kiện (`details.facts`): chọn 2–4 cái đắt nhất theo người đọc cho dòng ✅: Thang máy, Để được xe điện, Lối vào: ngõ ô tô, Khép kín, Ban công, Cửa sổ thoáng, Camera, Vân tay cửa chính, Máy giặt riêng. Không đưa điều bất lợi lên dòng ✅; "Không nuôi thú cưng", "Không nhận xe điện", "Chung chủ", "Hợp đồng tối thiểu 12 tháng" chỉ ghi ở dòng 📌 cuối khối để khách tự lọc.
@@ -42,7 +42,7 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 - **Số tin mỗi bài**: 1
 - **Cách chọn tin**: tin đầu tiên theo thứ tự ưu tiên của đích (khớp leads > `NEW` > `PRICE_DOWN` > `NOW_AVAILABLE` > `UNCHANGED`, cùng mức thì tin lâu chưa soạn cho đích đó nhất). Ngày không có gì mới vẫn dùng tin `UNCHANGED`.
 - **Cấu trúc**:
-  1. Dòng tiêu đề: icon 🔥 hoặc 🏡, loại phòng + diện tích + 1–2 điểm đắt nhất + khu. Tin `NEW` / `PRICE_DOWN` / `NOW_AVAILABLE` nói điều mới trước ("VỪA GIẢM GIÁ", "VỪA TRỐNG"). Tin còn 1 phòng có thể mở bằng "Chỉ còn 1 phòng". Mỗi bài một câu mở khác nhau.
+  1. Dòng tiêu đề: viết thường, tối đa 1 icon 🏡 (không dùng 🔥), loại phòng + diện tích + 1–2 điểm đắt nhất + khu + giá/tháng. Tin `NEW` / `PRICE_DOWN` / `NOW_AVAILABLE` nói điều mới trước ("Vừa giảm giá", "Vừa trống"). Tin còn 1 phòng có thể mở bằng "Chỉ còn 1 phòng". Mỗi bài một câu mở khác nhau.
   2. Khối thông tin, mỗi dòng một ý: 🏠 địa chỉ, quận • 💰 giá/tháng (+ cọc) • ⏰ trạng thái • ✅ 2–4 điểm nổi bật • 🛋 nội thất gom gọn • 🧾 phí • 📌 lưu ý (nếu có). Threads: bỏ 🛋 và 📌, tối đa 6 dòng thông tin.
   3. Một câu "hợp với ai" theo nhóm người đọc, viết riêng cho phòng.
   4. Lời mời nói chuyện.
@@ -51,7 +51,7 @@ Người đọc lướt trên điện thoại: dòng đầu phải đủ để q
 - **Ví dụ** (tường cá nhân, phòng giá thấp, liên hệ Zalo):
 
 ```
-🔥 STUDIO 25M² CÓ BẾP RIÊNG – MIÊU NHA, NAM TỪ LIÊM
+🏡 Studio 25m² có bếp riêng, Miêu Nha, Nam Từ Liêm · 3,9 triệu/tháng
 
 🏠 6/59 Miêu Nha, Nam Từ Liêm
 💰 3,9 triệu/tháng • Cọc 1 tháng
@@ -86,7 +86,7 @@ Chi tiết và ảnh T1302: <link của tin T1302>
 - **Ví dụ** (tường cá nhân, phòng cho người đi làm):
 
 ```
-🏡 CẦU GIẤY: 3 CĂN 1 NGỦ 1 KHÁCH CHO NGƯỜI ĐI LÀM, ĐỀU CÓ THANG MÁY
+🏡 Cầu Giấy: 3 căn 1 ngủ 1 khách cho người đi làm, đều có thang máy
 
 🔹 T2125 – 1 ngủ 1 khách, sofa, máy giặt riêng
 Ngõ 89 Phạm Văn Đồng • 6,35 triệu/tháng • Còn trống
