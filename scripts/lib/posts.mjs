@@ -212,7 +212,7 @@ export function validatePosts(posts, input) {
       // 5–7. văn bản (thân bài) và comment đầu tiên dùng chung luật định dạng, giá, mã tin, link
       const fb = target && FACEBOOK_KINDS.has(target.kind);
       const linksOn = target?.links === true;
-      const masked = target?.priceStyle === 'masked' && target?.kind !== 'page';
+      const masked = target?.priceStyle === 'masked';
       const ctx = { pi, err, isBrand, codesOk, used, codes, listings, postCodes: post.postCodes, language: target?.language, linksOn, masked };
       const text = typeof v.text === 'string' ? v.text.normalize('NFC') : null;
       if (text === null) {

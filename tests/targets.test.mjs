@@ -105,11 +105,11 @@ test('onlyGroups skips inactive match', () => {
   assert.equal(targetsForSlot(cfg({ groups: [grp({ active: false })] }), THU, null, ['cau giay']).length, 0);
 });
 
-test('links, priceStyle theo kênh trên từng đích; Page luôn giá đầy đủ', () => {
-  const c = cfg({ perSlot: { fb1: 1, pg: 1, th: 1 }, links: { page: true, wall: false, threads: true, group: true }, priceStyle: { wall: 'masked', threads: 'full', group: 'masked' } });
+test('links, priceStyle theo kênh trên từng đích', () => {
+  const c = cfg({ perSlot: { fb1: 1, pg: 1, th: 1 }, links: { page: true, wall: false, threads: true, group: true }, priceStyle: { page: 'masked', wall: 'masked', threads: 'full', group: 'masked' } });
   const by = Object.fromEntries(targetsForSlot(c, THU, '11:00').map((t) => [t.kind, t]));
   assert.deepEqual(Object.fromEntries(Object.entries(by).map(([k, t]) => [k, [t.links, t.priceStyle]])), {
-    group: [true, 'masked'], wall: [false, 'masked'], page: [true, 'full'], threads: [true, 'full'],
+    group: [true, 'masked'], wall: [false, 'masked'], page: [true, 'masked'], threads: [true, 'full'],
   });
 });
 

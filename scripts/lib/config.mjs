@@ -16,7 +16,7 @@ const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 export const LINK_KINDS = ['page', 'wall', 'threads', 'group'];
-export const PRICE_STYLE_KINDS = ['wall', 'threads', 'group'];
+export const PRICE_STYLE_KINDS = ['page', 'wall', 'threads', 'group'];
 export const PRICE_STYLES = ['full', 'masked'];
 
 export function validateConfig(cfg) {
@@ -63,8 +63,7 @@ export function validateConfig(cfg) {
       errors.push(`priceStyle: phải là object { ${PRICE_STYLE_KINDS.join(', ')} } với giá trị "full" hoặc "masked"`);
     } else {
       for (const [k, v] of Object.entries(cfg.priceStyle)) {
-        if (k === 'page') errors.push('priceStyle.page: Page luôn ghi giá đầy đủ, bỏ khoá này');
-        else if (!PRICE_STYLE_KINDS.includes(k)) errors.push(`priceStyle.${k}: chỉ nhận ${PRICE_STYLE_KINDS.join(', ')}`);
+        if (!PRICE_STYLE_KINDS.includes(k)) errors.push(`priceStyle.${k}: chỉ nhận ${PRICE_STYLE_KINDS.join(', ')}`);
         else if (!PRICE_STYLES.includes(v)) errors.push(`priceStyle.${k}: phải là "full" hoặc "masked"`);
       }
     }

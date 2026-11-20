@@ -390,11 +390,12 @@ test('giá che (masked): "4xxx" thay giá đầy đủ, không ghi priceText', (
     { id: 'group:m', kind: 'group', name: 'G', variants: 1, links: false, priceStyle: 'masked' },
     { id: 'wall:f', kind: 'wall', name: 'W', variants: 1, links: true, priceStyle: 'full' },
     { id: 'page:m', kind: 'page', name: 'P', variants: 1, links: true, priceStyle: 'masked' },
+    { id: 'page:f', kind: 'page', name: 'P', variants: 1, links: true },
     { id: 'wall:en', kind: 'wall', name: 'W', variants: 1, language: 'en', priceStyle: 'masked' },
   ] };
   const run = (tid, text, comment, codes = ['MA']) => validatePosts({ posts: [{ targetId: tid, type: 't', postCodes: codes,
     variants: [{ key: 'A', text, ...(comment ? { comment } : {}), images: codes.length === 1 ? fi(codes[0], 3) : codes.length ? codes.map((c) => fi(c, 3)[0]) : fi('F1', 3) }] }] }, inp).errors.map((e) => e.message);
-  for (const tid of ['wall:m', 'threads:m', 'group:m']) {
+  for (const tid of ['wall:m', 'threads:m', 'group:m', 'page:m']) {
     assert.deepEqual(run(tid, 'Studio giá 4xxx/tháng, nhắn mình để có giá chính xác'), [], tid);
     assert.deepEqual(run(tid, 'Căn 12xxx'), [], tid);
     assert.deepEqual(run(tid, 'Hai phòng: 4xxx và 3xxx', null, ['MA', 'MB']), [], tid);
@@ -414,8 +415,8 @@ test('giá che (masked): "4xxx" thay giá đầy đủ, không ghi priceText', (
   // tiếng Anh: không ghi dạng đầy đủ tiếng Anh
   assert.ok(run('wall:en', 'Room 4xxx, 4.4 million VND').some((m) => /kênh này che giá/.test(m)));
   assert.deepEqual(run('wall:en', 'Room 4xxx per month'), []);
-  // kênh giá đầy đủ (và Page luôn đầy đủ): "4xxx" là lỗi
-  for (const tid of ['wall:f', 'page:m']) {
+  // kênh giá đầy đủ (thiếu priceStyle = đầy đủ): "4xxx" là lỗi
+  for (const tid of ['wall:f', 'page:f']) {
     assert.deepEqual(run(tid, 'Studio 4,4 triệu'), [], tid);
     assert.ok(run(tid, 'Studio 4,4 triệu, giá 4xxx').some((m) => /kênh này ghi giá đầy đủ.*"4xxx"/.test(m)), tid);
     assert.ok(run(tid, 'Studio 4,4 triệu', 'Giá 4xxx').some((m) => /\(comment\): kênh này ghi giá đầy đủ/.test(m)), tid);

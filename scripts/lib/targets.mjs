@@ -16,8 +16,8 @@ function variantsFor(cfg, kind) {
 
 // Công tắc link homematch.vn theo kênh: chỉ đúng true mới bật (thiếu/sai = tắt).
 const linksFor = (cfg, kind) => cfg.links?.[kind] === true;
-// Cách ghi giá: Page luôn đầy đủ; kênh khác "masked" khi config ghi đúng như vậy.
-const priceStyleFor = (cfg, kind) => (kind !== 'page' && cfg.priceStyle?.[kind] === 'masked' ? 'masked' : 'full');
+// Cách ghi giá: "masked" khi config ghi đúng như vậy, còn lại đầy đủ.
+const priceStyleFor = (cfg, kind) => (cfg.priceStyle?.[kind] === 'masked' ? 'masked' : 'full');
 
 export function targetsForSlot(cfg, date, hhmm, onlyGroups) {
   const day = DAY_KEYS[date.getDay()];
