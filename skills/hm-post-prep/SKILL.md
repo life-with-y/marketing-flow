@@ -162,7 +162,7 @@ Ghi vào `~/.homematch-marketing/runs/<slotId>/posts.json` (cùng thư mục v�
   "slot": "2026-11-19_1100",
   "posts": [
     {
-      "targetId": "group:https://facebook.com/groups/…",
+      "targetId": "page:fbpage:0",
       "type": "Phòng mới / giảm giá",
       "postCodes": ["T1302"],
       "variants": [
