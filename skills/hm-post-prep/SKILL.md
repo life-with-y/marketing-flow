@@ -76,11 +76,12 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
 2. Tin phòng hay thương hiệu (kiểu có số tin `0` là thương hiệu):
    - `group`: luôn là tin phòng.
    - `page` dùng tỉ lệ `page`; `wall` và `threads` dùng tỉ lệ `personal`.
-   - Tính theo **tài khoản** (`target.account`), không theo từng đích. `n` = số dòng, `b` = số dòng có `postCodes` rỗng, cộng từ hai nguồn:
-     - tối đa 10 dòng gần nhất trong `prepared.jsonl` có `account` = `target.account` (không có file hoặc không có dòng nào thì 0);
-     - các bài đã soạn **trước đó trong lượt này** cho cùng tài khoản (bài thương hiệu tính vào `b`).
-   - Soạn bài thương hiệu khi `(b + 1) / (n + 1) ≤ brand / 100`; không thì tin phòng.
-   - Ví dụ: Page có 5 đích trong khung, chưa có lịch sử, `brand` = 50. Bài 1: n=0, b=0, (0+1)/(0+1)=1 > 0,5 → tin phòng. Bài 2: n=1, b=0, 1/2=0,5 ≤ 0,5 → thương hiệu. Bài 3: n=2, b=1, 2/3 > 0,5 → tin phòng. Bài 4: n=3, b=1, 2/4 ≤ 0,5 → thương hiệu. Bài 5: n=4, b=2, 3/5 > 0,5 → tin phòng. Kết quả: tin phòng, thương hiệu, tin phòng, thương hiệu, tin phòng.
+   - Tính theo **tài khoản** (`target.account`), không theo từng đích. Một cửa sổ trượt duy nhất, tối đa 10 bài: gồm các dòng `prepared.jsonl` có `account` = `target.account` (không có file hoặc không có dòng nào thì không có) **và** các bài đã soạn trước đó trong lượt này cho cùng tài khoản. Khi thêm bài trong lượt vào, bỏ dòng `prepared.jsonl` cũ nhất trước để cửa sổ không quá 10. `n` = số bài trong cửa sổ, `b` = số bài có `postCodes` rỗng (bài thương hiệu).
+   - Trần mỗi lượt: một tài khoản chỉ được tối đa `floor(số đích của tài khoản trong lượt × brand / 100 + 0,5)` bài thương hiệu (giữ đúng công thức: 1 đích, brand 30% → `floor(0,8)` = 0).
+   - Soạn bài thương hiệu khi `(b + 1) / (n + 1) ≤ brand / 100` **và** số bài thương hiệu của tài khoản trong lượt này còn dưới trần; không thì tin phòng.
+   - Rải đều: không soạn hai bài thương hiệu liên tiếp cho cùng tài khoản trong một lượt nếu còn soạn được tin phòng.
+   - Ví dụ 1: Page có 5 đích trong khung, chưa có lịch sử, `brand` = 50. Trần = floor(5×0,5+0,5) = 3. Bài 1: n=0, b=0, 1/1 > 0,5 → tin phòng. Bài 2: n=1, b=0, 1/2 ≤ 0,5 → thương hiệu. Bài 3: n=2, b=1, 2/3 > 0,5 → tin phòng. Bài 4: n=3, b=1, 2/4 ≤ 0,5 → thương hiệu. Bài 5: n=4, b=2, 3/5 > 0,5 → tin phòng. Kết quả: tin phòng, thương hiệu, tin phòng, thương hiệu, tin phòng (2 bài thương hiệu, dưới trần 3).
+   - Ví dụ 2: FB cá nhân có 5 đích trong khung, lịch sử 10 bài đều là tin phòng, `brand` = 30. Trần = floor(5×0,3+0,5) = 2. Bài 1: n=10, b=0, 1/11 ≈ 0,09 ≤ 0,3, trần còn → thương hiệu (cửa sổ bỏ 1 dòng cũ: n=10, b=1). Bài 2: 2/11 ≈ 0,18 ≤ 0,3 nhưng bài trước là thương hiệu → tin phòng (n=10, b=1). Bài 3: 2/11 ≤ 0,3, trần còn (1 < 2), bài trước là tin phòng → thương hiệu (b=2). Bài 4: đã chạm trần 2 → tin phòng. Bài 5: tin phòng. Kết quả: thương hiệu, tin phòng, thương hiệu, tin phòng, tin phòng (2 bài thương hiệu, không liền kề). Đã kiểm lại theo công thức.
 3. Trong nhóm kiểu đã chọn (tin phòng hoặc thương hiệu), dùng kiểu theo mục **Cách chọn tin** của từng kiểu. Kiểu không đủ tin theo điều kiện của nó thì lùi về kiểu 1 tin. Không có kiểu thương hiệu nào dùng được cho kênh thì soạn tin phòng.
 4. `type` trong `posts.json` = tên kiểu, đúng như tiêu đề trong file kiểu bài (vd `Phòng mới / giảm giá`).
 
