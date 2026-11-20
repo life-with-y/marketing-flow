@@ -74,9 +74,9 @@ function typesPanel(md) {
   const cards = types.map((t, i) => {
     const channels = t.channels.map((c) => CHANNEL[c] || c).join(' · ');
     const structure = t.structure.length ? `<ol>${t.structure.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '<span class="mute">—</span>';
-    const example = t.example
-      ? `<div class="text" data-who="${esc(t.exampleNote ? `Ví dụ · ${t.exampleNote}` : 'Ví dụ')}">${esc(t.example)}</div>`
-      : '<span class="mute">—</span>';
+    const exs = arr(t.examples).length ? t.examples : (t.example ? [{ note: t.exampleNote, text: t.example }] : []);
+    const example = exs.filter((x) => x.text).map((x) => `<div class="text" data-who="${esc(x.note ? `Ví dụ · ${x.note}` : 'Ví dụ')}">${esc(x.text)}</div>`).join('\n')
+      || '<span class="mute">—</span>';
     return `<details class="sec ctype"${i === 0 ? ' open' : ''}>
       <summary>${esc(t.name)} <small>${esc([t.listings && `${t.listings} tin`, channels].filter(Boolean).join(' · '))}</small></summary>
       <div class="body">

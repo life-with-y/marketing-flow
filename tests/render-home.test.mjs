@@ -149,7 +149,9 @@ test('Góp ý only with formUrl; params encoded, text cut at 1500', () => {
 test('Kiểu bài tab: one card per type, first open, fields, FB-style example, buttons', () => {
   const html = home();
   const p = html.slice(html.indexOf('id="p-types"'), html.indexOf('id="p-daily"'));
-  assert.equal((p.match(/<details class="sec ctype"/g) || []).length, 4);
+  assert.equal((p.match(/<details class="sec ctype"/g) || []).length, 5);
+  // kiểu có 2 ví dụ hiện cả 2
+  assert.ok(p.includes('data-who="Ví dụ · Threads, khác khu, link tắt"') && p.includes('data-who="Ví dụ · tường cá nhân, cùng khu, link tắt"'));
   assert.equal((p.match(/<details class="sec ctype" open>/g) || []).length, 1);
   assert.match(p, /<details class="sec ctype" open>\s*<summary>Phòng nổi bật/);
   for (const s of ['Kênh', 'Số tin mỗi bài', 'Cách chọn tin', 'Cấu trúc', 'Ảnh', 'Ví dụ', 'Tường cá nhân · Page · Threads · Nhóm']) assert.ok(p.includes(s), s);

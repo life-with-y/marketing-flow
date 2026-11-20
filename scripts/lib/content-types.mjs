@@ -11,7 +11,7 @@ const KEYS = {
 };
 
 function parseSection(title, lines) {
-  const t = { name: title.replace(/^\d+\.\s*/, '').trim(), channels: [], listings: '', howToPick: '', structure: [], images: '', example: '', exampleNote: '' };
+  const t = { name: title.replace(/^\d+\.\s*/, '').trim(), channels: [], listings: '', howToPick: '', structure: [], images: '', example: '', exampleNote: '', examples: [] };
   let known = false;
   // Dòng nằm trong khối ``` (ví dụ) không bao giờ là trường.
   const fenced = [];
@@ -33,16 +33,20 @@ function parseSection(title, lines) {
         if (step) t.structure.push(step[1].trim());
       }
     } else if (key === 'example') {
-      t.exampleNote = (m[2] || '').trim();
+      // Nhiều dòng "Ví dụ": giữ hết trong examples, example/exampleNote là ví dụ đầu.
+      const note = (m[2] || '').trim();
+      let text;
       let j = i + 1;
       while (j < lines.length && !lines[j].trim()) j++;
       if (j < lines.length && /^\s*```/.test(lines[j])) {
         const body = [];
         for (j++; j < lines.length && !/^\s*```/.test(lines[j]); j++) body.push(lines[j]);
-        t.example = body.join('\n').replace(/^\n+|\s+$/g, '');
+        text = body.join('\n').replace(/^\n+|\s+$/g, '');
       } else {
-        t.example = val;
+        text = val;
       }
+      t.examples.push({ note, text });
+      if (t.examples.length === 1) { t.example = text; t.exampleNote = note; }
     } else {
       t[key] = val;
     }
