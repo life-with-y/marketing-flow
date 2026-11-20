@@ -38,7 +38,7 @@
 ## Lời mời (CTA)
 
 - Nhắn Zalo / inbox theo `contact`, kèm "link chi tiết ở comment".
-- Dấu hiệu tin cậy chỉ lấy từ dữ liệu: ảnh thật của phòng, giá ghi rõ; khi phù hợp viết "xem phòng trước rồi mới quyết định".
+- Dấu hiệu tin cậy chỉ lấy từ dữ liệu: ảnh thật của phòng, giá ghi rõ.
 
 ## Tránh
 

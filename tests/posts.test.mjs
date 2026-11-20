@@ -320,3 +320,8 @@ test('Threads: tối đa một #tag; Facebook không giới hạn ở validator'
   assert.ok(!has(mk(), /hashtag/));
   assert.ok(!has(mk({}, { text: `${goodText} #a #b #c` }), /hashtag/));
 });
+
+test('Threads: "#2", "#1" không phải hashtag (sau # phải là chữ)', () => {
+  assert.deepEqual(msgs(th(`${thGood} #phongtro phòng #2 và #1`)), []);
+  assert.ok(has(th(`${thGood} #phongtro #a1`), /tối đa 1/));
+});

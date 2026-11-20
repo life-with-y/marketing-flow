@@ -9,11 +9,20 @@ export const PLATFORM_FILES = {
   threads: 'threads.md',
 };
 
+// Chỉ dùng file cá nhân khi là file thường và có nội dung (không chỉ khoảng trắng).
+function usable(file) {
+  try {
+    return fs.statSync(file).isFile() && fs.readFileSync(file, 'utf8').trim() !== '';
+  } catch {
+    return false;
+  }
+}
+
 export function platformGuidePaths(dir, root) {
   const out = {};
   for (const [kind, file] of Object.entries(PLATFORM_FILES)) {
     const own = path.join(dir, 'platforms', file);
-    out[kind] = fs.existsSync(own) ? own : path.join(root, 'rules', 'platforms', file);
+    out[kind] = usable(own) ? own : path.join(root, 'rules', 'platforms', file);
   }
   return out;
 }

@@ -207,7 +207,7 @@ Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) 
   - `facebook-profile.md` (`wall`): link ở comment, giọng persona, 1–3 emoji làm dấu mốc, SĐT một lần chữ số thường.
   - `facebook-groups.md` (`group`): theo quy định nhóm (`target.note`), mặc định không SĐT, không link, CTA inbox / comment mã.
   - `threads.md` (`threads`): chữ là chính, link trong thân bài khi cần bấm, tối đa một `#tag`, ≤ 500 ký tự (nên ≤ 350).
-  - `prepare.mjs` ghi `input.paths.platforms` (`{ page, wall, group, threads }`); file cùng tên trong `~/.homematch-marketing/platforms/` ghi đè file plugin. Trang chủ hiện các hướng dẫn ở mục "Hướng dẫn nền tảng" cuối tab Kiểu bài.
+  - `prepare.mjs` ghi `input.paths.platforms` (`{ page, wall, group, threads }`); file cùng tên trong `~/.homematch-marketing/platforms/` (file thường, có nội dung) ghi đè file plugin. Trang chủ hiện các hướng dẫn ở mục "Hướng dẫn nền tảng" cuối tab Kiểu bài.
   - Thứ tự ưu tiên khi soạn: `hard-rules` > hướng dẫn nền tảng > persona / kiểu bài > `channel-format` / Trends.
   - `build.mjs` kiểm thêm: không số dạng icon (U+20E3) ở `text`/`comment`; Threads tối đa một `#tag`. Emoji chỉ ở mức hướng dẫn, không kiểm.
 - `templates/config.default.json`: mặc định do owner đặt (giờ chạy, `perSlot`, CTA mẫu, `channel-mix`). `/hm-setup` hiện các mặc định này để người dùng sửa. Cập nhật mặc định không đổi config đã thiết lập.

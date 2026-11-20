@@ -16,6 +16,7 @@ Thứ tự ưu tiên khi các nguồn mâu thuẫn: luật cứng > hướng d�
 Nội dung phải dán được nguyên lên Facebook/Threads:
 
 - Được dùng: chữ thường, xuống dòng, emoji, gạch đầu dòng bằng ký tự `•`.
+- Số điện thoại ghi bằng chữ số thường, không dùng số dạng icon/keycap (0️⃣8️⃣…).
 - Không dùng markdown: `**…**`, `__…__`, `_…_`, dòng tiêu đề bắt đầu bằng `#`.
 - Không dùng chữ "đậm/nghiêng" giả bằng ký tự Unicode (khối U+1D400–U+1D7FF, vd 𝗽𝗵𝗼̀𝗻𝗴, 𝘱𝘩𝘰̀𝘯𝘨).
 

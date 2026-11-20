@@ -2,8 +2,8 @@
 const KEYS = ['A', 'B', 'C'];
 const MATH_ALNUM = /[\u{1D400}-\u{1D7FF}]/u;
 const KEYCAP = /\u20E3/u;
-// #tag đứng riêng (không dính sau chữ, số, "/", "&").
-const HASHTAG_RE = /(?<![\p{L}\p{M}\p{N}_&\/])#[\p{L}\p{M}\p{N}_]+/gu;
+// #tag đứng riêng (không dính sau chữ, số, "/", "&"), ngay sau # là chữ ("#2" không tính).
+const HASHTAG_RE = /(?<![\p{L}\p{M}\p{N}_&\/])#\p{L}[\p{L}\p{M}\p{N}_]*/gu;
 
 const stripSlash = (s) => String(s).replace(/\/+$/, '');
 
