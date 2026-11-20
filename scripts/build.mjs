@@ -37,6 +37,8 @@ export async function runBuild({
   now = new Date(),
   root = PLUGIN_ROOT,
   spawnImpl,
+  warn = (m) => console.error(m),
+  writeHomeImpl = writeHome,
 } = {}) {
   if (!SLOT_RE.test(String(slot ?? ''))) {
     return { exitCode: 2, report: `Mã khung "${slot}" không hợp lệ, dùng dạng 2026-11-19_1100` };
@@ -64,14 +66,19 @@ export async function runBuild({
   fs.rmSync(path.join(outDir, 'page-data.json'), { force: true });
   fs.rmSync(path.join(outDir, 'index.html'), { force: true });
 
+  // Trang chủ không được liệt kê khung vừa bị xoá dữ liệu; lỗi dựng trang không che lỗi chính.
+  const refreshHome = () => { try { writeHomeImpl({ dir, cfg, home, now, root, pending: input.library?.pending ?? [] }); } catch { /* bỏ qua */ } };
+
   const { errors } = validatePosts(postsDoc, input);
   if (errors.length) {
+    refreshHome();
     const lines = errors.map((e, i) => `${i + 1}. ${e.message}`);
     return { exitCode: 5, report: `posts.json có ${errors.length} lỗi, sửa rồi chạy lại:\n${lines.join('\n')}` };
   }
 
   const dl = await downloadPosts({ posts: postsDoc, input, outRoot: outDir, fetchImpl });
   if (dl.needsReplacement.length) {
+    refreshHome();
     const lines = dl.needsReplacement.map((n, i) => `${i + 1}. ${n.targetId}: ${n.reason}`);
     return {
       exitCode: 6,
@@ -104,7 +111,6 @@ export async function runBuild({
   };
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, 'page-data.json'), JSON.stringify(pageData, null, 2), 'utf8');
-  const homePage = writeHome({ dir, cfg, home, now, root, pending: pageData.pending });
 
   const targets = new Map((input.targets || []).map((t) => [t.id, t]));
   appendPrepared(dir, posts.map((p) => ({
@@ -115,11 +121,19 @@ export async function runBuild({
     type: p.type,
   })), now);
 
+  let homePage = null;
+  try {
+    homePage = writeHomeImpl({ dir, cfg, home, now, root, pending: pageData.pending });
+  } catch (e) {
+    warn(`Cảnh báo: không dựng được trang chủ ${path.join(outputDir, 'index.html')} (${e.message}). Bài vẫn ở ${outDir}`);
+  }
+  const shown = homePage ?? outDir;
+
   const extra = spawnImpl ? [spawnImpl] : [];
   openFolder(outDir, platform, ...extra);
   const hhmm = `${slot.slice(11, 13)}:${slot.slice(13, 15)}`;
-  notify('HomeMatch', `Đã soạn ${posts.length} bài lúc ${hhmm}: ${homePage}`, platform, ...extra);
-  return { exitCode: 0, outDir, homePage, report: `Đã soạn ${posts.length} bài lúc ${hhmm}: ${homePage}` };
+  notify('HomeMatch', `Đã soạn ${posts.length} bài lúc ${hhmm}: ${shown}`, platform, ...extra);
+  return { exitCode: 0, outDir, homePage, report: `Đã soạn ${posts.length} bài lúc ${hhmm}: ${shown}` };
 }
 
 function parseArgs(argv) {

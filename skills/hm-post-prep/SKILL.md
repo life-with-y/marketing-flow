@@ -186,7 +186,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/build.mjs" --slot <slotId>
 
 | Mã | Nghĩa | Làm gì |
 |---|---|---|
-| `0` | OK | stdout có dạng `Đã soạn N bài lúc HH:MM: <outputDir>/index.html` (trang chủ chung, khung mới nhất hiện trước). Sang bước 5. |
+| `0` | OK | stdout có dạng `Đã soạn N bài lúc HH:MM: <outputDir>/index.html` (trang chủ chung, khung mới nhất hiện trước). Nếu stderr có `Cảnh báo: không dựng được trang chủ…` thì stdout ghi thư mục khung thay cho trang chủ; vẫn sang bước 5, báo kèm cảnh báo đó. |
 | `5` | `posts.json` sai luật | stderr liệt kê lỗi, mỗi lỗi ghi "Bài n" (n là thứ tự bài trong `posts`, đếm từ 1). Sửa **đúng các lỗi đó** trong `posts.json` (không đổi bài khác), chạy lại build. Tối đa **2 lần sửa**. Sau lần sửa thứ 2 vẫn còn lỗi thì chuyển các bài còn lỗi từ `posts` sang `skipped` (`reason`: lỗi tóm tắt, vd `Không viết được giá đúng định dạng sau 2 lần sửa`), rồi chạy build lại. |
 | `5` (lỗi cấu trúc) | stderr có `posts.json sai cấu trúc` (không có "Bài n") | Viết lại **toàn bộ** `posts.json` đúng cấu trúc ở 3.7 (giữ nguyên tin, ảnh, nội dung đã chọn), chạy lại build. Tính vào giới hạn 2 lần sửa; lần 2 vẫn sai cấu trúc thì ghi `posts.json` với `posts: []` và mọi đích vào `skipped` (`reason`: `Không ghi được posts.json đúng cấu trúc`), chạy build lại. |
 | `6` | Thiếu ảnh khi tải | stderr liệt kê `<targetId>: <lý do>`. Với mỗi đích đó: **thay tin một lần** bằng tin kế tiếp theo thứ tự ở 3.2 (chưa dùng cho đích đó trong lần chạy này), chọn lại ảnh, viết lại nội dung, rồi chạy build lại. Đích đã thay một lần mà vẫn bị báo thì chuyển bài sang `skipped` (`reason`: lý do script báo), chạy build lại. Không còn tin để thay thì `skipped` ngay. |

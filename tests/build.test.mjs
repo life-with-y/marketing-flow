@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runBuild } from '../scripts/build.mjs';
+import { writeHome } from '../scripts/lib/render-home.mjs';
 import { openFolder, notify } from '../scripts/lib/os.mjs';
 
 let server, base;
@@ -160,4 +161,49 @@ test('rebuild lỗi (exit 6 / exit 5) xoá page-data.json cũ', async () => {
   fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(p5));
   assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 5);
   assert.ok(!fs.existsSync(page));
+});
+
+test('home write failure: warning on stderr, prepared still written, exit 0', async () => {
+  const { home, dir } = mk();
+  fs.mkdirSync(path.join(home, 'out', 'index.html'), { recursive: true }); // index.html là thư mục -> ghi lỗi
+  const warns = [];
+  const r = await runBuild({ home, slot: SLOT, platform: 'test', warn: (m) => warns.push(m) });
+  assert.equal(r.exitCode, 0, r.report);
+  assert.equal(warns.length, 1);
+  assert.match(warns[0], /^Cảnh báo: không dựng được trang chủ/);
+  assert.ok(fs.existsSync(path.join(dir, 'prepared.jsonl')));
+  assert.ok(fs.existsSync(path.join(home, 'out', SLOT, 'page-data.json')));
+  assert.equal(r.report, `Đã soạn 1 bài lúc 11:00: ${path.join(home, 'out', SLOT)}`);
+});
+
+test('exit 5 / exit 6 after a good build regenerate home without the stale slot', async () => {
+  const { home, runDir, input, posts } = mk();
+  const page = path.join(home, 'out', 'index.html');
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 0);
+  assert.ok(fs.readFileSync(page, 'utf8').includes(`<option value="${SLOT}"`));
+  const p5 = structuredClone(posts);
+  p5.posts[0].variants[0].text = 'Cầu Giấy 3tr8';
+  fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(p5));
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 5);
+  assert.ok(!fs.readFileSync(page, 'utf8').includes(`value="${SLOT}"`));
+  fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(posts));
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 0);
+  const bad = structuredClone(input);
+  bad.listings[0].images = [0, 1, 2].map((i) => ({ url: `${base}/${i > 0 ? 'bad' : 'ok'}/${i}`, isCover: i === 0 }));
+  fs.writeFileSync(path.join(runDir, 'input.json'), JSON.stringify(bad));
+  const p6 = structuredClone(posts);
+  p6.posts[0].variants[0].images = bad.listings[0].images.map((i) => i.url);
+  fs.writeFileSync(path.join(runDir, 'posts.json'), JSON.stringify(p6));
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 6);
+  assert.ok(!fs.readFileSync(page, 'utf8').includes(`value="${SLOT}"`));
+});
+
+test('prepared.jsonl is appended before the home page is written', async () => {
+  const { home, dir } = mk();
+  const order = [];
+  const writeHomeImpl = (args) => { order.push(fs.existsSync(path.join(dir, 'prepared.jsonl'))); return writeHome(args); };
+  const r = await runBuild({ home, slot: SLOT, platform: 'test', writeHomeImpl });
+  assert.equal(r.exitCode, 0);
+  assert.deepEqual(order, [true]);
+  assert.ok(fs.existsSync(path.join(home, 'out', 'index.html')));
 });
