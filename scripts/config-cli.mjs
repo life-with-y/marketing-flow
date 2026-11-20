@@ -1,43 +1,22 @@
 // CLI cấu hình: init | backup | undo | changelog | render-board | today | validate (Task 11).
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { profileDir } from './lib/paths.mjs';
 import { loadConfig, validateConfig, ConfigError } from './lib/config.mjs';
 import { targetsForSlot } from './lib/targets.mjs';
 import { diffProfile } from './lib/config-diff.mjs';
-import { renderConfigBoard } from './lib/render-config.mjs';
+import { writeHome } from './lib/render-home.mjs';
 import { fetchSheet } from './lib/sheet.mjs';
+import { readJsonSafe, readProfile as profile, newestHistory } from './lib/profile.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['config.json', 'persona.md', 'content-types.md'];
 const SKELETON = { apiBaseUrl: '', accounts: [], groups: [] };
 const NO_HISTORY = 'Chưa có lần sửa nào';
 
-const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return null; } };
-const readJsonSafe = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };
 const stamp = (d) => d.toISOString().replace(/:/g, '-');
-const unstamp = (name) => {
-  const d = new Date(name.replace(/^(\d{4}-\d{2}-\d{2}T\d{2})-(\d{2})-(\d{2})/, '$1:$2:$3'));
-  return Number.isNaN(d.getTime()) ? null : d;
-};
-
-function profile(dir) {
-  return { cfg: readJsonSafe(path.join(dir, 'config.json')) ?? {}, persona: readText(path.join(dir, 'persona.md')), contentTypes: readText(path.join(dir, 'content-types.md')) };
-}
-
-function newestHistory(dir) {
-  const h = path.join(dir, 'history');
-  let names = [];
-  try { names = fs.readdirSync(h, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { /* none */ }
-  names.sort();
-  const name = names[names.length - 1];
-  return name ? { name, dir: path.join(h, name) } : null;
-}
-
-function profileOf(snapDir) {
-  return profile(snapDir);
-}
 
 // Cấu hình hiện tại trộn mặc định như loadConfig; sai thì vẫn trả về bản thô kèm lỗi.
 function readForBoard(dir, root) {
@@ -51,12 +30,6 @@ function readForBoard(dir, root) {
     const errors = raw == null ? [e.message] : validateConfig(cfg);
     return { cfg, errors: errors.length ? errors : [e.message] };
   }
-}
-
-function tokenLabel(dir) {
-  const s = readJsonSafe(path.join(dir, 'secrets.json'));
-  if (!s || typeof s.token !== 'string' || !s.token) return null;
-  return typeof s.label === 'string' ? s.label : '';
 }
 
 export function init(dir, root = PLUGIN_ROOT) {
@@ -88,7 +61,7 @@ export function backup(dir, now = new Date()) {
 export function changelog(dir) {
   const snap = newestHistory(dir);
   if (!snap) return null;
-  return diffProfile(profileOf(snap.dir), profile(dir));
+  return diffProfile(profile(snap.dir), profile(dir));
 }
 
 export function undo(dir) {
@@ -106,21 +79,11 @@ export function undo(dir) {
   return lines;
 }
 
-export async function renderBoard(dir, { now = new Date(), root = PLUGIN_ROOT, fetchImpl = fetch } = {}) {
+// Dựng trang chủ <outputDir>/index.html (tên lệnh render-board giữ để tương thích).
+export async function renderBoard(dir, { now = new Date(), root = PLUGIN_ROOT, fetchImpl = fetch, home = os.homedir() } = {}) {
   const { cfg, errors } = readForBoard(dir, root);
-  const snap = newestHistory(dir);
-  const lastChange = snap
-    ? { at: unstamp(snap.name) ?? now, lines: diffProfile(profileOf(snap.dir), profile(dir)) }
-    : null;
   const sheet = await fetchSheet(cfg.library?.pendingCsvUrl, fetchImpl);
-  const html = renderConfigBoard({
-    cfg, persona: readText(path.join(dir, 'persona.md')), contentTypes: readText(path.join(dir, 'content-types.md')),
-    pending: sheet.rows, pendingError: sheet.error, hasPendingUrl: !!cfg.library?.pendingCsvUrl, today: now, lastChange, tokenLabel: tokenLabel(dir), errors,
-  });
-  const out = path.join(dir, 'board', 'index.html');
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, html);
-  return out;
+  return writeHome({ dir, cfg, errors, home, now, root, pending: sheet.rows, pendingError: sheet.error });
 }
 
 export function today(dir, { now = new Date(), root = PLUGIN_ROOT } = {}) {
@@ -135,7 +98,7 @@ export function today(dir, { now = new Date(), root = PLUGIN_ROOT } = {}) {
   };
 }
 
-export async function main(argv, { dir = profileDir(), now = new Date(), root = PLUGIN_ROOT, out = (s) => console.log(s), fetchImpl = fetch } = {}) {
+export async function main(argv, { dir = profileDir(), home = os.homedir(), now = new Date(), root = PLUGIN_ROOT, out = (s) => console.log(s), fetchImpl = fetch } = {}) {
   const cmd = argv[0];
   try {
     if (cmd === 'init') {
@@ -155,7 +118,7 @@ export async function main(argv, { dir = profileDir(), now = new Date(), root = 
       else if (!lines.length) out('Không có thay đổi');
       else lines.forEach((l) => out(l));
     } else if (cmd === 'render-board') {
-      out(await renderBoard(dir, { now, root, fetchImpl }));
+      out(await renderBoard(dir, { now, root, fetchImpl, home }));
     } else if (cmd === 'validate') {
       try {
         loadConfig(dir, { root });

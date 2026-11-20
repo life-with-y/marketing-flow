@@ -1,18 +1,13 @@
-// Dựng trang cấu hình tĩnh từ assets/config-board/template.html (Task 11).
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// Các phần cấu hình của trang chủ: tab Hằng ngày, tab Hồ sơ và cột phải (Lần sửa gần nhất, Báo lỗi).
 import { esc } from './render-posts.mjs';
 import { targetsForSlot } from './targets.mjs';
 import { validateConfig } from './config.mjs';
 
-const TEMPLATE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'config-board', 'template.html');
 const DOW = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const DAY_LABEL = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 'T7', sun: 'CN' };
 const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const LANG = { vi: 'tiếng Việt', en: 'tiếng Anh' };
-const TYPE_LABEL = { 'fb-personal': 'FB cá nhân', 'fb-page': 'FB Page', threads: 'Threads' };
 const KIND_LABEL = { wall: 'Tường', page: 'Page', threads: 'Threads' };
 
 const p2 = (n) => String(n).padStart(2, '0');
@@ -57,27 +52,6 @@ function personaHtml(persona) {
           <div><span class="sc" style="font-weight:600;font-size:14px">Nên</span><ul>${li(yes)}</ul></div>
           <div><span class="sc" style="font-weight:600;font-size:14px">Không nên</span><ul>${li(no)}</ul></div>
         </div>`;
-}
-
-function contentTypes(md) {
-  return parseSections(md)
-    .map((s) => {
-      const title = s.title.replace(/^\d+\.\s*/, '');
-      const field = (name) => new RegExp(`^\\s*-\\s+\\*\\*${name}\\*\\*:\\s*(.*)$`, 'i');
-      const get = (name) => s.lines.map((l) => field(name).exec(l)?.[1]).find(Boolean) || '';
-      return { title, channels: get('Kênh'), count: get('Số tin mỗi bài') };
-    })
-    .filter((t) => t.channels || t.count);
-}
-
-function contentTypesHtml(md) {
-  if (md == null) return { n: 0, html: '<p class="hint">Chưa có kiểu bài, chạy <code>config-cli init</code> hoặc /hm-setup.</p>' };
-  const cts = contentTypes(md);
-  if (!cts.length) return { n: 0, html: `<blockquote style="white-space:pre-wrap">${esc(md.trim())}</blockquote>` };
-  return {
-    n: cts.length,
-    html: cts.map((t) => `<div class="ct"><div class="ct-head"><b>${esc(t.title)}</b><span class="mute it" style="font-size:14px">${esc([t.count && `${t.count} tin`, t.channels].filter(Boolean).join(' · '))}</span></div></div>`).join('\n        '),
-  };
 }
 
 function slotsHtml(cfg, today, errors) {
@@ -150,8 +124,7 @@ function pendingHtml(pending, error) {
     </details>`;
 }
 
-function profileHtml(cfg, persona, contentTypesMd, tokenLabel) {
-  const ct = contentTypesHtml(contentTypesMd);
+function profileHtml(cfg, persona, tokenLabel) {
   const accs = arr(cfg.accounts).filter(Boolean);
   const byType = (t) => accs.filter((a) => a.type === t).map((a) => esc(a.label || a.id)).join(' · ') || '<span class="mute">—</span>';
   const token = tokenLabel == null ? 'chưa cài' : `đã cài${tokenLabel ? ' · ' + esc(tokenLabel) : ''}`;
@@ -164,11 +137,6 @@ function profileHtml(cfg, persona, contentTypesMd, tokenLabel) {
       <div class="body">${personaHtml(persona)}
         <p class="hint">Page luôn dùng giọng thương hiệu HomeMatch.</p>
       </div>
-    </details>
-
-    <details class="sec">
-      <summary>Kiểu bài <small>${ct.n} kiểu</small></summary>
-      <div class="body">${ct.html}</div>
     </details>
 
     <details class="sec">
@@ -199,7 +167,8 @@ function whenOf(at) {
   return Number.isNaN(d.getTime()) ? '' : hhmmOf(d);
 }
 
-export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = null, pending = [], pendingError = null, today = new Date(), lastChange = null, tokenLabel = null, errors } = {}) {
+// Giá trị cho các chỗ {{…}} phần cấu hình trong assets/home/template.html.
+export function boardParts({ cfg, persona = null, pending = [], pendingError = null, today = new Date(), lastChange = null, tokenLabel = null, errors } = {}) {
   cfg = cfg && typeof cfg === 'object' ? cfg : {};
   const errs = errors ?? validateConfig(cfg);
   const slots = slotsHtml(cfg, today, errs);
@@ -209,7 +178,7 @@ export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = nu
     ? `  <details class="box">
     <summary>Lần sửa gần nhất${when ? ' · ' + esc(when) : ''}</summary>
     <ul class="log">${arr(lastChange.lines).map((l) => `<li>${esc(l)}</li>`).join('') || '<li class="mute">Không có thay đổi</li>'}</ul>
-    <button type="button" class="btn ghost" onclick="undo()">Hoàn tác lần sửa này</button>
+    <button type="button" class="btn ghost edit-only" onclick="undo()">Hoàn tác lần sửa này</button>
   </details>`
     : '  <div class="box"><h3>Lần sửa gần nhất</h3><p class="note" style="margin:0">Chưa có lần sửa nào</p></div>';
   const formUrl = cfg.feedback?.formUrl;
@@ -220,7 +189,7 @@ export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = nu
   const errorsHtml = errs.length
     ? `  <div class="pend" style="border-color:#b3261e;color:#b3261e;margin:0 0 22px"><b>Cấu hình đang sai, sửa bằng ô bên phải:</b><ul>${errs.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></div>\n`
     : '';
-  const values = {
+  return {
     HEADER_META: esc(`${dateText}${when ? ' · sửa lần cuối ' + when : ''}`),
     ERRORS: errorsHtml,
     TODAY_COUNT: `${slots.total} bài`,
@@ -230,10 +199,9 @@ export function renderConfigBoard({ cfg, persona = null, contentTypes: ctMd = nu
     MORE: esc(groups.more),
     PERSLOT: perSlotHtml(cfg),
     PENDING: pendingHtml(pending, pendingError),
-    PROFILE: profileHtml(cfg, persona, ctMd, tokenLabel),
+    PROFILE: profileHtml(cfg, persona, tokenLabel),
     LAST_CHANGE: lastHtml,
     FEEDBACK: feedback,
     UNDO_LABEL_JSON: jsonForScript(when),
   };
-  return fs.readFileSync(TEMPLATE, 'utf8').replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
 }

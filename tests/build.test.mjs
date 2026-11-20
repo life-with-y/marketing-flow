@@ -36,7 +36,7 @@ function mk({ badImages = false } = {}) {
     slot: SLOT,
     targets: [{ id: 'group:https://fb/g1', kind: 'group', account: 'fb1', name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', variants: 1, language: 'vi' }],
     listings: [{ code: 'T1', link: 'https://homematch.vn/t1', label: 'NEW', eligible: true, imageCount: 3, rooms: [{ room: '1', price: 3800000, priceText: '3,8 triệu' }], images: [0, 1, 2].map(img) }],
-    library: { approved: [], trends: [], pending: [], errors: ['Trends: lỗi'] },
+    library: { approved: [], trends: [], pending: ['Liên hệ nhóm chưa chốt'], errors: ['Trends: lỗi'] },
   };
   const posts = {
     slot: SLOT,
@@ -48,18 +48,49 @@ function mk({ badImages = false } = {}) {
   return { home, dir, runDir, posts, input };
 }
 
-test('success: index.html, prepared lines, exit 0', async () => {
+test('success: page-data.json + home index.html, no per-slot index, prepared lines, exit 0', async () => {
   const { home, dir } = mk();
-  const r = await runBuild({ home, slot: SLOT, platform: 'test' });
+  const r = await runBuild({ home, slot: SLOT, platform: 'test', now: new Date(2026, 10, 19, 11, 3) });
   assert.equal(r.exitCode, 0, r.report);
-  const html = fs.readFileSync(path.join(home, 'out', SLOT, 'index.html'), 'utf8');
+  const homePage = path.join(home, 'out', 'index.html');
+  assert.equal(r.report, `Đã soạn 1 bài lúc 11:00: ${homePage}`);
+  assert.equal(r.outDir, path.join(home, 'out', SLOT));
+  assert.ok(!fs.existsSync(path.join(home, 'out', SLOT, 'index.html')));
+  const data = JSON.parse(fs.readFileSync(path.join(home, 'out', SLOT, 'page-data.json'), 'utf8'));
+  assert.equal(data.slot, SLOT);
+  assert.equal(data.generatedAt, new Date(2026, 10, 19, 11, 3).toISOString());
+  assert.equal(data.posts.length, 1);
+  assert.deepEqual([data.posts[0].type, data.posts[0].label, data.posts[0].postCodes], ['Phòng mới', 'NEW', ['T1']]);
+  assert.deepEqual(data.posts[0].variants[0].files, ['1.jpg', '2.jpg', '3.jpg']);
+  assert.deepEqual(data.targets.map((t) => t.id), ['group:https://fb/g1']);
+  assert.deepEqual(data.accounts, [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }]);
+  assert.deepEqual([data.skipped, data.pending, data.notes], [[], ['Liên hệ nhóm chưa chốt'], ['Trends: lỗi']]);
+  assert.ok(!JSON.stringify(data).includes('sekret-token'));
+  const html = fs.readFileSync(homePage, 'utf8');
   assert.ok(html.includes('Cầu Giấy 3,8 triệu'));
   assert.ok(html.includes('Trends: lỗi'));
+  assert.ok(html.includes('Liên hệ nhóm chưa chốt'));
+  assert.ok(html.includes(`src="${SLOT}/01_phong-tro-cau-giay_T1/1.jpg"`));
+  assert.ok(html.includes('Kiểu bài') && html.includes('Phòng mới / giảm giá'));
   assert.ok(!html.includes('sekret-token'));
   const lines = fs.readFileSync(path.join(dir, 'prepared.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(lines.length, 1);
   assert.deepEqual([lines[0].slot, lines[0].account, lines[0].postCodes, lines[0].type], [SLOT, 'fb1', ['T1'], 'Phòng mới']);
   assert.ok(fs.existsSync(path.join(home, 'out', SLOT, '01_phong-tro-cau-giay_T1', '1.jpg')));
+});
+
+test('home lists earlier slots too, newest first', async () => {
+  const { home, runDir, input, posts } = mk();
+  assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 0);
+  const S2 = '2026-11-20_1014';
+  const r2 = path.join(path.dirname(runDir), S2);
+  fs.mkdirSync(r2, { recursive: true });
+  fs.writeFileSync(path.join(r2, 'input.json'), JSON.stringify({ ...input, slot: S2 }));
+  fs.writeFileSync(path.join(r2, 'posts.json'), JSON.stringify({ ...posts, slot: S2 }));
+  assert.equal((await runBuild({ home, slot: S2, platform: 'test' })).exitCode, 0);
+  const html = fs.readFileSync(path.join(home, 'out', 'index.html'), 'utf8');
+  const opts = [...html.matchAll(/<option value="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(opts, [S2, SLOT]);
 });
 
 test('wrong price: exit 5, numbered errors, nothing written', async () => {
@@ -69,7 +100,7 @@ test('wrong price: exit 5, numbered errors, nothing written', async () => {
   const r = await runBuild({ home, slot: SLOT, platform: 'test' });
   assert.equal(r.exitCode, 5);
   assert.match(r.report, /^1\. /m);
-  assert.ok(!fs.existsSync(path.join(home, 'out', SLOT, 'index.html')));
+  assert.ok(!fs.existsSync(path.join(home, 'out', SLOT, 'page-data.json')));
   assert.ok(!fs.existsSync(path.join(dir, 'prepared.jsonl')));
 });
 
@@ -78,7 +109,7 @@ test('image failures: exit 6, needsReplacement listed, no index/prepared', async
   const r = await runBuild({ home, slot: SLOT, platform: 'test' });
   assert.equal(r.exitCode, 6);
   assert.ok(r.report.includes('group:https://fb/g1'));
-  assert.ok(!fs.existsSync(path.join(home, 'out', SLOT, 'index.html')));
+  assert.ok(!fs.existsSync(path.join(home, 'out', SLOT, 'page-data.json')));
   assert.ok(!fs.existsSync(path.join(dir, 'prepared.jsonl')));
 });
 
@@ -107,9 +138,9 @@ test('os helpers: no-op on test platform, args arrays on darwin/win32, never thr
   assert.doesNotThrow(() => { openFolder('/a', 'darwin', boom); notify('a', 'b', 'darwin', boom); });
 });
 
-test('rebuild lỗi (exit 6 / exit 5) xoá index.html cũ', async () => {
+test('rebuild lỗi (exit 6 / exit 5) xoá page-data.json cũ', async () => {
   const { home, runDir, input, posts } = mk();
-  const page = path.join(home, 'out', SLOT, 'index.html');
+  const page = path.join(home, 'out', SLOT, 'page-data.json');
   assert.equal((await runBuild({ home, slot: SLOT, platform: 'test' })).exitCode, 0);
   assert.ok(fs.existsSync(page));
   const bad = structuredClone(input);

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { diffConfig, diffProfile } from '../scripts/lib/config-diff.mjs';
-import { renderConfigBoard } from '../scripts/lib/render-config.mjs';
+import { renderHome } from '../scripts/lib/render-home.mjs';
 import { main } from '../scripts/config-cli.mjs';
 
 const ALL = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -22,7 +22,8 @@ const cfg = (o = {}) => ({
   ...o,
 });
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hm-cfg-'));
-const run = async (args, dir, now = THU, fetchImpl) => { const o = []; const code = await main(args, { dir, now, out: (s) => o.push(s), fetchImpl }); return { code, o }; };
+// home cũng là thư mục tạm: outputDir mặc định "~/HomeMatch-Posts" không bao giờ trỏ vào máy thật.
+const run = async (args, dir, now = THU, fetchImpl) => { const o = []; const code = await main(args, { dir, home: dir, now, out: (s) => o.push(s), fetchImpl }); return { code, o }; };
 
 test('diffConfig: toggle, schedule, added group -> exactly 3 lines', () => {
   const a = cfg();
@@ -58,36 +59,6 @@ test('diffProfile: persona / content types text', () => {
   assert.deepEqual(diffProfile({ cfg: cfg(), persona: 'a' }, { cfg: cfg(), persona: 'a' }), []);
 });
 
-const PERSONA = '# Persona\n\n## Tôi là ai\n\nFounder <b>x</b>.\n\n## NÊN\n\n- Nói rõ\n\n## KHÔNG NÊN\n\n- Siêu phẩm\n';
-test('renderConfigBoard: no token, off class, persona open, escaping', () => {
-  const html = renderConfigBoard({
-    cfg: cfg({ groups: [grp({ active: false }), grp({ name: '<img onerror=1>', url: 'u2' })] }),
-    persona: PERSONA, contentTypes: '## 1. Phòng mới\n\n- **Kênh**: wall\n- **Số tin mỗi bài**: 1\n',
-    pending: ['Cách ghi liên hệ'], today: THU, tokenLabel: 'mkt-minh',
-    lastChange: { at: new Date(2026, 10, 19, 9, 12), lines: ['Giờ chạy: 17:00 → 17:30'] },
-  });
-  assert.ok(!html.includes('SECRET-TOKEN-123'));
-  assert.match(html, /class="grp off"/);
-  assert.match(html, /<details class="sec" open>\s*<summary>Persona/);
-  assert.equal((html.match(/<details class="sec" open>/g) || []).length, 1);
-  assert.ok(!html.includes('<img onerror=1>') && html.includes('&lt;img onerror=1&gt;'));
-  assert.ok(!html.includes('<b>x</b>'));
-  assert.ok(html.includes('đã cài · mkt-minh'));
-  assert.ok(html.includes('Giờ chạy: 17:00 → 17:30') && html.includes('Hoàn tác'));
-  assert.ok(html.includes('1 mục đang chờ quy định'));
-  assert.ok(html.includes('Hôm nay sẽ soạn') && html.includes('window.lavish?.queuePrompt'));
-  assert.ok(!/<script[^>]*\ssrc=/i.test(html));
-  assert.ok(!/\{\{[A-Z_]+\}\}/.test(html));
-});
-
-test('renderConfigBoard: token not set, today filter flags, invalid cfg shows errors', () => {
-  const html = renderConfigBoard({ cfg: cfg({ groups: [grp({ days: ['mon'] })] }), today: THU, tokenLabel: null });
-  assert.ok(html.includes('chưa cài'));
-  assert.match(html, /data-today="0"/);
-  const bad = renderConfigBoard({ cfg: { groups: 'x' }, today: THU });
-  assert.ok(bad.includes('Cấu hình đang sai') && bad.includes('apiBaseUrl'));
-});
-
 test('init creates skeleton + templates, never overwrites', async () => {
   const dir = path.join(tmp(), 'p');
   const r = await run(['init'], dir);
@@ -118,22 +89,37 @@ test('backup, edit, changelog, undo restores files', async () => {
   assert.equal((await run(['undo'], dir)).code, 1);
 });
 
-test('render-board writes board/index.html, token never present, lastChange from history', async () => {
+test('render-board writes the home page at outputDir/index.html with slots, token never present', async () => {
   const dir = tmp();
-  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg()));
+  const out = path.join(dir, 'posts');
+  const slotDir = path.join(out, '2026-11-19_1100');
+  fs.mkdirSync(slotDir, { recursive: true });
+  fs.writeFileSync(path.join(slotDir, 'page-data.json'), JSON.stringify({
+    slot: '2026-11-19_1100', generatedAt: THU.toISOString(), outDir: slotDir,
+    posts: [{ n: 1, dir: path.join(slotDir, '01_x_T1'), targetId: 'group:https://fb/hm', postCodes: ['T1'], type: 'Phòng mới', label: 'NEW', variants: [{ key: 'A', dir: path.join(slotDir, '01_x_T1'), text: 'Nội dung bài <b>', files: ['1.jpg'] }] }],
+    targets: [{ id: 'group:https://fb/hm', kind: 'group', account: 'fb1', name: 'Nhà trọ Hoàng Mai', url: 'https://fb/hm' }],
+    accounts: [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }], skipped: [], pending: [], notes: [],
+  }));
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg({ outputDir: out })));
   fs.writeFileSync(path.join(dir, 'secrets.json'), JSON.stringify({ token: 'SECRET-TOKEN-123', label: 'mkt-minh' }));
   await run(['backup'], dir);
-  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg({ schedule: ['17:30'] })));
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg({ outputDir: out, schedule: ['17:30'] })));
   const r = await run(['render-board'], dir);
-  const file = path.join(dir, 'board', 'index.html');
+  const file = path.join(out, 'index.html');
   assert.deepEqual(r.o, [file]);
+  assert.ok(!fs.existsSync(path.join(dir, 'board')));
   const html = fs.readFileSync(file, 'utf8');
   assert.ok(!html.includes('SECRET-TOKEN-123'));
   assert.ok(html.includes('đã cài · mkt-minh') && html.includes('Giờ chạy: 17:00 → 17:30'));
-  // invalid config still renders
+  assert.ok(html.includes('Nội dung bài &lt;b&gt;') && html.includes('src="2026-11-19_1100/01_x_T1/1.jpg"'));
+  // no content-types.md in profile -> template library
+  assert.ok(html.includes('Phòng mới / giảm giá'));
+  // invalid config still renders; default outputDir resolves under home (temp)
   fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apiBaseUrl: '', accounts: [], groups: [] }));
-  await run(['render-board'], dir);
-  assert.ok(fs.readFileSync(file, 'utf8').includes('Cấu hình đang sai'));
+  const r2 = await run(['render-board'], dir);
+  const file2 = path.join(dir, 'HomeMatch-Posts', 'index.html');
+  assert.deepEqual(r2.o, [file2]);
+  assert.ok(fs.readFileSync(file2, 'utf8').includes('Cấu hình đang sai'));
 });
 
 test('today prints JSON targets per slot', async () => {
@@ -163,7 +149,7 @@ test('undo deletes files created after backup (manifest)', async () => {
 });
 
 const withPending = (url) => { const dir = tmp(); fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg({ library: url ? { pendingCsvUrl: url } : {} }))); return dir; };
-const board = (dir) => fs.readFileSync(path.join(dir, 'board', 'index.html'), 'utf8');
+const board = (dir) => fs.readFileSync(path.join(dir, 'HomeMatch-Posts', 'index.html'), 'utf8');
 
 test('render-board: pending rows from sheet, escaped', async () => {
   const dir = withPending('https://docs.google.com/x.csv');
@@ -202,7 +188,7 @@ test('validate: OK exit 0, sai thì LỖI exit 1', async () => {
 });
 
 test('model không còn trong bảng cấu hình và diff (lịch dùng model mặc định của app)', () => {
-  const html = renderConfigBoard({ cfg: cfg({ model: 'opus' }), today: THU, tokenLabel: null });
+  const html = renderHome({ cfg: cfg({ model: 'opus' }), today: THU, tokenLabel: null, outputDir: '/tmp/x' });
   assert.ok(!html.includes('<dt>Model</dt>'));
   assert.deepEqual(diffConfig(cfg({ model: 'sonnet' }), cfg({ model: 'opus' })), []);
 });

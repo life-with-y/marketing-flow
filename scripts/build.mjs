@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { profileDir, expandHome } from './lib/paths.mjs';
+import { profileDir } from './lib/paths.mjs';
 import { loadConfig, ConfigError } from './lib/config.mjs';
 import { validatePosts } from './lib/posts.mjs';
 import { downloadPosts } from './lib/download.mjs';
-import { renderPostsPage } from './lib/render-posts.mjs';
+import { writeHome, homeOutputDir } from './lib/render-home.mjs';
 import { appendPrepared } from './lib/prepared.mjs';
 import { openFolder, notify } from './lib/os.mjs';
 
@@ -57,8 +57,11 @@ export async function runBuild({
   const input = inp.value;
   const postsDoc = pj.value;
 
-  // Xoá trang cũ trước: lần chạy lỗi (exit 5/6) không để lại index.html của lần trước.
-  const outDir = path.join(expandHome(cfg.outputDir, home), slot);
+  // Xoá dữ liệu trang cũ trước: lần chạy lỗi (exit 5/6) không để lại bài của lần trước trên trang chủ.
+  // index.html riêng của khung (bản cũ) cũng bỏ: trang chủ <outputDir>/index.html thay thế.
+  const outputDir = homeOutputDir(cfg, home);
+  const outDir = path.join(outputDir, slot);
+  fs.rmSync(path.join(outDir, 'page-data.json'), { force: true });
   fs.rmSync(path.join(outDir, 'index.html'), { force: true });
 
   const { errors } = validatePosts(postsDoc, input);
@@ -85,20 +88,23 @@ export async function runBuild({
   });
 
   const lib = input.library || {};
-  const html = renderPostsPage({
+  const usedTargets = new Set([...posts.map((p) => p.targetId), ...(Array.isArray(postsDoc.skipped) ? postsDoc.skipped.map((x) => x?.targetId) : [])]);
+  const targetList = (input.targets || []).filter((t) => usedTargets.has(t.id));
+  const usedAccounts = new Set(targetList.map((t) => t.account));
+  const pageData = {
     slot,
     generatedAt: now.toISOString(),
     outDir,
     posts,
-    targets: input.targets || [],
-    accounts: cfg.accounts || [],
+    targets: targetList,
+    accounts: (cfg.accounts || []).filter((a) => usedAccounts.has(a.id)).map(({ id, type, label }) => ({ id, type, label })),
     skipped: Array.isArray(postsDoc.skipped) ? postsDoc.skipped : [],
     pending: Array.isArray(lib.pending) ? lib.pending : [],
     notes: Array.isArray(lib.errors) ? lib.errors : [],
-    feedback: cfg.feedback || {},
-    person: '',
-  });
-  fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf8');
+  };
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(path.join(outDir, 'page-data.json'), JSON.stringify(pageData, null, 2), 'utf8');
+  const homePage = writeHome({ dir, cfg, home, now, root, pending: pageData.pending });
 
   const targets = new Map((input.targets || []).map((t) => [t.id, t]));
   appendPrepared(dir, posts.map((p) => ({
@@ -112,8 +118,8 @@ export async function runBuild({
   const extra = spawnImpl ? [spawnImpl] : [];
   openFolder(outDir, platform, ...extra);
   const hhmm = `${slot.slice(11, 13)}:${slot.slice(13, 15)}`;
-  notify('HomeMatch', `Đã soạn ${posts.length} bài lúc ${hhmm}`, platform, ...extra);
-  return { exitCode: 0, outDir, report: `Đã soạn ${posts.length} bài lúc ${hhmm}: ${path.join(outDir, 'index.html')}` };
+  notify('HomeMatch', `Đã soạn ${posts.length} bài lúc ${hhmm}: ${homePage}`, platform, ...extra);
+  return { exitCode: 0, outDir, homePage, report: `Đã soạn ${posts.length} bài lúc ${hhmm}: ${homePage}` };
 }
 
 function parseArgs(argv) {

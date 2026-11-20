@@ -1,9 +1,6 @@
-// Dựng trang bài đăng tĩnh index.html từ assets/posts-page/template.html (Task 9).
-import fs from 'node:fs';
+// Phần "Bài đăng" của trang chủ: mỗi khung giờ một section, mỗi bài một thẻ (dữ liệu từ <slot>/page-data.json).
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const TEMPLATE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'posts-page', 'template.html');
 const LABELS = { NEW: 'Mới', PRICE_DOWN: 'Giảm giá', NOW_AVAILABLE: 'Vừa trống' };
 const OPEN_TEXT = { group: 'Mở nhóm ↗', page: 'Mở Page ↗', threads: 'Mở Threads ↗' };
 const KIND_TEXT = { group: 'nhóm', page: 'trang', threads: '' };
@@ -15,11 +12,9 @@ export const esc = (s) => String(s ?? '')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const p2 = (n) => String(n).padStart(2, '0');
-const isHttp = (u) => /^https?:\/\//i.test(String(u ?? ''));
-
-function relUrl(fromDir, file) {
-  return path.relative(fromDir, file).split(path.sep).map(encodeURIComponent).join('/');
-}
+const arr = (v) => (Array.isArray(v) ? v : []);
+export const isHttp = (u) => /^https?:\/\//i.test(String(u ?? ''));
+const urlPath = (rel) => rel.split(path.sep).map(encodeURIComponent).join('/');
 
 function feedbackUrl(feedback, vals) {
   const url = feedback?.formUrl;
@@ -33,11 +28,16 @@ function feedbackUrl(feedback, vals) {
   return url + (url.includes('?') ? '&' : '?') + parts.join('&');
 }
 
-function slotParts(slot) {
+export function slotParts(slot) {
   const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})$/.exec(slot || '');
   if (!m) return { hhmm: String(slot ?? ''), date: '', dow: '' };
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   return { hhmm: `${m[4]}:${m[5]}`, date: `${m[3]}/${m[2]}`, dow: DAYS[d.getDay()] };
+}
+
+export function slotLabel(slot) {
+  const { hhmm, date } = slotParts(slot);
+  return date ? `${date} ${hhmm}` : hhmm;
 }
 
 function pendingText(p) {
@@ -45,10 +45,19 @@ function pendingText(p) {
   return String(p ?? '');
 }
 
+// Đường dẫn tương đối từ <outputDir>/index.html và đường dẫn thật trên máy, theo tên thư mục khung.
+function locate(ctx, dir) {
+  const d = String(dir ?? '');
+  const rel = path.relative(ctx.slotDir, d);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) return { abs: d, rel: path.relative(ctx.outputDir, d) };
+  return { abs: path.join(ctx.outputDir, ctx.slot, rel), rel: path.join(ctx.slot, rel) };
+}
+
 function renderVariant(post, v, i, ctx) {
-  const { slot, outDir, feedback, who, target, person } = ctx;
-  const codes = post.postCodes || [];
-  const files = v.files.map((f) => ({ name: f, src: relUrl(outDir, path.join(v.dir, f)) }));
+  const { slot, feedback, who, target, person } = ctx;
+  const codes = arr(post.postCodes);
+  const where = locate(ctx, v.dir);
+  const files = arr(v.files).map((f) => ({ name: f, src: urlPath(path.join(where.rel, String(f))) }));
   const fb = feedbackUrl(feedback, {
     person: person ?? who,
     slot,
@@ -61,45 +70,49 @@ function renderVariant(post, v, i, ctx) {
     `<button type="button" class="ph${k === 0 ? ' cover' : ''}" data-src="${esc(f.src)}" data-name="${esc(f.name)}"><img src="${esc(f.src)}" alt="" loading="lazy"></button>`
   )).join('');
   const note = `${files.length} ảnh · ${codes.length ? esc(codes.join(', ')) : 'thương hiệu'}`;
-  return `<div class="post-b vbody" data-key="${esc(v.key)}" data-kind="${esc(target?.kind ?? '')}" data-path="${esc(v.dir)}" data-feedback="${esc(fb)}"${i ? ' hidden' : ''}>
+  return `<div class="post-b vbody" data-key="${esc(v.key)}" data-kind="${esc(target?.kind ?? '')}" data-path="${esc(where.abs)}" data-feedback="${esc(fb)}"${i ? ' hidden' : ''}>
       <div class="text" data-who="${esc(who)}" data-raw="${esc(v.text)}">${esc(v.text)}</div>
       <div class="photos">${photos}<div class="ph-note">${note}</div></div>
     </div>`;
 }
 
 function renderPost(post, ctx) {
-  const { targets, accounts, outDir, feedback, person, slot } = ctx;
+  const { targets, accounts, feedback, person, slot } = ctx;
   const target = targets.get(post.targetId);
   const acc = accounts.get(target?.account);
   const accLabel = acc?.label ?? target?.account ?? '';
   const author = acc?.type === 'fb-page' ? 'HomeMatch' : (acc?.label ?? person ?? '');
   const who = target?.kind === 'group' ? `${author} · nhóm ${target.name}` : author;
   const kind = target?.kind;
+  const codes = arr(post.postCodes);
+  const variants = arr(post.variants);
   const tags = [];
   if (LABELS[post.label]) tags.push(`<span class="tag inv">${esc(LABELS[post.label])}</span>`);
   if (post.type) tags.push(`<span class="tag">${esc(post.type)}</span>`);
-  const multi = post.variants.length > 1;
-  const first = post.variants[0];
+  const multi = variants.length > 1;
   const link = isHttp(target?.url) ? `<a class="open" href="${esc(target.url)}" target="_blank" rel="noopener noreferrer">${esc(OPEN_TEXT[kind] ?? 'Mở ↗')}</a>` : '';
   const anyFeedback = isHttp(feedback?.formUrl);
   const sub = [accLabel && `đăng bằng ${accLabel}`, KIND_TEXT[kind]].filter(Boolean).join(' · ');
-  const vctx = { slot, outDir, feedback, who, target, person: author };
+  const vctx = { ...ctx, who, target, person: author };
+  const seed = `Kiểu ${post.type}: (bài ${slot} số ${post.n}, mã ${codes.length ? codes.join(', ') : '—'}) `;
+  const first = variants[0] ? locate(ctx, variants[0].dir).abs : '';
   return `
-  <article class="post" data-n="${post.n}" data-acc="${esc(target?.account ?? '')}">
+  <article class="post" data-n="${esc(post.n)}" data-acc="${esc(target?.account ?? '')}">
     <div class="post-h">
-      <span class="num">${p2(post.n)}</span>
+      <span class="num">${esc(p2(post.n))}</span>
       <span class="target"><b>${esc(target?.name ?? post.targetId)}</b><span class="acc">${esc(sub)}</span></span>
       <span class="tags">${tags.join('')}</span>
     </div>
-    ${multi ? `<div class="vtabs">${post.variants.map((v, i) => `<button type="button" data-key="${esc(v.key)}" aria-selected="${i === 0}">Bản ${esc(v.key)}</button>`).join('')}</div>` : ''}
-    ${post.variants.map((v, i) => renderVariant(post, v, i, vctx)).join('\n    ')}
+    ${multi ? `<div class="vtabs">${variants.map((v, i) => `<button type="button" data-key="${esc(v.key)}" aria-selected="${i === 0}">Bản ${esc(v.key)}</button>`).join('')}</div>` : ''}
+    ${variants.map((v, i) => renderVariant(post, v, i, vctx)).join('\n    ')}
     <div class="actions">
       <button type="button" class="btn" data-act="copy-text">Copy nội dung</button>
       <button type="button" class="btn ghost" data-act="copy-path">Copy thư mục ảnh</button>
       ${link}
       ${anyFeedback ? '<button type="button" class="btn ghost" data-act="feedback">Góp ý</button>' : ''}
+      ${post.type ? `<button type="button" class="btn ghost" data-act="seed" data-seed="${esc(seed)}">Sửa kiểu bài này</button>` : ''}
       <label class="posted"><input type="checkbox"> Đã đăng</label>
-      <span class="path">${esc(first.dir)}</span>
+      <span class="path">${esc(first)}</span>
     </div>
   </article>`;
 }
@@ -112,17 +125,18 @@ function foot(summary, items) {
   </details>`;
 }
 
-export function renderPostsPage({
-  slot, generatedAt, posts, targets, accounts, skipped = [], pending = [], notes = [],
-  feedback = {}, person = '', outDir,
-}) {
-  const tmap = new Map((targets || []).map((t) => [t.id, t]));
-  const amap = new Map((accounts || []).map((a) => [a.id, a]));
-  const base = outDir ?? (posts[0] ? path.dirname(posts[0].dir) : '');
-  const ctx = { targets: tmap, accounts: amap, outDir: base, feedback, person, slot };
+// data = nội dung page-data.json của một khung; outputDir = thư mục chứa index.html chung.
+export function slotSection(data, { outputDir, feedback = {}, person = '', hidden = false }) {
+  const slot = String(data.slot ?? '');
+  const posts = arr(data.posts).filter((p) => p && typeof p === 'object');
+  const tmap = new Map(arr(data.targets).map((t) => [t?.id, t]));
+  const amap = new Map(arr(data.accounts).map((a) => [a?.id, a]));
+  const slotDir = typeof data.outDir === 'string' && data.outDir ? data.outDir : path.join(outputDir, slot);
+  const ctx = { targets: tmap, accounts: amap, feedback, person, slot, slotDir, outputDir };
   const { hhmm, date, dow } = slotParts(slot);
-  const gen = new Date(generatedAt);
+  const gen = new Date(data.generatedAt);
   const done = Number.isNaN(gen.getTime()) ? '' : ` · soạn xong ${p2(gen.getHours())}:${p2(gen.getMinutes())}`;
+  const meta = [dow && date ? ` · ${dow} ${date}` : '', done].join('').replace(/^ · /, '· ');
 
   const accIds = [...new Set(posts.map((p) => tmap.get(p.targetId)?.account).filter(Boolean))];
   const filters = [`<button type="button" aria-pressed="true" data-acc="">Tất cả</button>`]
@@ -130,24 +144,29 @@ export function renderPostsPage({
     .join('');
 
   const footer = [];
+  const skipped = arr(data.skipped);
   if (skipped.length) {
     footer.push(foot(`${skipped.length} bài bị bỏ`, skipped.map((s) => {
-      const t = tmap.get(s.targetId);
-      return `<li><i>${esc(t?.name ?? s.targetId)}</i>: ${esc(s.reason)}</li>`;
+      const t = tmap.get(s?.targetId);
+      return `<li><i>${esc(t?.name ?? s?.targetId)}</i>: ${esc(s?.reason)}</li>`;
     })));
   }
+  const pending = arr(data.pending).filter((p) => pendingText(p));
   if (pending.length) footer.push(foot('Đang chờ quy định', pending.map((p) => `<li>${esc(pendingText(p))}</li>`)));
+  const notes = arr(data.notes);
   if (notes.length) footer.push(foot('Ghi chú', notes.map((n) => `<li>${esc(n)}</li>`)));
 
-  const values = {
-    PAGE_TITLE: esc(`Bài đăng ${hhmm}${date ? ' - ' + date : ''}`),
-    HEADER_TITLE: `Bài đăng <b>${esc(hhmm)}</b> <span class="mute it" style="font-size:15px">${esc([dow && date ? ` · ${dow} ${date}` : '', done].join('').replace(/^ · /, '· '))}</span>`,
-    TOTAL: String(posts.length),
-    FOLDER_NOTE: `Thư mục ảnh của khung này đã mở trong Finder: ${esc(base)} · mỗi bài là thư mục cùng số (01_, 02_ …)`,
-    FILTERS: filters,
-    POSTS: posts.map((p) => renderPost(p, ctx)).join('\n'),
-    FOOTER: footer.join(''),
-    SLOT_JSON: JSON.stringify(String(slot ?? '')).replace(/</g, '\\u003c'),
-  };
-  return fs.readFileSync(TEMPLATE, 'utf8').replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
+  return `<section class="slotview" data-slot="${esc(slot)}" data-total="${posts.length}"${hidden ? ' hidden' : ''}>
+  <div class="sh">
+    <div class="sh-row">
+      <div class="sh-title">Bài đăng <b>${esc(hhmm)}</b> <span class="mute it">${esc(meta)}</span></div>
+      <div class="progress">đã đăng <b class="posted-n">0</b> / <b>${posts.length}</b></div>
+    </div>
+    <div class="bar"><i></i></div>
+    <div class="folder">Thư mục ảnh của khung này: ${esc(path.join(outputDir, slot))} · mỗi bài là thư mục cùng số (01_, 02_ …)</div>
+    <div class="filters">${filters}</div>
+  </div>
+  ${posts.map((p) => renderPost(p, ctx)).join('\n') || '<p class="hint">Khung này không có bài.</p>'}
+  ${footer.join('')}
+</section>`;
 }
