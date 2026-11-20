@@ -1,5 +1,5 @@
 ---
-description: Xem và chỉnh cấu hình HomeMatch (nhóm, lịch, persona, kiểu bài) bằng trang tương tác
+description: Xem và chỉnh cấu hình HomeMatch (cụm nhóm, lịch, persona, kiểu bài) bằng trang tương tác
 argument-hint: [yêu cầu chỉnh sửa]
 ---
 

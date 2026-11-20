@@ -1,6 +1,6 @@
 ---
 name: hm-config
-description: Xem và chỉnh cấu hình HomeMatch marketing (nhóm đăng, lịch soạn bài, persona, kiểu bài) qua trang chủ HomeMatch mở bằng Lavish; tự đồng bộ lịch soạn bài với scheduled tasks. Dùng khi chạy /hm-config hoặc khi người dùng muốn đổi nhóm, giờ đăng, giọng văn, kiểu bài.
+description: Xem và chỉnh cấu hình HomeMatch marketing (cụm nhóm, lịch soạn bài, persona, kiểu bài) qua trang chủ HomeMatch mở bằng Lavish; tự đồng bộ lịch soạn bài với scheduled tasks. Dùng khi chạy /hm-config hoặc khi người dùng muốn đổi cụm nhóm, đánh dấu đã vào nhóm, giờ đăng, giọng văn, kiểu bài.
 ---
 
 # Chỉnh cấu hình HomeMatch
@@ -21,7 +21,7 @@ CLI: `node "${CLAUDE_PLUGIN_ROOT}/scripts/config-cli.mjs" <init|backup|undo|chan
 ## Bước 1: Dựng và mở trang
 
 1. Nếu chưa có hồ sơ: chạy `init`.
-2. Chạy `render-board`: dựng trang chủ `<outputDir>/index.html` (mặc định `~/HomeMatch-Posts/index.html`; cùng trang với bài đăng các khung, 4 tab Bài đăng · Kiểu bài · Hằng ngày · Hồ sơ). stdout là đường dẫn trang, gọi là `<file>`.
+2. Chạy `render-board`: dựng trang chủ `<outputDir>/index.html` (mặc định `~/HomeMatch-Posts/index.html`; cùng trang với bài đăng các khung, 5 tab Bài đăng · Kiểu bài · Cụm nhóm · Hằng ngày · Hồ sơ). stdout là đường dẫn trang, gọi là `<file>`.
    Mở bằng Lavish thì trang ở chế độ "Đang sửa cùng Claude" (ô yêu cầu gửi thẳng cho bạn, có hoàn tác). Mở thẳng bằng trình duyệt thì trang "Chỉ xem": nút "Copy yêu cầu" copy `/hm-config <yêu cầu 1>; <yêu cầu 2>` để người dùng dán vào chat.
 3. Mở: `npx -y lavish-axi <file>`.
 4. Chờ phản hồi, ở foreground: `npx -y lavish-axi poll <file>`.
@@ -33,6 +33,10 @@ Phản hồi từ `poll` (hoặc đối số của `/hm-config`, nhiều yêu c�
 
 - Yêu cầu bắt đầu bằng `Kiểu <tên>:` (kể cả dạng `Kiểu <tên>: (bài <slot> số <n>, mã …) …` từ nút "Sửa kiểu bài này") hoặc `Thêm kiểu bài mới:` là sửa `content-types.md`: sửa đúng mục `## <tên>` (hoặc thêm mục mới cùng định dạng: Kênh, Số tin mỗi bài, Cách chọn tin, Cấu trúc, Ảnh, Ví dụ). Phần trong ngoặc chỉ cho biết bài nào người dùng đang nhìn; đọc `<outputDir>/<slot>/page-data.json` nếu cần xem nội dung bài đó.
 
+- Cụm nhóm nằm ở `config.json` › `clusters[]`: `{ id, name, account, active, segment (room | student | apartment), districts[], days[], slots[], keywords[], note, groups[] }`, mỗi nhóm `{ name, url, members, interactions, joined }`. Nhóm thật do người dùng tự tìm và tham gia; plugin chỉ gợi ý.
+  - `Đã vào nhóm <tên> (cụm <tên cụm>)` / `Chưa vào nhóm …` (từ ô tích ở tab Cụm nhóm): đặt `joined` `true` / `false` cho nhóm đó trong cụm đó (một nhóm có thể nằm ở nhiều cụm; chỉ sửa cụm được nêu).
+  - `Thêm nhóm vào cụm <tên cụm>: <tên> <link>`: thêm `{ name, url, joined: true }` vào `groups` của cụm.
+  - `Tạm ngừng cụm …` / `Bật lại cụm …`: đổi `active`.
 - Nếu có câu "Hoàn tác lần sửa gần nhất": sang bước 5.
 - Ngược lại, theo thứ tự:
   1. `config-cli backup`.

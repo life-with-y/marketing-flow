@@ -21,11 +21,11 @@ Làm đúng thứ tự 1 → 5. Mọi chữ hiển thị cho người dùng bằ
 Chạy:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.mjs" [--slot HH:MM] [--only "Tên nhóm 1,Tên nhóm 2"]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.mjs" [--slot HH:MM] [--only "Tên cụm 1,Tên cụm 2"]
 ```
 
 - `--slot HH:MM`: chỉ khi được gọi từ lịch (lời gọi có giờ khung, vd "khung 11:00" → `--slot 11:00`). Chạy tay (`/hm-prep-now`) thì không truyền.
-- `--only "…"`: chỉ khi lời gọi giới hạn nhóm (vd "chỉ nhóm Cầu Giấy, Đống Đa" → `--only "Cầu Giấy,Đống Đa"`). Tên cách nhau bằng dấu phẩy, trong một cặp ngoặc kép.
+- `--only "…"`: chỉ khi lời gọi giới hạn cụm nhóm (vd "chỉ cụm Cầu Giấy, Đống Đa" → `--only "Cầu Giấy,Đống Đa"`; khớp một phần tên cụm, không dấu). Tên cách nhau bằng dấu phẩy, trong một cặp ngoặc kép.
 
 Xử lý theo mã thoát:
 
@@ -57,8 +57,9 @@ Thứ tự ưu tiên khi mâu thuẫn: luật cứng (`hardRules`) > hướng d�
 
 - `slot`: `slotId`.
 - `targets[]`: các đích của khung, mỗi đích một bài (hoặc bỏ vào `skipped`):
-  - `id` (vd `group:https://facebook.com/groups/…`, `wall:fb1:0`, `page:page:0`, `threads:th:0`), `kind` (`group` | `wall` | `page` | `threads`), `account`, `name`, `url`
-  - `districts[]` (rỗng = toàn Hà Nội), `language` (`vi` | `en`; thiếu = `vi`), `note` (ghi chú nhóm, luôn tuân theo)
+  - `id` (vd `group:cg-room`, `wall:fb1:0`, `page:page:0`, `threads:th:0`), `kind` (`group` | `wall` | `page` | `threads`), `account`, `name`, `url`
+  - `group` là **cụm nhóm** (khu vực × phân khúc): một bài người dùng đăng trên trang cá nhân (`account`) rồi chia sẻ vào các nhóm của cụm. Đích có thêm `districts[]` (rỗng = toàn Hà Nội), `segment` (`room` | `student` | `apartment`), `segmentRule` (luật tin của phân khúc, vd `Có phòng dưới 5 triệu`), `listingCodes[]` (mã tin đủ điều kiện thuộc cụm, script đã lọc theo quận + phân khúc, theo thứ tự ưu tiên), `groups[]` (nhóm đã vào: `name`, `url`)
+  - `language` (`vi` | `en`; thiếu = `vi`), `note` (quy định chặt nhất của các nhóm trong cụm, luôn tuân theo)
   - `variants` (số bản 1–3), `contact[]` (thứ tự ưu tiên liên hệ; Page đã là `pageContact`)
   - `links` (`true` | `false`): công tắc link `homematch.vn` của kênh (config `links`, mặc định tắt). Nhóm: `true` chỉ cho phép link ở `comment` khi `target.note` cũng cho phép.
   - `priceStyle` (`full` | `masked`): cách ghi giá của kênh (config `priceStyle`, mặc định `full`).
@@ -96,7 +97,7 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
 ### 3.2 Chọn tin
 
 - Chỉ tin `eligible: true`.
-- Đích `group` có `districts`: chỉ tin có `district` thuộc danh sách (so không dấu, không phân biệt hoa thường). `districts` rỗng: mọi quận.
+- Đích `group` (cụm nhóm): chỉ tin có mã trong `target.listingCodes` (build trả lỗi tin ngoài cụm). Viết theo góc của phân khúc: `student` nói giá, chi phí hằng tháng, đủ đồ; `apartment` nói loại phòng, máy giặt riêng, thang máy, an ninh; `room` theo người đọc của từng tin.
 - Mức ưu tiên của tin: (1) khớp leads: có một `leads.demands[]` cùng `district` (so không dấu) và giá phòng thấp nhất của tin ≤ `maxPrice` (không có `maxPrice` thì chỉ cần cùng quận); (2) `label` theo `NEW` > `PRICE_DOWN` > `NOW_AVAILABLE` > `UNCHANGED` = `PRICE_UP`.
 - **Xoay vòng**: trong cùng mức, xếp tin chưa có `lastPrepared[<id đích>]` trước, rồi tới tin có thời điểm cũ nhất. Lấy tin đầu danh sách (bài nhiều tin: lấy đủ số tin theo kiểu, theo thứ tự đó, thoả điều kiện của kiểu).
 - **Trải tin trong lượt** (áp sau mức ưu tiên và xoay vòng, chỉ đổi thứ tự giữa các tin còn lại):
@@ -106,7 +107,7 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
   - Hoà nhau hoàn toàn (cùng mức, cùng thời điểm `lastPrepared` hoặc cùng chưa có): giữ thứ tự trong `input.listings`.
 - Ngày không có gì mới vẫn soạn đủ bài bằng tin `UNCHANGED`.
 - Một tin có thể vào nhiều đích trong cùng khung (khi không còn tin khác theo luật trải tin ở trên); mỗi đích một nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
-- Không đủ tin cho đích (vd nhóm có `districts` mà không còn tin đủ điều kiện): không soạn bài cho đích đó, thêm vào `skipped` với lý do (vd `Không có tin đủ điều kiện ở Cầu Giấy`).
+- Không đủ tin cho đích (vd cụm có `listingCodes` rỗng): không soạn bài cho đích đó, thêm vào `skipped` với lý do (vd `Cụm Ba Đình · phòng trọ chưa có tin`).
 
 ### 3.3 Chọn ảnh (`images`: URL lấy nguyên từ `listing.images[].url`, theo thứ tự đăng)
 
@@ -140,7 +141,7 @@ Làm cho từng đích theo thứ tự trong `input.targets`. Thứ tự bài tr
 - **Link tin trên Facebook (`page`, `wall`), khi công tắc bật**: thân bài (`text`) **không có link**. CTA trong thân bài trỏ về Zalo / inbox theo `contact` và nói "link chi tiết ở comment". Đặt `link` (có thể kèm mã tin) vào `comment` của bản, vd `Chi tiết và ảnh: <link>`; người dùng dán làm comment đầu tiên rồi ghim. Lý do: Facebook giảm tiếp cận bài có link ngoài trong thân bài, và Meta đang thử giới hạn 2 bài có link/tháng cho Page và trang cá nhân chuyên nghiệp chưa xác minh (link trong comment không bị tính).
 - **Threads, khi công tắc bật**: được đặt link tin trong `text` (Threads không còn hạ tiếp cận bài có link). Không cần `comment`.
 - **Giá che (`target.priceStyle` = `masked`)**: CTA mời hỏi giá chính xác qua Zalo / inbox ("nhắn mình để có giá chính xác"), không viết câu mồi "comment để nhận giá".
-- `group`: quy định đăng của nhóm (cách ghi liên hệ, link, tiền tố) đang **pending** cho tới khi có quy định rõ (xem `library.pending`). Khi chưa có quy định cho nhóm, dùng **mặc định an toàn**: không SĐT (kể cả số Zalo), không link ở đâu cả (cả `text` lẫn `comment`), CTA "nhắn tin / comment mã T…". Chỉ dùng loại liên hệ khác khi `target.note` ghi rõ nhóm cho phép; khi đó chọn theo thứ tự trong `contact`, lùi xuống loại nhóm cho phép. Link chỉ khi **cả** `target.links` là `true` **và** `target.note` cho phép link; khi đó link để trong `comment`, không để trong thân bài.
+- `group`: bài cụm được chia sẻ nguyên văn vào nhiều nhóm, nên phải hợp quy định của **mọi** nhóm trong cụm. Quy định đăng của nhóm (cách ghi liên hệ, link, tiền tố) đang **pending** cho tới khi có quy định rõ (xem `library.pending`). Khi chưa có quy định cho nhóm, dùng **mặc định an toàn**: không SĐT (kể cả số Zalo), không link ở đâu cả (cả `text` lẫn `comment`), CTA "nhắn tin / comment mã T…". Chỉ dùng loại liên hệ khác khi `target.note` ghi rõ nhóm cho phép; khi đó chọn theo thứ tự trong `contact`, lùi xuống loại nhóm cho phép. Link chỉ khi **cả** `target.links` là `true` **và** `target.note` cho phép link; khi đó link để trong `comment`, không để trong thân bài.
 - `target.note` luôn được tuân theo (vd tiền tố bắt buộc, cấm link), trừ khi nó trái luật cứng.
 
 ### 3.6 Viết nội dung (`text`)
@@ -189,7 +190,7 @@ Ghi vào `~/.homematch-marketing/runs/<slotId>/posts.json` (cùng thư mục v�
 }
 ```
 
-- `targetId` = `id` của đích. Mỗi đích `group` tối đa 1 bài; mỗi đích khác cũng 1 bài.
+- `targetId` = `id` của đích. Mỗi cụm (`group`) tối đa 1 bài mỗi khung; mỗi đích khác cũng 1 bài.
 - `postCodes`: mã các tin trong bài, theo thứ tự xuất hiện; `[]` cho bài thương hiệu. Không lặp mã.
 - `variants.length` = `target.variants`; `key` lần lượt `A`, `B`, `C`.
 - `text` xuống dòng bằng `\n` thật trong chuỗi JSON.

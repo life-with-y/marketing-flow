@@ -12,6 +12,7 @@ import { targetsForSlot, fold } from './lib/targets.mjs';
 import { lastPreparedMap } from './lib/prepared.mjs';
 import { fetchSheet, loadLeads } from './lib/sheet.mjs';
 import { platformGuidePaths } from './lib/platforms.mjs';
+import { inCluster } from './lib/clusters.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RANK = ['NEW', 'PRICE_DOWN', 'NOW_AVAILABLE', 'UNCHANGED'];
@@ -114,6 +115,10 @@ export async function runPrepare({
     })
     .sort((a, b) => (b._lead - a._lead) || (rankOf(a.label) - rankOf(b.label)))
     .map(({ _lead, ...l }) => l);
+  // Đích cụm nhóm: script lọc sẵn tin đúng quận + phân khúc, theo thứ tự ưu tiên ở trên.
+  for (const t of targets) {
+    if (t.kind === 'group') t.listingCodes = listings.filter((l) => l.eligible && inCluster(l, t)).map((l) => l.code);
+  }
 
   const lib = cfg.library || {};
   const [approved, trends, pending] = await Promise.all(

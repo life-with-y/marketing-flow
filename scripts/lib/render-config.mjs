@@ -2,12 +2,12 @@
 import { esc, PAGE_MASKED_WARNING } from './render-posts.mjs';
 import { targetsForSlot } from './targets.mjs';
 import { validateConfig } from './config.mjs';
+import { inCluster, segmentRule } from './clusters.mjs';
 
 const DOW = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const DAY_LABEL = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 'T7', sun: 'CN' };
 const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const LANG = { vi: 'tiếng Việt', en: 'tiếng Anh' };
 const KIND_LABEL = { wall: 'Tường', page: 'Page', threads: 'Threads' };
 const SWITCH_KINDS = [['page', 'Page'], ['wall', 'Tường'], ['threads', 'Threads'], ['group', 'Nhóm']];
 
@@ -65,7 +65,7 @@ function slotsHtml(cfg, today, errors) {
     const groups = ts.filter((t) => t.kind === 'group');
     const accs = [...new Set(groups.map((t) => accLabel(cfg, t.account)))];
     const rows = [];
-    if (groups.length) rows.push(`<li><span>${groups.length} nhóm</span><span>${esc(accs.join(', '))}</span></li>`);
+    if (groups.length) rows.push(`<li><span>${groups.length} cụm nhóm</span><span>${esc(accs.join(', '))}</span></li>`);
     const others = new Map();
     for (const t of ts.filter((x) => x.kind !== 'group')) {
       const k = `${KIND_LABEL[t.kind] || t.kind}${t.kind === 'wall' ? ' ' + t.name : t.kind === 'page' ? ' ' + t.name : ''}`;
@@ -77,25 +77,39 @@ function slotsHtml(cfg, today, errors) {
   return { total, html: boxes.join('\n') || '<p class="hint">Chưa có giờ chạy.</p>' };
 }
 
-function groupsHtml(cfg, today) {
-  const gs = arr(cfg.groups).filter((g) => g && typeof g === 'object');
-  const dayKey = DAY_KEYS[today.getDay()];
-  let off = 0, hidden = 0;
-  const html = gs.map((g) => {
-    const active = g.active !== false;
-    if (!active) off++;
-    const isToday = active && arr(g.days ?? ALL_DAYS).includes(dayKey);
-    if (!isToday) hidden++;
-    const slots = arr(g.slots ?? cfg.schedule);
-    const lg = g.language && g.language !== 'vi' ? ` · ${g.language}` : '';
-    const meta = `${esc(slots.join(' · '))} · ${esc(accLabel(cfg, g.account))}${esc(lg)} <span class="state${active ? ' on' : ''}">${active ? 'bật' : 'tạm ngừng'}</span>`;
-    return `<details class="grp${active ? '' : ' off'}" data-today="${isToday ? 1 : 0}"><summary><span class="grp-name">${esc(g.name)}</span><span class="grp-meta">${meta}</span></summary>
-<div class="grp-body"><dl class="kv"><dt>Quận</dt><dd>${arr(g.districts).length ? esc(arr(g.districts).join(', ')) : 'toàn Hà Nội'}</dd><dt>Ngày</dt><dd>${esc(daysText(g.days ?? ALL_DAYS))}</dd><dt>Ngôn ngữ</dt><dd>${esc(LANG[g.language ?? 'vi'] || g.language)}</dd><dt>Ghi chú</dt><dd>${dash(g.note)}</dd></dl></div></details>`;
-  }).join('\n');
+const fmtK = (n) => (Number.isInteger(n) ? (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n)) : '');
+const SHOW_GROUPS = 5;
+
+function groupRow(c, g) {
+  const ok = isHttp(g.url);
+  const name = esc(g.name || g.url);
+  return `<li class="jg"><label><input type="checkbox" data-cluster="${esc(c.name)}" data-name="${esc(g.name || g.url)}"${g.joined === true ? ' checked' : ''}> <span class="jg-n">${name}</span></label><span class="jg-m">${esc(fmtK(g.members))}</span><span class="jg-m">${esc(g.interactions ?? '')}</span>${ok ? `<a href="${esc(g.url)}" target="_blank" rel="noopener noreferrer" aria-label="Mở nhóm">↗</a>` : '<span></span>'}</li>`;
+}
+
+// Tab Cụm nhóm: mỗi cụm một thẻ (quận × phân khúc), số tin đang khớp, nhóm nên vào xếp theo tương tác.
+function clustersHtml(cfg, listings) {
+  const cs = arr(cfg.clusters).filter((c) => c && typeof c === 'object');
+  const ls = Array.isArray(listings) ? listings.filter((l) => arr(l?.images).length >= 3) : null;
+  const cards = [...cs.filter((c) => c.active !== false), ...cs.filter((c) => c.active === false)].map((c) => {
+    const active = c.active !== false;
+    const n = ls ? ls.filter((l) => inCluster(l, c)).length : null;
+    const groups = arr(c.groups).filter((g) => g && typeof g === 'object');
+    const joined = groups.filter((g) => g.joined === true).length;
+    const count = n == null ? '' : `<span class="cnt${n ? '' : ' zero'}">${n} tin khớp</span>`;
+    const meta = `${esc(arr(c.slots ?? cfg.schedule).join(' · '))} · ${esc(accLabel(cfg, c.account))} · ${joined}/${groups.length} nhóm đã vào <span class="state${active ? ' on' : ''}">${active ? 'bật' : 'tạm ngừng'}</span>`;
+    const head = `<li class="jg jg-h"><span>Nhóm</span><span class="jg-m">Thành viên</span><span class="jg-m">Tương tác</span><span></span></li>`;
+    const top = groups.slice(0, SHOW_GROUPS).map((g) => groupRow(c, g)).join('');
+    const rest = groups.slice(SHOW_GROUPS);
+    const more = rest.length ? `<details class="more-g"><summary>+ ${rest.length} nhóm khác</summary><ul class="jgl">${rest.map((g) => groupRow(c, g)).join('')}</ul></details>` : '';
+    const kw = arr(c.keywords).length ? arr(c.keywords).map((k) => `“${esc(k)}”`).join(', ') : '<span class="mute">—</span>';
+    return `<details class="grp clu${active ? '' : ' off'}"${active ? ' open' : ''}><summary><span class="grp-name">${esc(c.name)} ${count}</span><span class="grp-meta">${meta}</span></summary>
+<div class="grp-body"><dl class="kv"><dt>Quận</dt><dd>${arr(c.districts).length ? esc(arr(c.districts).join(', ')) : 'toàn Hà Nội'}</dd><dt>Tin</dt><dd>${esc(segmentRule(c.segment ?? 'room'))}</dd><dt>Ngày</dt><dd>${esc(daysText(c.days ?? ALL_DAYS))}</dd><dt>Tìm thêm</dt><dd>${kw}</dd><dt>Ghi chú</dt><dd>${dash(c.note)}</dd></dl>
+${groups.length ? `<ul class="jgl">${head}${top}</ul>${more}` : '<p class="hint">Chưa có nhóm.</p>'}</div></details>`;
+  });
+  const on = cs.filter((c) => c.active !== false).length;
   return {
-    html,
-    counts: `${gs.length - off} bật · ${off} tạm ngừng`,
-    more: hidden ? `… và ${hidden} nhóm khác` : '',
+    html: cards.join('\n') || '<p class="hint">Chưa có cụm nhóm.</p>',
+    counts: `${on} bật · ${cs.length - on} tạm ngừng`,
   };
 }
 
@@ -174,11 +188,11 @@ function whenOf(at) {
 }
 
 // Giá trị cho các chỗ {{…}} phần cấu hình trong assets/home/template.html.
-export function boardParts({ cfg, persona = null, pending = [], pendingError = null, today = new Date(), lastChange = null, tokenLabel = null, errors } = {}) {
+export function boardParts({ cfg, listings = null, persona = null, pending = [], pendingError = null, today = new Date(), lastChange = null, tokenLabel = null, errors } = {}) {
   cfg = cfg && typeof cfg === 'object' ? cfg : {};
   const errs = errors ?? validateConfig(cfg);
   const slots = slotsHtml(cfg, today, errs);
-  const groups = groupsHtml(cfg, today);
+  const clusters = clustersHtml(cfg, listings);
   const when = lastChange ? whenOf(lastChange.at) : '';
   const lastHtml = lastChange
     ? `  <details class="box">
@@ -200,9 +214,8 @@ export function boardParts({ cfg, persona = null, pending = [], pendingError = n
     ERRORS: errorsHtml,
     TODAY_COUNT: `${slots.total} bài`,
     SLOTS: slots.html,
-    GROUP_COUNTS: esc(groups.counts),
-    GROUPS: groups.html,
-    MORE: esc(groups.more),
+    CLUSTER_COUNTS: esc(clusters.counts),
+    CLUSTERS: clusters.html,
     PERSLOT: perSlotHtml(cfg),
     PENDING: pendingHtml(pending, pendingError),
     PROFILE: profileHtml(cfg, persona, tokenLabel),

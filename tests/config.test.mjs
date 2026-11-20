@@ -10,17 +10,17 @@ const base = () => ({
   apiBaseUrl: 'https://x',
   schedule: ['11:00'],
   accounts: [{ id: 'fb1', type: 'fb-personal', label: 'a' }],
-  groups: [{ name: 'g', url: 'https://fb/g', account: 'fb1', days: ['mon'] }],
+  clusters: [{ id: 'g', name: 'g', account: 'fb1', days: ['mon'] }],
   variants: { default: 1 },
 });
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hm-'));
 
 test('valid config has no errors', () => assert.deepEqual(validateConfig(base()), []));
 
-test('unknown group account', () => {
+test('unknown cluster account', () => {
   const c = base();
-  c.groups[0].account = 'fb9';
-  assert.ok(validateConfig(c).some((e) => e.includes('groups[0].account')));
+  c.clusters[0].account = 'fb9';
+  assert.ok(validateConfig(c).some((e) => e.includes('clusters[0].account')));
 });
 
 test('variants out of range', () => {
@@ -37,8 +37,8 @@ test('bad schedule time', () => {
 
 test('bad days', () => {
   const c = base();
-  c.groups[0].days = ['mon', 'xyz'];
-  assert.ok(validateConfig(c).some((e) => e.includes('groups[0].days')));
+  c.clusters[0].days = ['mon', 'xyz'];
+  assert.ok(validateConfig(c).some((e) => e.includes('clusters[0].days')));
 });
 
 test('loadConfig broken json', () => {
@@ -49,14 +49,14 @@ test('loadConfig broken json', () => {
 
 test('loadConfig merges defaults', () => {
   const d = tmp();
-  const { apiBaseUrl, accounts, groups } = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups: [{ name: 'g', url: 'https://fb/g', account: 'fb1' }] }));
+  const { apiBaseUrl, accounts, clusters } = base();
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, clusters: [{ id: 'g', name: 'g', account: 'fb1' }] }));
   const c = loadConfig(d);
   assert.deepEqual(c.schedule, ['11:00', '17:30']);
-  assert.equal(c.groups[0].language, 'vi');
-  assert.equal(c.groups[0].active, true);
-  assert.equal(c.groups[0].days.length, 7);
-  assert.deepEqual(c.groups[0].districts, []);
+  assert.equal(c.clusters[0].language, 'vi');
+  assert.equal(c.clusters[0].active, true);
+  assert.equal(c.clusters[0].days.length, 7);
+  assert.deepEqual(c.clusters[0].districts, []);
   assert.equal('model' in c, false);
   assert.equal(c.outputDir, '~/HomeMatch-Posts');
   assert.deepEqual(c.variants, { default: 1 });
@@ -84,25 +84,25 @@ test('paths', () => {
   assert.equal(expandHome('/abs', '/h'), '/abs');
 });
 
-test('group without slots gets schedule slots', () => {
+test('cluster without slots gets schedule slots', () => {
   const d = tmp();
   const b = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, groups: [{ name: 'g', url: 'https://fb/g', account: 'fb1' }] }));
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ ...b, clusters: [{ id: 'g', name: 'g', account: 'fb1' }] }));
   const c = loadConfig(d);
-  assert.deepEqual(c.groups[0].slots, c.schedule);
-  assert.notEqual(c.groups[0].slots, c.schedule);
+  assert.deepEqual(c.clusters[0].slots, c.schedule);
+  assert.notEqual(c.clusters[0].slots, c.schedule);
 });
 
-test('group slot not in schedule is an error', () => {
+test('cluster slot not in schedule is an error', () => {
   const c = base();
-  c.groups[0].slots = ['12:00'];
-  assert.ok(validateConfig(c).some((e) => e.includes('groups[0].slots[0]')));
+  c.clusters[0].slots = ['12:00'];
+  assert.ok(validateConfig(c).some((e) => e.includes('clusters[0].slots[0]')));
 });
 
 test('top-level optional sections get defaults', () => {
   const d = tmp();
-  const { apiBaseUrl, accounts, groups } = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups }));
+  const { apiBaseUrl, accounts, clusters } = base();
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, clusters }));
   const c = loadConfig(d);
   assert.deepEqual(c.contact, []);
   assert.deepEqual(c.pageContact, []);
@@ -110,15 +110,20 @@ test('top-level optional sections get defaults', () => {
   assert.deepEqual(c.leadScan, { enabled: false });
 });
 
-test('groups[i].url: bắt buộc http(s), không trùng', () => {
-  const at = (urls) => { const c = base(); c.groups = urls.map((url) => ({ ...base().groups[0], url })); return validateConfig(c); };
+test('clusters[i].groups[j].url: bắt buộc http(s), không trùng trong cụm; id cụm không trùng', () => {
+  const at = (urls) => { const c = base(); c.clusters[0].groups = urls.map((url) => ({ name: 'n', url })); return validateConfig(c); };
   assert.deepEqual(at(['https://fb/a', 'http://fb/b']), []);
   for (const bad of [undefined, '', 'u', 'ftp://fb/a', 'facebook.com/groups/x', 3]) {
-    assert.ok(at([bad]).some((e) => e.startsWith('groups[0].url')), String(bad));
+    assert.ok(at([bad]).some((e) => e.startsWith('clusters[0].groups[0].url')), String(bad));
   }
-  const dup = at(['https://fb/a', 'https://fb/a']);
-  assert.ok(dup.some((e) => e.startsWith('groups[1].url')));
-  assert.ok(!dup.some((e) => e.startsWith('groups[0].url')));
+  const dup = at(['https://fb/a', 'https://FB/a/']);
+  assert.ok(dup.some((e) => e.startsWith('clusters[0].groups[1].url')));
+  const c = base(); c.clusters.push({ ...c.clusters[0] });
+  assert.ok(validateConfig(c).some((e) => e.startsWith('clusters[1].id')));
+  const s = base(); s.clusters[0].segment = 'vip';
+  assert.ok(validateConfig(s).some((e) => e.startsWith('clusters[0].segment')));
+  const old = base(); old.groups = [{ name: 'g', url: 'https://fb/g' }];
+  assert.ok(validateConfig(old).some((e) => e.startsWith('groups:')));
 });
 
 test('perSlot.<key>: account có thật, số nguyên 0–5', () => {
@@ -133,12 +138,12 @@ test('perSlot.<key>: account có thật, số nguyên 0–5', () => {
 
 test('links, priceStyle: mặc định tắt link, giá đầy đủ; trộn từng khoá', () => {
   const d = tmp();
-  const { apiBaseUrl, accounts, groups } = base();
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups }));
+  const { apiBaseUrl, accounts, clusters } = base();
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, clusters }));
   const c = loadConfig(d);
   assert.deepEqual(c.links, { page: false, wall: false, threads: false, group: false });
   assert.deepEqual(c.priceStyle, { page: 'full', wall: 'full', threads: 'full', group: 'full' });
-  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, groups, links: { threads: true }, priceStyle: { wall: 'masked' } }));
+  fs.writeFileSync(path.join(d, 'config.json'), JSON.stringify({ apiBaseUrl, accounts, clusters, links: { threads: true }, priceStyle: { wall: 'masked' } }));
   const c2 = loadConfig(d);
   assert.deepEqual(c2.links, { page: false, wall: false, threads: true, group: false });
   assert.deepEqual(c2.priceStyle, { page: 'full', wall: 'masked', threads: 'full', group: 'full' });

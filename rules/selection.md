@@ -7,7 +7,7 @@
 
 ## Đích của khung giờ
 
-- Nhóm có `active: true`, có hôm nay trong `days` và có khung này trong `slots`; mỗi nhóm **tối đa 1 bài** mỗi khung.
+- Cụm nhóm có `active: true`, có hôm nay trong `days` và có khung này trong `slots`; mỗi cụm **tối đa 1 bài** mỗi khung (đăng trên trang cá nhân, chia sẻ vào các nhóm của cụm).
 - Các kênh trong `perSlot` (tường cá nhân, Page, Threads).
 - Script đã lọc sẵn: danh sách đích là `input.targets`.
 
@@ -23,11 +23,13 @@ Trong cùng mức thì ưu tiên tin chưa được soạn cho đích đó lâu 
 
 **Ngày không có gì mới**: vẫn soạn đủ số bài bằng tin `UNCHANGED`, xoay vòng như trên.
 
-## Ghép nhóm theo quận
+## Cụm nhóm: quận × phân khúc
 
-- Nhóm có `districts` chỉ nhận tin thuộc các quận đó.
-- Nhóm không khai `districts` là nhóm toàn Hà Nội.
-- Một tin có thể vào nhiều nhóm trong cùng khung, mỗi nhóm một phiên bản nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
+- Cụm có `districts` chỉ nhận tin thuộc các quận đó.
+- Cụm không khai `districts` là cụm toàn Hà Nội.
+- Phân khúc: `room` mọi tin; `student` tin có phòng dưới 5 triệu; `apartment` tin có phòng Studio / 1 ngủ 1 khách / gác lửng từ 5 triệu.
+- Script lọc sẵn tin của cụm vào `target.listingCodes`.
+- Một tin có thể vào nhiều cụm trong cùng khung, mỗi cụm một phiên bản nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
 
 ## Ảnh
 

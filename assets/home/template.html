@@ -161,11 +161,23 @@ details.foot ul { margin: 6px 0 4px; padding-left: 18px; }
 .grp-meta { font-size: 14px; color: var(--mute); font-style: italic; white-space: nowrap; }
 .grp.off .grp-name { color: var(--mute); text-decoration: line-through; }
 .grp-body { padding: 0 2px 12px 28px; }
+.grp .cnt { font-size: 13px; font-style: italic; color: var(--mute); margin-left: 6px; }
+.grp .cnt.zero { color: #b3261e; }
+.jgl { list-style: none; margin: 12px 0 0; padding: 0; font-size: 14.5px; }
+.jg { display: grid; grid-template-columns: minmax(0, 1fr) 76px 64px 20px; gap: 8px; align-items: center; padding: 3px 0; border-top: 1px dotted var(--faint); }
+.jg label { display: flex; gap: 8px; align-items: center; min-width: 0; cursor: pointer; }
+.jg-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jg-m { text-align: right; color: var(--mute); font-variant-numeric: tabular-nums; }
+.jg-h { font-size: 13px; color: var(--mute); font-style: italic; border-top: none; }
+.jg a { text-decoration: none; color: var(--ink); }
+.more-g summary { cursor: pointer; font-size: 14px; color: var(--mute); font-style: italic; margin-top: 6px; }
+.share { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 0 16px 10px; font-size: 14.5px; }
+.share-h { font-style: italic; color: var(--mute); }
+.share a { color: var(--ink); }
+
 .state { display: inline-block; border: var(--hair); padding: 0 7px; font-size: 12.5px; line-height: 1.6; white-space: nowrap; font-style: normal; color: var(--ink); }
 .state.on { background: var(--ink); color: var(--paper); }
 .filter { display: flex; gap: 6px; }
-.filter button { font: 13.5px var(--serif); background: var(--paper); border: var(--hair); padding: 1px 10px; cursor: pointer; color: var(--ink); }
-.filter button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 dl.kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 2px 16px; margin: 0; font-size: 15px; }
 dl.kv dt { color: var(--mute); font-style: italic; }
 dl.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
@@ -235,6 +247,7 @@ details.box[open] > summary::after { content: "–"; }
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-tab="posts">Bài đăng <small>{{POSTS_COUNT}}</small></button>
   <button role="tab" aria-selected="false" data-tab="types">Kiểu bài <small>{{TYPES_COUNT}}</small></button>
+  <button role="tab" aria-selected="false" data-tab="clusters">Cụm nhóm <small>{{CLUSTER_COUNTS}}</small></button>
   <button role="tab" aria-selected="false" data-tab="daily">Hằng ngày</button>
   <button role="tab" aria-selected="false" data-tab="profile">Hồ sơ <small>ít sửa</small></button>
 </nav>
@@ -250,19 +263,15 @@ details.box[open] > summary::after { content: "–"; }
     {{TYPES_PANEL}}
   </div>
 
+  <div class="panel narrow" id="p-clusters" hidden>
+    <div id="clusters">{{CLUSTERS}}</div>
+  </div>
+
   <div class="panel narrow" id="p-daily" hidden>
     <h2>Hôm nay sẽ soạn <small>{{TODAY_COUNT}}</small></h2>
     <div class="slots">{{SLOTS}}</div>
 
-    <h2>Nhóm <small>{{GROUP_COUNTS}}</small></h2>
-    <div class="filter" style="margin:-2px 0 10px">
-      <button type="button" aria-pressed="true" data-mode="today">Hôm nay</button>
-      <button type="button" aria-pressed="false" data-mode="all">Tất cả</button>
-    </div>
-    <div id="groups">{{GROUPS}}</div>
-    <p class="hint" id="more" hidden>{{MORE}}</p>
-
-    <h2>Số bài mỗi khung <small>ngoài nhóm</small></h2>
+    <h2>Số bài mỗi khung <small>ngoài cụm nhóm</small></h2>
     {{PERSLOT}}
 {{PENDING}}
   </div>
@@ -276,12 +285,12 @@ details.box[open] > summary::after { content: "–"; }
   <div class="box" id="ask">
     <h3>Muốn đổi gì?</h3>
     <div class="chips">
-      <button type="button" data-seed="Tạm ngừng nhóm ">Tạm ngừng nhóm</button>
-      <button type="button" data-seed="Bật lại nhóm ">Bật lại nhóm</button>
-      <button type="button" data-seed="Thêm nhóm: &lt;tên&gt; &lt;link&gt;, đăng bằng , quận ">Thêm nhóm</button>
+      <button type="button" data-seed="Tạm ngừng cụm ">Tạm ngừng cụm</button>
+      <button type="button" data-seed="Bật lại cụm ">Bật lại cụm</button>
+      <button type="button" data-seed="Thêm nhóm vào cụm : &lt;tên&gt; &lt;link&gt;">Thêm nhóm</button>
       <button type="button" data-seed="Hôm nay không đăng ">Hôm nay bỏ…</button>
     </div>
-    <textarea id="req" placeholder="Gõ bằng lời thường, vd: “nhóm Expats chỉ đăng cuối tuần”"></textarea>
+    <textarea id="req" placeholder="Gõ bằng lời thường, vd: “cụm Cầu Giấy · sinh viên chỉ đăng 11:00”"></textarea>
     <button type="button" class="btn ghost" id="add">Thêm vào danh sách</button>
     <ul class="queue" id="queue"></ul>
     <button type="button" class="btn" id="send" disabled>Copy yêu cầu</button>
@@ -376,15 +385,14 @@ function undo(){
   window.lavish?.sendQueuedPrompts?.();
 }
 
-/* Hằng ngày: lọc nhóm */
-function flt(btn){
-  $$('.filter button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-  const today = btn.dataset.mode === 'today';
-  $$('#groups .grp').forEach(g => { g.hidden = today && g.dataset.today !== '1'; });
-  $('#more').hidden = today;
-}
-$$('.filter button').forEach(b => b.addEventListener('click', () => flt(b)));
-if ($('.filter button')) flt($('.filter button'));
+/* Cụm nhóm: tích "đã vào" thành yêu cầu sửa cấu hình (tích rồi bỏ thì huỷ yêu cầu) */
+$$('#clusters .jg input').forEach(cb => cb.addEventListener('change', () => {
+  const tail = cb.dataset.name + ' (cụm ' + cb.dataset.cluster + ')';
+  const t = (cb.checked ? 'Đã vào nhóm ' : 'Chưa vào nhóm ') + tail;
+  const i = items.indexOf((cb.checked ? 'Chưa vào nhóm ' : 'Đã vào nhóm ') + tail);
+  if (i >= 0) items.splice(i, 1); else { items.push(t); if (MODE === 'edit') lavishQueue(t); }
+  renderQueue();
+}));
 
 /* Bài đăng: chọn khung */
 const sel = $('#slot-sel');

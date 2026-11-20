@@ -45,7 +45,7 @@ test('rowNumber: header is row 1, first data row is 2', async () => {
 });
 
 test('--feedback uses library.feedbackCsvUrl', async () => {
-  const home = homeWith(JSON.stringify({ apiBaseUrl: 'https://a.example', accounts: [], groups: [], library: { feedbackCsvUrl: 'https://example.com/fb.csv' } }));
+  const home = homeWith(JSON.stringify({ apiBaseUrl: 'https://a.example', accounts: [], clusters: [], library: { feedbackCsvUrl: 'https://example.com/fb.csv' } }));
   let asked;
   const { code, json } = await runFb(home, async (u) => { asked = u; return csv(); });
   assert.equal(code, 0);
@@ -54,7 +54,7 @@ test('--feedback uses library.feedbackCsvUrl', async () => {
 });
 
 test('--feedback without url exits 2', async () => {
-  const home = homeWith(JSON.stringify({ apiBaseUrl: 'https://a.example', accounts: [], groups: [] }));
+  const home = homeWith(JSON.stringify({ apiBaseUrl: 'https://a.example', accounts: [], clusters: [] }));
   const { code, json } = await runFb(home);
   assert.equal(code, 2);
   assert.match(json.error, /feedbackCsvUrl/);

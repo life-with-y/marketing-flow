@@ -447,3 +447,13 @@ test('bài "phân khúc": đúng 1 ảnh bìa mỗi tin, theo thứ tự postCod
   // kiểu khác vẫn được thêm ảnh phụ
   assert.deepEqual(seg([...covers, fi('KA', 3)[1]], 'Gom theo khu'), []);
 });
+
+test('cụm nhóm: tin ngoài listingCodes của cụm bị trả lỗi', () => {
+  const cin = {
+    targets: [{ id: 'group:cg', kind: 'group', name: 'Cầu Giấy · sinh viên', variants: 1, links: false, priceStyle: 'full', listingCodes: ['F1'] }],
+    listings: [fake('F1', 6), fake('F2', 4)],
+  };
+  const p = (c) => ({ posts: [{ targetId: 'group:cg', type: 't', postCodes: [c], variants: [{ key: 'A', text: `${c} 2 triệu/tháng`, images: fi(c, 4) }] }] });
+  assert.ok(!validatePosts(p('F1'), cin).errors.some((e) => /không thuộc cụm/.test(e.message)));
+  assert.ok(validatePosts(p('F2'), cin).errors.some((e) => /tin F2 không thuộc cụm "Cầu Giấy · sinh viên"/.test(e.message)));
+});

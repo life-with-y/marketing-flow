@@ -77,4 +77,4 @@ Làm đúng phần "Bước 3: Đồng bộ lịch" của skill `hm-config` (tas
 
 ## Bước 6: Mở cấu hình
 
-Nói một dòng đã xong, rồi mở `/hm-config` bằng skill `hm-config` để điền nhóm đăng và chỉnh phần còn lại.
+Nói một dòng đã xong, rồi mở `/hm-config` bằng skill `hm-config` để điền cụm nhóm và chỉnh phần còn lại.
