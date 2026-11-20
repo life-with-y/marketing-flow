@@ -256,3 +256,27 @@ test('malformed slot files are skipped with a note; other slots intact', () => {
   const only = renderHome({ cfg: cfg(), outputDir: out, slots: [], badSlots: ['2026-11-19_1100'], today: THU });
   assert.ok(only.includes('Không đọc được khung 2026-11-19_1100') && only.includes('Chưa có bài nào'));
 });
+
+test('comment đầu tiên: hộp riêng dưới nội dung, nút Copy comment, ẩn khi bản không có comment', () => {
+  const evil = 'Chi tiết <b>x</b> & "q": https://homematch.vn/p/T1';
+  const p1 = post('2026-11-19_1100', 1, 'group:g1', ['một', 'hai']);
+  p1.variants[1].comment = evil;
+  const p2 = post('2026-11-19_1100', 2, 'group:g1', ['ba']);
+  p2.variants[0].comment = 'Xem: https://homematch.vn/p/T2';
+  const p3 = post('2026-11-19_1100', 3, 'threads:th:0', ['hi']);
+  const html = home({ slots: [slotData('2026-11-19_1100', { posts: [p1, p2, p3] })] });
+  const cards = html.split('<article class="post"').slice(1).map((c) => c.split('</article>')[0]);
+  // bài 1: chỉ bản B có comment; nút có nhưng ẩn lúc đầu (bản A đang hiện)
+  assert.equal((cards[0].match(/class="cmt"/g) || []).length, 1);
+  assert.ok(cards[0].includes('Comment đầu tiên (ghim lại)'));
+  assert.ok(cards[0].includes('data-raw="Chi tiết &lt;b&gt;x&lt;/b&gt; &amp; &quot;q&quot;: https://homematch.vn/p/T1"'));
+  assert.ok(!cards[0].includes('<b>x</b>'));
+  assert.match(cards[0], /<button type="button" class="btn" data-act="copy-comment" hidden>Copy comment<\/button>/);
+  // bài 2: bản duy nhất có comment, nút hiện, đứng ngay sau Copy nội dung
+  assert.match(cards[1], /data-act="copy-text">Copy nội dung<\/button>\s*<button type="button" class="btn" data-act="copy-comment">Copy comment<\/button>/);
+  // bài 3: không có comment nào thì không có hộp, không có nút
+  assert.ok(!cards[2].includes('class="cmt"') && !cards[2].includes('copy-comment'));
+  // JS: copy đúng data-raw của bản đang hiện, đổi bản thì ẩn/hiện nút
+  assert.ok(html.includes(`$('.cmt-t', active(post))`));
+  assert.ok(html.includes('cc.hidden = !$(\'.cmt-t\', active(post))'));
+});
