@@ -51,3 +51,13 @@ test('tolerates missing fields and odd input', () => {
   assert.equal(w.listings, '2');
   assert.deepEqual(w.structure, ['Một', 'Hai']);
 });
+
+test('field lines inside a fenced example are not fields', () => {
+  const md = '## K\n\n- **Ảnh**: 5 ảnh\n- **Ví dụ**:\n\n```\n- **Ảnh**: x\n- **Kênh**: group\n```\n- **Kênh**: page\n';
+  const [t] = parseContentTypes(md);
+  assert.equal(t.images, '5 ảnh');
+  assert.deepEqual(t.channels, ['page']);
+  assert.equal(t.example, '- **Ảnh**: x\n- **Kênh**: group');
+  // a section whose only "fields" sit inside a fence is not a type
+  assert.deepEqual(parseContentTypes('## N\n\n```\n- **Kênh**: page\n```\n'), []);
+});

@@ -13,8 +13,13 @@ const KEYS = {
 function parseSection(title, lines) {
   const t = { name: title.replace(/^\d+\.\s*/, '').trim(), channels: [], listings: '', howToPick: '', structure: [], images: '', example: '', exampleNote: '' };
   let known = false;
+  // Dòng nằm trong khối ``` (ví dụ) không bao giờ là trường.
+  const fenced = [];
+  let open = false;
+  for (const l of lines) { const f = /^\s*```/.test(l); fenced.push(open || f); if (f) open = !open; }
+  const isField = (j) => !fenced[j] && FIELD_RE.test(lines[j]);
   for (let i = 0; i < lines.length; i++) {
-    const m = FIELD_RE.exec(lines[i]);
+    const m = fenced[i] ? null : FIELD_RE.exec(lines[i]);
     const key = m && KEYS[m[1].trim().toLowerCase()];
     if (!key) continue;
     known = true;
@@ -23,7 +28,7 @@ function parseSection(title, lines) {
       t.channels = val.split(',').map((s) => s.trim()).filter(Boolean);
     } else if (key === 'structure') {
       if (val) t.structure.push(val);
-      for (let j = i + 1; j < lines.length && !FIELD_RE.test(lines[j]); j++) {
+      for (let j = i + 1; j < lines.length && !isField(j); j++) {
         const step = /^\s*(?:\d+[.)]|[-*•])\s+(.*)$/.exec(lines[j]);
         if (step) t.structure.push(step[1].trim());
       }
