@@ -69,6 +69,7 @@ p { margin: 8px 0; }
 .filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
 .post { border: var(--hair); margin: 0 0 18px; }
+.post-err { border: 1px dashed #b3261e; color: #b3261e; padding: 10px 16px; margin: 0 0 18px; font-size: 15px; }
 .post-h { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: 12px; align-items: baseline;
   padding: 12px 16px; border-bottom: 1px dotted var(--mute); cursor: pointer; }
 .num { font-size: 20px; font-variant-numeric: tabular-nums; }
@@ -300,16 +301,22 @@ const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1800); }
 async function copy(s){ try { await navigator.clipboard.writeText(s); return true; } catch (e) { return false; } }
 
-/* chế độ: có window.lavish = đang sửa cùng Claude; không có = chỉ xem */
-let sent = false;
-const isEdit = () => !!window.lavish;
+/* chế độ: có window.lavish = đang sửa cùng Claude; không có = chỉ xem. Lavish có thể gắn muộn nên kiểm tra lại sau khi tải. */
+{{MODE_FN}}
+let MODE = 'view', sent = false;
+const items = [];
+function lavishQueue(t){ window.lavish?.queuePrompt?.(t, { tag:'hm-config', queueKey:'req-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), text:t, element:$('#ask') }); }
 function applyMode(){
-  const edit = isEdit();
-  document.body.dataset.mode = edit ? 'edit' : 'view';
-  $('#mode').textContent = edit ? 'Đang sửa cùng Claude' : 'Chỉ xem';
-  if (!sent) $('#send').textContent = edit ? 'Gửi cho Claude sửa' : 'Copy yêu cầu';
-  $('#send-note').textContent = edit ? 'Claude sửa ngay, lưu bản cũ, rồi dựng lại trang.' : 'Dán vào chat Claude để sửa.';
+  const v = modeView(!!window.lavish);
+  const wasView = MODE !== 'edit';
+  MODE = v.mode;
+  if (MODE === 'edit' && wasView) items.forEach(lavishQueue);
+  document.body.dataset.mode = MODE;
+  $('#mode').textContent = v.badge;
+  if (!sent) $('#send').textContent = v.send;
+  $('#send-note').textContent = v.note;
   renderQueue();
+  return MODE;
 }
 
 /* tab */
@@ -322,7 +329,6 @@ $$('.tabs button').forEach(b => b.addEventListener('click', () => tab(b.dataset.
 try { const t = sessionStorage.getItem('hm-tab'); if (t && $('#p-' + t)) tab(t); } catch (e) {}
 
 /* ô yêu cầu ở cột phải */
-const items = [];
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function seed(t){ const r = $('#req'); r.value = t; r.focus(); r.setSelectionRange(t.length, t.length); renderQueue(); }
 document.addEventListener('click', e => { const b = e.target.closest('[data-seed]'); if (b) seed(b.dataset.seed); });
@@ -336,14 +342,14 @@ $('#req').addEventListener('input', renderQueue);
 function queueReq(){
   const r = $('#req'); const t = r.value.trim(); if (!t) return;
   items.push(t); r.value = '';
-  if (isEdit()) window.lavish?.queuePrompt?.('Cập nhật config: ' + t, { tag:'hm-config', queueKey:'req-' + Date.now(), text:t, element:$('#ask') });
+  if (MODE === 'edit') lavishQueue(t);
   renderQueue();
 }
 $('#add').addEventListener('click', queueReq);
 async function sendAll(){
   queueReq();
   if (!items.length) return;
-  if (isEdit()) {
+  if (MODE === 'edit') {
     window.lavish?.sendQueuedPrompts?.();
     sent = true; const b = $('#send'); b.disabled = true; b.textContent = 'Đã gửi — Claude đang sửa';
     return;
@@ -353,7 +359,7 @@ async function sendAll(){
 }
 $('#send').addEventListener('click', sendAll);
 function undo(){
-  if (!isEdit()) return;
+  if (MODE !== 'edit') return;
   window.lavish?.queuePrompt?.('Hoàn tác lần sửa gần nhất (' + UNDO_LABEL + ').', { tag:'hm-config', queueKey:'undo', text:'Hoàn tác lần sửa ' + UNDO_LABEL, element:$('.log') });
   window.lavish?.sendQueuedPrompts?.();
 }
@@ -478,6 +484,10 @@ document.addEventListener('keydown', e => {
 
 applyMode();
 window.addEventListener('load', applyMode);
+const modeStart = Date.now();
+const modePoll = setInterval(() => {
+  if (applyMode() === 'edit' || Date.now() - modeStart > 5000) clearInterval(modePoll);
+}, 200);
 </script>
 </body>
 </html>

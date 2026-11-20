@@ -117,6 +117,20 @@ function renderPost(post, ctx) {
   </article>`;
 }
 
+// Bài hỏng (null, thiếu bản…) thành một thẻ báo lỗi; các bài khác vẫn hiện.
+function safePost(post, i, ctx) {
+  const n = post && typeof post === 'object' && post.n != null ? post.n : i + 1;
+  try {
+    if (!post || typeof post !== 'object') throw new Error('bad post');
+    const variants = arr(post.variants);
+    if (!variants.length || variants.some((v) => !v || typeof v !== 'object')) throw new Error('bad variants');
+    return renderPost(post, ctx);
+  } catch {
+    return `
+  <div class="post-err">Không hiển thị được bài số ${esc(n)} (dữ liệu khung bị hỏng).</div>`;
+  }
+}
+
 function foot(summary, items) {
   return `
   <details class="foot">
@@ -128,7 +142,7 @@ function foot(summary, items) {
 // data = nội dung page-data.json của một khung; outputDir = thư mục chứa index.html chung.
 export function slotSection(data, { outputDir, feedback = {}, person = '', hidden = false }) {
   const slot = String(data.slot ?? '');
-  const posts = arr(data.posts).filter((p) => p && typeof p === 'object');
+  const posts = arr(data.posts);
   const tmap = new Map(arr(data.targets).map((t) => [t?.id, t]));
   const amap = new Map(arr(data.accounts).map((a) => [a?.id, a]));
   const slotDir = typeof data.outDir === 'string' && data.outDir ? data.outDir : path.join(outputDir, slot);
@@ -138,7 +152,7 @@ export function slotSection(data, { outputDir, feedback = {}, person = '', hidde
   const done = Number.isNaN(gen.getTime()) ? '' : ` · soạn xong ${p2(gen.getHours())}:${p2(gen.getMinutes())}`;
   const meta = [dow && date ? ` · ${dow} ${date}` : '', done].join('').replace(/^ · /, '· ');
 
-  const accIds = [...new Set(posts.map((p) => tmap.get(p.targetId)?.account).filter(Boolean))];
+  const accIds = [...new Set(posts.map((p) => tmap.get(p?.targetId)?.account).filter(Boolean))];
   const filters = [`<button type="button" aria-pressed="true" data-acc="">Tất cả</button>`]
     .concat(accIds.map((id) => `<button type="button" aria-pressed="false" data-acc="${esc(id)}">${esc(amap.get(id)?.label ?? id)}</button>`))
     .join('');
@@ -166,7 +180,7 @@ export function slotSection(data, { outputDir, feedback = {}, person = '', hidde
     <div class="folder">Thư mục ảnh của khung này: ${esc(path.join(outputDir, slot))} · mỗi bài là thư mục cùng số (01_, 02_ …)</div>
     <div class="filters">${filters}</div>
   </div>
-  ${posts.map((p) => renderPost(p, ctx)).join('\n') || '<p class="hint">Khung này không có bài.</p>'}
+  ${posts.map((p, i) => safePost(p, i, ctx)).join('\n') || '<p class="hint">Khung này không có bài.</p>'}
   ${footer.join('')}
 </section>`;
 }

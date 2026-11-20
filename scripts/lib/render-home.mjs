@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { esc, slotSection, slotLabel } from './render-posts.mjs';
 import { boardParts } from './render-config.mjs';
 import { parseContentTypes } from './content-types.mjs';
+import { modeView } from './home-mode.mjs';
 import { readText, lastChange as readLastChange, tokenLabel as readTokenLabel } from './profile.mjs';
 import { expandHome } from './paths.mjs';
 
@@ -18,35 +19,50 @@ const ADD_TYPE = 'Thêm kiểu bài mới: tên …, kênh …, số tin …, c�
 const arr = (v) => (Array.isArray(v) ? v : []);
 const dash = (v) => (v == null || v === '' ? '<span class="mute">—</span>' : esc(v));
 
-// Đọc <outputDir>/<slot>/page-data.json, mới nhất trước, tối đa 14 khung. Bỏ qua file hỏng.
-export function loadSlots(outputDir, limit = MAX_SLOTS) {
-  let names = [];
-  try { names = fs.readdirSync(outputDir, { withFileTypes: true }).filter((e) => e.isDirectory() && SLOT_RE.test(e.name)).map((e) => e.name); } catch { return []; }
-  names.sort().reverse();
-  const out = [];
-  for (const name of names) {
-    if (out.length >= limit) break;
-    try {
-      const data = JSON.parse(fs.readFileSync(path.join(outputDir, name, 'page-data.json'), 'utf8'));
-      if (data && typeof data === 'object' && Array.isArray(data.posts)) out.push({ ...data, slot: name });
-    } catch { /* chưa có hoặc hỏng */ }
-  }
-  return out;
+// Dữ liệu khung dùng được: object có mảng posts. Bài hỏng trong mảng vẫn giữ, thẻ bài tự báo lỗi.
+function usableSlot(data) {
+  return data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.posts);
 }
 
-function postsPanel(slots, outputDir, feedback) {
-  const list = arr(slots).filter((s) => s && SLOT_RE.test(String(s.slot)))
-    .sort((a, b) => (a.slot < b.slot ? 1 : a.slot > b.slot ? -1 : 0))
-    .slice(0, MAX_SLOTS);
-  if (!list.length) return { n: 0, html: '<p class="hint">Chưa có bài nào. Bài sẽ hiện ở đây sau khung soạn đầu tiên.</p>' };
+// Đọc <outputDir>/<slot>/page-data.json, mới nhất trước, tối đa 14 khung.
+// File hỏng hoặc sai cấu trúc vào `bad` (trang ghi "Không đọc được khung …"); thư mục chưa có file thì bỏ qua.
+export function loadSlots(outputDir, limit = MAX_SLOTS) {
+  let names = [];
+  try { names = fs.readdirSync(outputDir, { withFileTypes: true }).filter((e) => e.isDirectory() && SLOT_RE.test(e.name)).map((e) => e.name); } catch { return { slots: [], bad: [] }; }
+  names.sort().reverse();
+  const slots = [], bad = [];
+  for (const name of names) {
+    if (slots.length + bad.length >= limit) break;
+    let text;
+    try { text = fs.readFileSync(path.join(outputDir, name, 'page-data.json'), 'utf8'); } catch { continue; }
+    let data;
+    try { data = JSON.parse(text); } catch { data = null; }
+    if (usableSlot(data)) slots.push({ ...data, slot: name }); else bad.push(name);
+  }
+  return { slots, bad };
+}
+
+function postsPanel(slots, badSlots, outputDir, feedback) {
+  const bad = arr(badSlots).map(String);
+  const sections = [];
+  for (const s of arr(slots).filter((x) => x && SLOT_RE.test(String(x.slot)))
+    .sort((a, b) => (a.slot < b.slot ? 1 : a.slot > b.slot ? -1 : 0))) {
+    if (sections.length >= MAX_SLOTS) break;
+    if (!usableSlot(s)) { bad.push(s.slot); continue; }
+    try {
+      sections.push({ slot: s.slot, n: s.posts.length, html: slotSection(s, { outputDir, feedback, hidden: sections.length > 0 }) });
+    } catch { bad.push(s.slot); }
+  }
+  const notes = [...new Set(bad)].sort().reverse().map((b) => `<p class="hint bad-slot">Không đọc được khung ${esc(b)}</p>`).join('\n');
+  if (!sections.length) return { n: 0, html: `<p class="hint">Chưa có bài nào. Bài sẽ hiện ở đây sau khung soạn đầu tiên.</p>${notes}` };
+  const list = sections;
   const opts = list.map((s, i) => `<option value="${esc(s.slot)}"${i === 0 ? ' selected' : ''}>${esc(slotLabel(s.slot))}</option>`).join('');
   const bar = `<div class="slotbar">
     <button type="button" class="slotnav" id="slot-older" aria-label="Khung trước">‹</button>
     <select id="slot-sel" aria-label="Chọn khung giờ">${opts}</select>
     <button type="button" class="slotnav" id="slot-newer" aria-label="Khung sau">›</button>
   </div>`;
-  const sections = list.map((s, i) => slotSection(s, { outputDir, feedback, hidden: i > 0 })).join('\n');
-  return { n: arr(list[0].posts).length, html: `${bar}\n${sections}` };
+  return { n: list[0].n, html: `${bar}\n${notes}\n${list.map((x) => x.html).join('\n')}` };
 }
 
 function typesPanel(md) {
@@ -81,11 +97,11 @@ function typesPanel(md) {
 
 export function renderHome({
   cfg = {}, errors, persona = null, contentTypes = null, pending = [], pendingError = null,
-  today = new Date(), lastChange = null, tokenLabel = null, outputDir, slots = [],
+  today = new Date(), lastChange = null, tokenLabel = null, outputDir, slots = [], badSlots = [],
 } = {}) {
   const c = cfg && typeof cfg === 'object' ? cfg : {};
   const board = boardParts({ cfg: c, persona, pending, pendingError, today, lastChange, tokenLabel, errors });
-  const posts = postsPanel(slots, outputDir, c.feedback || {});
+  const posts = postsPanel(slots, badSlots, outputDir, c.feedback || {});
   const types = typesPanel(contentTypes);
   const values = {
     ...board,
@@ -93,6 +109,7 @@ export function renderHome({
     POSTS_PANEL: posts.html,
     TYPES_COUNT: `${types.n} kiểu`,
     TYPES_PANEL: types.html,
+    MODE_FN: `const modeView = ${modeView.toString()};`,
   };
   return fs.readFileSync(TEMPLATE, 'utf8').replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
 }
@@ -106,9 +123,10 @@ export function homeOutputDir(cfg, home) {
 export function writeHome({ dir, cfg, errors = [], home, now = new Date(), root = PLUGIN_ROOT, pending = [], pendingError = null } = {}) {
   const outputDir = homeOutputDir(cfg, home);
   const contentTypes = readText(path.join(dir, 'content-types.md')) ?? readText(path.join(root, 'rules', 'templates', 'content-types.example.md'));
+  const { slots, bad } = loadSlots(outputDir);
   const html = renderHome({
     cfg, errors, persona: readText(path.join(dir, 'persona.md')), contentTypes, pending, pendingError,
-    today: now, lastChange: readLastChange(dir, now), tokenLabel: readTokenLabel(dir), outputDir, slots: loadSlots(outputDir),
+    today: now, lastChange: readLastChange(dir, now), tokenLabel: readTokenLabel(dir), outputDir, slots, badSlots: bad,
   });
   fs.mkdirSync(outputDir, { recursive: true });
   const file = path.join(outputDir, 'index.html');

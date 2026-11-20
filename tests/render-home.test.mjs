@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { renderHome } from '../scripts/lib/render-home.mjs';
+import os from 'node:os';
+import { renderHome, writeHome, loadSlots } from '../scripts/lib/render-home.mjs';
+import { modeView } from '../scripts/lib/home-mode.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXAMPLE = fs.readFileSync(path.join(ROOT, 'rules', 'templates', 'content-types.example.md'), 'utf8');
@@ -166,6 +168,13 @@ test('modes: lavish -> edit, else view with Copy yêu cầu; edit-only controls 
   assert.ok(html.includes('Đang sửa cùng Claude') && html.includes('Chỉ xem'));
   assert.ok(html.includes('Copy yêu cầu'));
   assert.ok(html.includes("'/hm-config ' + items.join('; ')"));
+  // edit prompt is exactly the request text (no prefix), matching skills/hm-config
+  assert.ok(html.includes('window.lavish?.queuePrompt?.(t, {'));
+  assert.ok(!html.includes('Cập nhật config: '));
+  // mode decided by the shared pure function, re-checked after load
+  assert.ok(html.includes(`const modeView = ${modeView.toString()};`));
+  assert.match(html, /setInterval\(/);
+  assert.ok(html.includes('MODE === \'edit\''));
   assert.ok(html.includes('Đã copy — dán vào chat Claude'));
   assert.match(html, /class="btn ghost edit-only"[^>]*onclick="undo\(\)"/);
   assert.ok(html.includes('body[data-mode="view"] .edit-only'));
@@ -200,4 +209,50 @@ test('daily tab content and invalid config banner', () => {
   const bad = home({ cfg: { groups: 'x' }, errors: undefined });
   assert.ok(bad.includes('Cấu hình đang sai') && bad.includes('apiBaseUrl'));
   assert.ok(home({ tokenLabel: null }).includes('chưa cài'));
+});
+
+test('modeView: lavish present -> edit, else view', () => {
+  assert.deepEqual(modeView(true), { mode: 'edit', badge: 'Đang sửa cùng Claude', send: 'Gửi cho Claude sửa', note: 'Claude sửa ngay, lưu bản cũ, rồi dựng lại trang.' });
+  assert.deepEqual(modeView(false), { mode: 'view', badge: 'Chỉ xem', send: 'Copy yêu cầu', note: 'Dán vào chat Claude để sửa.' });
+  assert.equal(modeView(undefined).mode, 'view');
+});
+
+test('broken post renders an error card, other posts still render', () => {
+  const S = '2026-11-19_1100';
+  const bad = [
+    { ...post(S, 2, 'group:g1', ['x']), variants: [null] },
+    { ...post(S, 3, 'group:g1', ['x']), variants: [] },
+    null,
+  ];
+  const html = home({ slots: [slotData(S, { posts: [post(S, 1, 'group:g1', ['Bài tốt vẫn hiện']), ...bad] })] });
+  assert.ok(html.includes('Bài tốt vẫn hiện'));
+  assert.equal((html.match(/<article class="post"/g) || []).length, 1);
+  assert.ok(html.includes('Không hiển thị được bài số 2') && html.includes('Không hiển thị được bài số 3'));
+  assert.equal((html.match(/class="post-err"/g) || []).length, 3);
+});
+
+test('malformed slot files are skipped with a note; other slots intact', () => {
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hm-home-'));
+  const dir = path.join(homeDir, '.homematch-marketing');
+  fs.mkdirSync(dir, { recursive: true });
+  const out = path.join(homeDir, 'out');
+  const write = (slot, text) => { fs.mkdirSync(path.join(out, slot), { recursive: true }); fs.writeFileSync(path.join(out, slot, 'page-data.json'), text); };
+  const good = slotData('2026-11-20_1100', { outDir: path.join(out, '2026-11-20_1100'), posts: [post('2026-11-20_1100', 1, 'group:g1', ['Khung tốt'])] });
+  write('2026-11-20_1100', JSON.stringify(good));
+  write('2026-11-19_1100', JSON.stringify({ slot: '2026-11-19_1100', posts: null }));
+  write('2026-11-18_1100', '{not json');
+  write('2026-11-17_1100', 'null');
+  write('2026-11-16_1100', JSON.stringify({ ...good, posts: [{ n: 1, variants: [null] }] }));
+  const { slots, bad } = loadSlots(out);
+  assert.deepEqual(slots.map((x) => x.slot), ['2026-11-20_1100', '2026-11-16_1100']);
+  assert.deepEqual(bad, ['2026-11-19_1100', '2026-11-18_1100', '2026-11-17_1100']);
+  const file = writeHome({ dir, cfg: cfg({ outputDir: out }), home: homeDir, now: THU });
+  const html = fs.readFileSync(file, 'utf8');
+  assert.ok(html.includes('Khung tốt'));
+  for (const b of bad) assert.ok(html.includes(`Không đọc được khung ${b}`), b);
+  assert.ok(html.includes('Không hiển thị được bài số 1'));
+  assert.deepEqual([...html.matchAll(/<option value="([^"]+)"/g)].map((m) => m[1]), ['2026-11-20_1100', '2026-11-16_1100']);
+  // only bad slots: still a page with the note
+  const only = renderHome({ cfg: cfg(), outputDir: out, slots: [], badSlots: ['2026-11-19_1100'], today: THU });
+  assert.ok(only.includes('Không đọc được khung 2026-11-19_1100') && only.includes('Chưa có bài nào'));
 });
