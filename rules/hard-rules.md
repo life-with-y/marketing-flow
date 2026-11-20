@@ -24,4 +24,4 @@ Nội dung phải dán được nguyên lên Facebook/Threads:
 - Giá chép đúng `priceText` (vd `3,5 triệu`); bài tiếng Anh được dùng thêm `3.5 million VND` hoặc `3,500,000 VND`. Không viết `tr`, không viết giá nào khác.
 - Ngay sau giá không đặt số hay chữ đọc giá (`5`, `rưỡi`, `một`, `tư`, `lẻ`…). Viết `3 triệu/tháng`, không viết `3 triệu một tháng`.
 - Chỉ ghi mã T… của tin có trong bài. Bài thương hiệu không ghi giá thuê, không ghi mã tin.
-- Phí và cọc chép đúng chuỗi trong `details.fees` / `details.deposit` (viết bằng `đ`, vd `3.990đ/số`, `Cọc 1 tháng`). Không đổi sang `triệu`/`k`, không cộng gộp.
+- Phí và cọc lấy từ `details.fees` / `details.deposit`, giữ đúng số tiền và đơn vị (viết bằng `đ`, vd `3.990đ/số`, `Cọc 1 tháng`); được bỏ dấu ":" giữa tên phí và số. Không đổi sang `triệu`/`k`, không cộng gộp, không tính tổng chi phí.

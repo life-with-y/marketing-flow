@@ -37,7 +37,7 @@ test('fetchMarketingRaw schema sai -> schema', async () => {
 });
 
 test('chuẩn hoá tin route mới', () => {
-  const [l, l2] = marketingToListings(mkt);
+  const [l, l2] = marketingToListings(mkt, '2026-11-20');
   assert.equal(l.source, 'marketing');
   assert.equal(l.code, 'T1302');
   assert.equal(l.address, 'ngõ 100 Trần Thái Tông');
@@ -65,6 +65,11 @@ test('chuẩn hoá tin route mới', () => {
   assert.equal(d.priceVerified, 'Đã kiểm tra giá ngày 18/11');
   assert.equal(l2.details.deposit, null);
   assert.deepEqual(l2.details.facts, []);
+});
+
+test('ngày trống đã qua -> Sắp trống', () => {
+  const [l] = marketingToListings(mkt, '2026-12-02');
+  assert.equal(l.rooms[1].statusText, 'Sắp trống');
 });
 
 test('surveyFacts: chỉ ghi khi biết', () => {

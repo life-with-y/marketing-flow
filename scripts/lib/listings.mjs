@@ -59,7 +59,7 @@ const UNIT_TYPE = {
   STUDIO: 'Studio', STUDIO_LOFT: 'Studio gác lửng', BOARDING_ROOM: 'Phòng trọ', PRIVATE_ROOM: 'Phòng riêng',
   MINI_APARTMENT: 'Chung cư mini', SHARED: 'Ở ghép', DORM: 'Ở ghép (giường tầng)', DUPLEX: 'Duplex',
   DUPLEX_TWO_BEDROOM: 'Duplex 2 ngủ', ONE_BEDROOM: '1 ngủ 1 khách', ONE_BEDROOM_LOFT: '1 ngủ gác lửng',
-  TWO_BEDROOM: '2 ngủ', TWO_BEDROOM_TWO_BATH: '2 ngủ 2 vệ sinh',
+  TWO_BEDROOM: '2 ngủ', TWO_BEDROOM_TWO_BATH: '2 ngủ 2 vệ sinh', LOFT_APARTMENT: 'Căn hộ gác lửng',
 };
 const FEE = { ELECTRICITY: 'Điện', WATER: 'Nước', SERVICE: 'Dịch vụ', INTERNET: 'Internet', PARKING: 'Gửi xe', SECURITY: 'An ninh' };
 const BILL = { PER_KWH: '/số', PER_M3: '/khối', PER_PERSON_MONTH: '/người/tháng', PER_ROOM_MONTH: '/phòng/tháng', PER_VEHICLE_MONTH: '/xe/tháng' };
@@ -71,9 +71,10 @@ const viNum = (n) => String(n).replace('.', ',');
 const ddmm = (iso) => { const [, m, d] = String(iso).slice(0, 10).split('-'); return `${d}/${m}`; };
 const km = (m) => (m < 1000 ? `${m} m` : `${viNum(Math.round(m / 100) / 10)} km`);
 
-export function statusTextOf(status, availableFrom) {
+// Ngày trống đã qua (dữ liệu chưa cập nhật) thì chỉ ghi "Sắp trống", không ghi ngày cũ.
+export function statusTextOf(status, availableFrom, today = new Date().toISOString().slice(0, 10)) {
   if (status === 'AVAILABLE') return 'Còn trống';
-  return availableFrom ? `Trống từ ${ddmm(availableFrom)}` : 'Sắp trống';
+  return availableFrom && String(availableFrom).slice(0, 10) >= today ? `Trống từ ${ddmm(availableFrom)}` : 'Sắp trống';
 }
 
 function feeText(f) {
@@ -118,7 +119,7 @@ function landmarkText(l) {
   return `${l.name}: ${km(l.distance_m)}${mode ? `, khoảng ${min} phút ${mode}` : ''}`;
 }
 
-export function marketingToListings(raw) {
+export function marketingToListings(raw, today) {
   return (raw.listings || []).map((l) => {
     const b = l.building || {};
     const images = (l.media || [])
@@ -141,7 +142,7 @@ export function marketingToListings(raw) {
         price: r.rent_vnd,
         priceText: formatPrice(r.rent_vnd),
         status: r.availability_status,
-        statusText: statusTextOf(r.availability_status, r.available_from),
+        statusText: statusTextOf(r.availability_status, r.available_from, today),
         services: [],
         furniture: r.furniture || [],
         unitType: r.unit_type_key,
