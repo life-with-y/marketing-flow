@@ -1,10 +1,11 @@
-# Nhóm Facebook
+# Nhóm Facebook (cụm nhóm)
 
-Áp dụng cho đích `kind: group`. Luật cứng (`hard-rules.md`) đứng trên file này.
+Áp dụng cho đích `kind: group`: một **cụm nhóm** (khu vực × phân khúc). Người dùng đăng bài trên trang cá nhân (chế độ chuyên nghiệp) rồi chia sẻ vào các nhóm của cụm; nhóm thật do người dùng tự tìm và tham gia. Luật cứng (`hard-rules.md`) đứng trên file này.
 
 ## Mục tiêu
 
-- Bài được admin duyệt và không bị gỡ; người trong nhóm hỏi lại qua inbox hoặc comment mã tin.
+- Bài được admin các nhóm duyệt và không bị gỡ; người trong nhóm hỏi lại qua inbox hoặc comment mã tin.
+- Một văn bản đi vào nhiều nhóm: viết cho người đọc chung của cụm (đúng khu, đúng phân khúc), không gọi tên một nhóm cụ thể.
 
 ## Link
 
@@ -36,7 +37,7 @@
 
 ## Độ dài & định dạng
 
-- Ngắn, gạch đầu dòng `•`. Mỗi nhóm một văn bản riêng (mở bài, thứ tự ý), cùng dữ kiện.
+- Ngắn, gạch đầu dòng `•`. Mỗi khung một văn bản mới cho cụm (mở bài, thứ tự ý khác bài trước), cùng dữ kiện.
 
 ## Lời mời (CTA)
 
@@ -45,5 +46,5 @@
 ## Tránh
 
 - Lách luật nhóm bằng số dạng icon hay viết tách chữ.
-- Đăng cùng một văn bản vào nhiều nhóm.
+- Lặp lại nguyên văn bài cũ của cụm.
 - Câu mồi tương tác ("comment 'có'…", "share để…"), giật tít, VIẾT HOA, "!!!".

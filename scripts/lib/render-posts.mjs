@@ -4,8 +4,8 @@ import path from 'node:path';
 export const PAGE_MASKED_WARNING = 'Page đang ẩn giá: khác với giá trị minh bạch của HomeMatch khi tư vấn — cân nhắc.';
 
 const LABELS = { NEW: 'Mới', PRICE_DOWN: 'Giảm giá', NOW_AVAILABLE: 'Vừa trống' };
-const OPEN_TEXT = { group: 'Mở nhóm ↗', page: 'Mở Page ↗', threads: 'Mở Threads ↗' };
-const KIND_TEXT = { group: 'nhóm', page: 'trang', threads: '' };
+const OPEN_TEXT = { page: 'Mở Page ↗', threads: 'Mở Threads ↗' };
+const KIND_TEXT = { group: 'trang cá nhân → chia sẻ vào nhóm', page: 'trang', threads: '' };
 const DAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const FEEDBACK_TEXT_MAX = 1500;
 
@@ -89,7 +89,7 @@ function renderPost(post, ctx) {
   const acc = accounts.get(target?.account);
   const accLabel = acc?.label ?? target?.account ?? '';
   const author = acc?.type === 'fb-page' ? 'HomeMatch' : (acc?.label ?? person ?? '');
-  const who = target?.kind === 'group' ? `${author} · nhóm ${target.name}` : author;
+  const who = target?.kind === 'group' ? `${author} · cụm ${target.name}` : author;
   const kind = target?.kind;
   const codes = arr(post.postCodes);
   const variants = arr(post.variants);
@@ -112,6 +112,7 @@ function renderPost(post, ctx) {
     </div>
     ${multi ? `<div class="vtabs">${variants.map((v, i) => `<button type="button" data-key="${esc(v.key)}" aria-selected="${i === 0}">Bản ${esc(v.key)}</button>`).join('')}</div>` : ''}
     ${variants.map((v, i) => renderVariant(post, v, i, vctx)).join('\n    ')}
+    ${kind === 'group' ? shareHtml(target) : ''}
     <div class="actions">
       <button type="button" class="btn" data-act="copy-text">Copy nội dung</button>
       ${variants.some(hasComment) ? `<button type="button" class="btn" data-act="copy-comment"${hasComment(variants[0]) ? '' : ' hidden'}>Copy comment</button>` : ''}
@@ -123,6 +124,15 @@ function renderPost(post, ctx) {
       <span class="path">${esc(first)}</span>
     </div>
   </article>`;
+}
+
+// Đích cụm: các nhóm đã vào của cụm, để chia sẻ bài từ trang cá nhân.
+function shareHtml(target) {
+  const gs = arr(target?.groups).filter((g) => g && isHttp(g.url));
+  const body = gs.length
+    ? gs.map((g) => `<a href="${esc(g.url)}" target="_blank" rel="noopener noreferrer">${esc(g.name ?? g.url)} ↗</a>`).join('')
+    : '<span class="mute it">Chưa có nhóm đã vào</span>';
+  return `<div class="share"><span class="share-h">Chia sẻ vào</span>${body}</div>`;
 }
 
 // Bài hỏng (null, thiếu bản…) thành một thẻ báo lỗi; các bài khác vẫn hiện.

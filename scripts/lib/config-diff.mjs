@@ -14,30 +14,49 @@ const lang = (v) => LANG_LABEL[v ?? 'vi'] || String(v);
 const text = (v) => (v == null || v === '' ? '—' : String(v));
 const state = (v) => (v === false ? 'tạm ngừng' : 'bật');
 const slotsText = (g) => (g.slots === undefined ? 'theo giờ chạy' : list(g.slots));
-const keyOf = (g) => String(g.url || g.name || '');
+const SEG = { room: 'phòng trọ', student: 'sinh viên, giá rẻ', apartment: 'căn hộ mini' };
+const seg = (v) => SEG[v ?? 'room'] || String(v);
+const gkey = (g) => String(g?.url || g?.name || '').trim().replace(/\/+$/, '').toLowerCase();
 
-function groupLines(oldGroups, newGroups) {
+function groupLines(nm, oldGroups, newGroups) {
   const out = [];
   const og = arr(oldGroups).filter((g) => g && typeof g === 'object');
   const ng = arr(newGroups).filter((g) => g && typeof g === 'object');
-  const oldBy = new Map(og.map((g) => [keyOf(g), g]));
-  const newBy = new Map(ng.map((g) => [keyOf(g), g]));
+  const oldBy = new Map(og.map((g) => [gkey(g), g]));
+  const newBy = new Map(ng.map((g) => [gkey(g), g]));
   for (const g of ng) {
-    const o = oldBy.get(keyOf(g));
-    const nm = g.name || g.url;
-    if (!o) { out.push(`Nhóm ${nm}: thêm mới`); continue; }
-    if ((o.name ?? '') !== (g.name ?? '')) out.push(`Nhóm ${text(o.name)}: đổi tên → ${text(g.name)}`);
-    if ((o.active !== false) !== (g.active !== false)) out.push(`Nhóm ${nm}: ${state(o.active)} → ${state(g.active)}`);
-    if (!same(o.slots, g.slots)) out.push(`Nhóm ${nm}: khung ${slotsText(o)} → ${slotsText(g)}`);
-    if (days(o.days) !== days(g.days)) out.push(`Nhóm ${nm}: ngày ${days(o.days)} → ${days(g.days)}`);
-    if ((o.language ?? 'vi') !== (g.language ?? 'vi')) out.push(`Nhóm ${nm}: ngôn ngữ ${lang(o.language)} → ${lang(g.language)}`);
-    if (list(o.districts) !== list(g.districts)) out.push(`Nhóm ${nm}: quận ${list(o.districts)} → ${list(g.districts)}`);
-    if ((o.note ?? '') !== (g.note ?? '')) out.push(`Nhóm ${nm}: ghi chú ${text(o.note)} → ${text(g.note)}`);
-    if ((o.account ?? '') !== (g.account ?? '')) out.push(`Nhóm ${nm}: tài khoản ${text(o.account)} → ${text(g.account)}`);
+    const o = oldBy.get(gkey(g));
+    const gn = g.name || g.url;
+    if (!o) out.push(`Cụm ${nm}: thêm nhóm ${gn}`);
+    else if ((o.joined === true) !== (g.joined === true)) out.push(`Cụm ${nm}: ${g.joined === true ? 'đã vào' : 'chưa vào'} nhóm ${gn}`);
   }
-  for (const g of og) {
-    if (!newBy.has(keyOf(g))) out.push(`Nhóm ${g.name || g.url}: bỏ`);
+  for (const g of og) if (!newBy.has(gkey(g))) out.push(`Cụm ${nm}: bỏ nhóm ${g.name || g.url}`);
+  return out;
+}
+
+function clusterLines(oldCs, newCs) {
+  const out = [];
+  const oc = arr(oldCs).filter((c) => c && typeof c === 'object');
+  const nc = arr(newCs).filter((c) => c && typeof c === 'object');
+  const oldBy = new Map(oc.map((c) => [String(c.id), c]));
+  const newBy = new Map(nc.map((c) => [String(c.id), c]));
+  for (const c of nc) {
+    const o = oldBy.get(String(c.id));
+    const nm = c.name || c.id;
+    if (!o) { out.push(`Cụm ${nm}: thêm mới`); continue; }
+    if ((o.name ?? '') !== (c.name ?? '')) out.push(`Cụm ${text(o.name)}: đổi tên → ${text(c.name)}`);
+    if ((o.active !== false) !== (c.active !== false)) out.push(`Cụm ${nm}: ${state(o.active)} → ${state(c.active)}`);
+    if (!same(o.slots, c.slots)) out.push(`Cụm ${nm}: khung ${slotsText(o)} → ${slotsText(c)}`);
+    if (days(o.days) !== days(c.days)) out.push(`Cụm ${nm}: ngày ${days(o.days)} → ${days(c.days)}`);
+    if ((o.language ?? 'vi') !== (c.language ?? 'vi')) out.push(`Cụm ${nm}: ngôn ngữ ${lang(o.language)} → ${lang(c.language)}`);
+    if (list(o.districts) !== list(c.districts)) out.push(`Cụm ${nm}: quận ${list(o.districts)} → ${list(c.districts)}`);
+    if (seg(o.segment) !== seg(c.segment)) out.push(`Cụm ${nm}: phân khúc ${seg(o.segment)} → ${seg(c.segment)}`);
+    if (list(o.keywords) !== list(c.keywords)) out.push(`Cụm ${nm}: từ khoá ${list(o.keywords)} → ${list(c.keywords)}`);
+    if ((o.note ?? '') !== (c.note ?? '')) out.push(`Cụm ${nm}: ghi chú ${text(o.note)} → ${text(c.note)}`);
+    if ((o.account ?? '') !== (c.account ?? '')) out.push(`Cụm ${nm}: tài khoản ${text(o.account)} → ${text(c.account)}`);
+    out.push(...groupLines(nm, o.groups, c.groups));
   }
+  for (const c of oc) if (!newBy.has(String(c.id))) out.push(`Cụm ${c.name || c.id}: bỏ`);
   return out;
 }
 
@@ -71,7 +90,7 @@ export function diffConfig(oldCfg, newCfg) {
   const n = newCfg || {};
   const out = [];
   if (!same(o.schedule, n.schedule)) out.push(`Giờ chạy: ${list(o.schedule)} → ${list(n.schedule)}`);
-  out.push(...groupLines(o.groups, n.groups));
+  out.push(...clusterLines(o.clusters, n.clusters));
   const label = (id) => arr(n.accounts).concat(arr(o.accounts)).find((a) => a && a.id === id)?.label || id;
   out.push(...mapLines('Số bài mỗi khung', o.perSlot, n.perSlot, label));
   out.push(...mapLines('Số bản', o.variants, n.variants));

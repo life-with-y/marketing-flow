@@ -1,3 +1,5 @@
+import { segmentRule, joinedGroups } from './clusters.mjs';
+
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const KIND_BY_TYPE = { 'fb-personal': 'wall', 'fb-page': 'page', threads: 'threads' };
 
@@ -23,27 +25,30 @@ export function targetsForSlot(cfg, date, hhmm, onlyGroups) {
   const day = DAY_KEYS[date.getDay()];
   const out = [];
   const needles = onlyGroups?.map(fold);
-  for (const g of cfg.groups || []) {
-    if (!g.active) continue;
+  for (const c of cfg.clusters || []) {
+    if (!c || !c.active) continue;
     if (needles) {
-      if (!needles.some((n) => fold(g.name).includes(n))) continue;
+      if (!needles.some((n) => fold(c.name).includes(n) || fold(c.id).includes(n))) continue;
     } else {
-      if (!(g.days || []).includes(day)) continue;
-      if (hhmm != null && !(g.slots || cfg.schedule || []).includes(hhmm)) continue;
+      if (!(c.days || []).includes(day)) continue;
+      if (hhmm != null && !(c.slots || cfg.schedule || []).includes(hhmm)) continue;
     }
     out.push({
-      id: 'group:' + g.url,
+      id: 'group:' + c.id,
       kind: 'group',
-      account: g.account,
-      name: g.name,
-      url: g.url,
-      districts: g.districts || [],
-      language: g.language,
-      note: g.note,
+      account: c.account,
+      name: c.name,
+      url: '',
+      districts: c.districts || [],
+      segment: c.segment || 'room',
+      segmentRule: segmentRule(c.segment || 'room'),
+      language: c.language,
+      note: c.note,
       variants: variantsFor(cfg, 'group'),
       links: linksFor(cfg, 'group'),
       priceStyle: priceStyleFor(cfg, 'group'),
       contact: cfg.contact || [],
+      groups: joinedGroups(c),
     });
   }
   if (needles) return out;

@@ -1,6 +1,6 @@
 # HomeMatch Marketing (marketing-flow)
 
-Plugin Claude Code soạn sẵn bài đăng nhóm Facebook, Page và Threads cho HomeMatch từ tin phòng mới nhất. Bạn vẫn tự đăng; plugin chuẩn bị nội dung và ảnh.
+Plugin Claude Code soạn sẵn bài đăng cho cụm nhóm Facebook (đăng trang cá nhân rồi chia sẻ vào nhóm), Page và Threads cho HomeMatch từ tin phòng mới nhất. Bạn vẫn tự đăng; plugin chuẩn bị nội dung và ảnh.
 
 ## Yêu cầu
 
@@ -25,7 +25,7 @@ Không cần tài khoản GitHub.
 
 - Đến giờ đã hẹn, plugin tự soạn bài. Mở `index.html` trong thư mục kết quả (mặc định `~/HomeMatch-Posts/index.html`): tab **Bài đăng** có bài của khung mới nhất (chọn được 14 khung gần nhất) để copy nội dung và đường dẫn thư mục ảnh; các tab **Kiểu bài**, **Hằng ngày**, **Hồ sơ** cho xem cấu hình.
 - Mỗi bài có một thư mục ảnh riêng, ảnh đặt tên theo thứ tự đăng (`1` là ảnh bìa).
-- `/hm-config`: mở cùng trang đó cùng Claude để đổi nhóm, lịch, persona, kiểu bài. Mở trang thẳng từ thư mục thì là chế độ chỉ xem: gõ yêu cầu, bấm **Copy yêu cầu** rồi dán vào chat Claude.
+- `/hm-config`: mở cùng trang đó cùng Claude để đổi cụm nhóm, lịch, persona, kiểu bài. Mở trang thẳng từ thư mục thì là chế độ chỉ xem: gõ yêu cầu, bấm **Copy yêu cầu** rồi dán vào chat Claude.
 - `/hm-prep-now`: soạn ngay, không chờ đến giờ.
 
 ## Lưu ý

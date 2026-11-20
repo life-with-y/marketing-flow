@@ -14,7 +14,7 @@ const THU = new Date(2026, 10, 19, 9, 12);
 const ALL = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 const targets = [
-  { id: 'group:g1', kind: 'group', account: 'fb1', name: 'Phòng trọ Cầu Giấy', url: 'https://facebook.com/groups/g1' },
+  { id: 'group:g1', kind: 'group', account: 'fb1', name: 'Cầu Giấy · phòng trọ', url: '', groups: [{ name: 'Phòng trọ Cầu Giấy', url: 'https://facebook.com/groups/g1' }, { name: 'xấu', url: 'javascript:alert(2)' }] },
   { id: 'page:page:0', kind: 'page', account: 'page', name: 'HomeMatch Page', url: '' },
   { id: 'threads:th:0', kind: 'threads', account: 'th', name: 'Threads Minh', url: 'javascript:alert(1)' },
 ];
@@ -23,13 +23,13 @@ const accounts = [
   { id: 'page', type: 'fb-page', label: 'HomeMatch Page' },
   { id: 'th', type: 'threads', label: 'Threads Minh' },
 ];
-const grp = (o) => ({ name: 'Nhà trọ Hoàng Mai', url: 'https://fb/hm', account: 'fb1', active: true, days: ALL, districts: ['Hoàng Mai'], language: 'vi', note: '', ...o });
+const grp = (o) => ({ id: 'hm-room', name: 'Nhà trọ Hoàng Mai', account: 'fb1', active: true, segment: 'room', days: ALL, districts: ['Hoàng Mai'], language: 'vi', note: '', keywords: ['phòng trọ Hoàng Mai'], groups: [{ name: 'Trọ HM 1', url: 'https://fb/hm1', members: 120000, interactions: 40, joined: true }], ...o });
 const cfg = (o = {}) => ({
   apiBaseUrl: 'https://api.example',
   outputDir: OUTPUT,
   schedule: ['17:00'],
   accounts: [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }],
-  groups: [grp()],
+  clusters: [grp()],
   perSlot: {},
   variants: { default: 1 },
   contact: [],
@@ -67,11 +67,11 @@ const home = (over = {}) => renderHome({
   ...over,
 });
 
-test('four tabs in order, side column shared, no leftover placeholders', () => {
+test('five tabs in order, side column shared, no leftover placeholders', () => {
   const html = home();
   const tabs = [...html.matchAll(/<button role="tab"[^>]*data-tab="(\w+)"[^>]*>([^<]+)/g)].map((m) => m[2].trim());
-  assert.deepEqual(tabs, ['Bài đăng', 'Kiểu bài', 'Hằng ngày', 'Hồ sơ']);
-  for (const id of ['p-posts', 'p-types', 'p-daily', 'p-profile']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.deepEqual(tabs, ['Bài đăng', 'Kiểu bài', 'Cụm nhóm', 'Hằng ngày', 'Hồ sơ']);
+  for (const id of ['p-posts', 'p-types', 'p-clusters', 'p-daily', 'p-profile']) assert.ok(html.includes(`id="${id}"`), id);
   assert.equal((html.match(/Muốn đổi gì\?/g) || []).length, 1);
   assert.ok(html.includes('Lần sửa gần nhất') && html.includes('Báo lỗi / góp ý plugin'));
   assert.ok(!/\{\{[A-Z_]+\}\}/.test(html));
@@ -119,7 +119,7 @@ test('post card features: variants, Copy buttons, http-only links, Threads, foot
   assert.equal((html.match(/<article class="post"/g) || []).length, 2);
   assert.ok(html.includes('Bản A') && html.includes('Bản B') && !html.includes('Bản C'));
   assert.ok(html.includes('Copy nội dung') && html.includes('Copy thư mục ảnh') && html.includes('Đã đăng'));
-  assert.ok(html.includes('href="https://facebook.com/groups/g1"') && html.includes('Mở nhóm ↗'));
+  assert.ok(html.includes('Chia sẻ vào') && html.includes('href="https://facebook.com/groups/g1"') && html.includes('FB Minh · cụm Cầu Giấy · phòng trọ'));
   assert.ok(!html.includes('javascript:alert'));
   assert.ok(html.includes('data-kind="threads"'));
   assert.ok(html.includes('1 bài bị bỏ') && html.includes('thiếu ảnh'));
@@ -186,7 +186,7 @@ test('modes: lavish -> edit, else view with Copy yêu cầu; edit-only controls 
 test('escaping: <script> in post text, content-type example, groups, persona; token absent', () => {
   const evil = '<script>alert(1)</script> & "q"';
   const html = home({
-    cfg: cfg({ groups: [grp({ active: false }), grp({ name: '<img onerror=1>', url: 'https://fb/2' })] }),
+    cfg: cfg({ clusters: [grp({ active: false }), grp({ id: 'x2', name: '<img onerror=1>', groups: [{ name: '<b>g</b>', url: 'https://fb/2' }] })] }),
     persona: '# Persona\n\n## Tôi là ai\n\nFounder <b>x</b>.\n\n## NÊN\n\n- Nói rõ\n',
     contentTypes: '## <i>T</i>\n\n- **Kênh**: page\n- **Ví dụ**:\n\n```\n<script>alert(2)</script>\n```\n',
     slots: [slotData('2026-11-19_1100', {
@@ -199,8 +199,8 @@ test('escaping: <script> in post text, content-type example, groups, persona; to
   assert.ok(!html.includes('<script>alert('));
   assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;') && html.includes('&lt;script&gt;alert(2)&lt;/script&gt;'));
   assert.ok(html.includes('data-raw="&lt;script&gt;alert(1)&lt;/script&gt; &amp; &quot;q&quot;"'));
-  assert.ok(!html.includes('<img src=x') && !html.includes('<img onerror=1>') && !html.includes('<b>note</b>') && !html.includes('<b>x</b>') && !html.includes('<i>T</i>'));
-  assert.match(html, /class="grp off"/);
+  assert.ok(!html.includes('<img src=x') && !html.includes('<img onerror=1>') && !html.includes('<b>note</b>') && !html.includes('<b>g</b>') && !html.includes('<b>x</b>') && !html.includes('<i>T</i>'));
+  assert.match(html, /class="grp clu off"/);
   assert.ok(html.includes('đã cài · mkt-minh'));
   assert.ok(!html.includes('SECRET-TOKEN'));
 });
@@ -208,7 +208,7 @@ test('escaping: <script> in post text, content-type example, groups, persona; to
 test('daily tab content and invalid config banner', () => {
   const html = home({ pending: ['Cách ghi liên hệ'] });
   assert.ok(html.includes('Hôm nay sẽ soạn') && html.includes('Số bài mỗi khung') && html.includes('1 mục đang chờ quy định'));
-  const bad = home({ cfg: { groups: 'x' }, errors: undefined });
+  const bad = home({ cfg: { clusters: 'x' }, errors: undefined });
   assert.ok(bad.includes('Cấu hình đang sai') && bad.includes('apiBaseUrl'));
   assert.ok(home({ tokenLabel: null }).includes('chưa cài'));
 });
@@ -346,4 +346,28 @@ test('khung có bài Page che giá: chú thích cuối khung một lần', () =>
   const gm = targets.map((t) => (t.kind === 'group' ? { ...t, priceStyle: 'masked' } : t));
   const gh = home({ slots: [slotData(s, { targets: gm, posts: [post(s, 1, 'group:g1', ['c'])] })] });
   assert.ok(!gh.slice(gh.indexOf('<section class="slotview"')).split('id="p-profile"')[0].includes(PAGE_WARN));
+});
+
+test('Cụm nhóm tab: số tin khớp từ snapshot, 5 nhóm đầu + phần còn lại, tích đã vào, từ khoá', () => {
+  const many = Array.from({ length: 7 }, (_, i) => ({ name: `Nhóm ${i + 1}`, url: `https://fb/g${i + 1}`, members: 1000 * (i + 1), interactions: 10 - i, joined: i === 0 }));
+  const img = { url: 'u' };
+  const listings = [
+    { code: 'T1', district: 'Hoàng Mai', rooms: [{ price: 3800000, unitType: 'STUDIO' }], images: [img, img, img] },
+    { code: 'T2', district: 'Hoàng Mai', rooms: [{ price: 6000000, unitType: 'ONE_BEDROOM' }], images: [img, img, img] },
+    { code: 'T3', district: 'Hoàng Mai', rooms: [{ price: 3000000 }], images: [img] },
+    { code: 'T4', district: 'Cầu Giấy', rooms: [{ price: 3000000 }], images: [img, img, img] },
+  ];
+  const html = home({ listings, cfg: cfg({ clusters: [
+    grp({ groups: many }),
+    grp({ id: 'hm-st', name: 'Hoàng Mai · sinh viên', segment: 'student' }),
+    grp({ id: 'hm-apt', name: 'Hoàng Mai · căn hộ', segment: 'apartment', active: false }),
+  ] }) });
+  const p = html.slice(html.indexOf('id="p-clusters"'), html.indexOf('id="p-daily"'));
+  assert.ok(p.includes('Nhà trọ Hoàng Mai <span class="cnt">2 tin khớp</span>'), p);
+  assert.ok(p.includes('Hoàng Mai · sinh viên <span class="cnt">1 tin khớp</span>'));
+  assert.ok(p.indexOf('Hoàng Mai · căn hộ') > p.indexOf('Hoàng Mai · sinh viên'));
+  assert.ok(p.includes('1/7 nhóm đã vào') && p.includes('+ 2 nhóm khác'));
+  assert.ok(p.includes('data-name="Nhóm 1" checked') && !p.includes('data-name="Nhóm 2" checked'));
+  assert.ok(p.includes('“phòng trọ Hoàng Mai”') && p.includes('Có phòng dưới 5 triệu'));
+  assert.ok(html.includes('Cụm nhóm <small>2 bật · 1 tạm ngừng</small>'));
 });

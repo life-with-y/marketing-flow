@@ -131,7 +131,7 @@ marketing-flow/
 
 ## A4. Luồng một lần chạy
 
-Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `/hm-prep-now chỉ nhóm Cầu Giấy, Đống Đa`, khi đó chỉ soạn cho các nhóm đó). Mã `slot` dạng `YYYY-MM-DD_HHMM`.
+Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định cụm, vd `/hm-prep-now chỉ cụm Cầu Giấy, Đống Đa`, khi đó chỉ soạn cho các cụm đó). Mã `slot` dạng `YYYY-MM-DD_HHMM`.
 
 1. **Fetch (script)**: gọi API, lưu `snapshots/<slot>.json`, giữ 30 bản gần nhất.
 2. **So sánh (script)**:
@@ -141,15 +141,15 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
 3. **Chọn và soạn (Claude)**:
    - Đọc: `hard-rules`, mặc định chung, hồ sơ cá nhân, Trends và bài Đã duyệt (nếu có), tab Cần tìm hiểu (nếu có), `leads/<hôm nay>.json` (nếu có).
    - **Đích của khung giờ**:
-     - nhóm có `active: true`, có hôm nay trong `days` và có khung này trong `slots`; mỗi nhóm **tối đa 1 bài** mỗi khung
+     - cụm nhóm có `active: true`, có hôm nay trong `days` và có khung này trong `slots`; mỗi cụm **tối đa 1 bài** mỗi khung: người dùng đăng trên trang cá nhân (chế độ chuyên nghiệp) rồi chia sẻ vào các nhóm đã vào của cụm
      - các kênh trong `perSlot` (tường cá nhân, Page, Threads)
    - **Kiểu bài**: mỗi đích nhận một kiểu bài dùng được cho kênh đó, theo tỉ lệ `channel-mix`. Kiểu bài quyết định số tin trong bài (1 hoặc nhiều) và cách chọn tin.
    - **Điều kiện tin**: có ít nhất 3 ảnh `IMAGE`.
    - **Ưu tiên**: khớp nhu cầu được hỏi nhiều (nếu có leads) > `NEW` > `PRICE_DOWN` > `NOW_AVAILABLE` > `UNCHANGED`. Trong cùng mức thì ưu tiên tin chưa được soạn cho đích đó lâu nhất (xoay vòng mềm, không chặn tin nào).
    - **Ngày không có gì mới**: vẫn soạn đủ số bài bằng tin `UNCHANGED`, xoay vòng như trên.
-   - **Ghép nhóm theo quận**: nhóm có `districts` chỉ nhận tin thuộc các quận đó. Nhóm không khai `districts` là nhóm toàn Hà Nội.
-   - Một tin có thể vào nhiều nhóm trong cùng khung, mỗi nhóm một phiên bản nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
-   - **Ngôn ngữ** theo `language` của nhóm (mặc định `vi`). Các kênh không phải nhóm dùng `vi`.
+   - **Cụm nhóm = quận × phân khúc**: `prepare` lọc tin đủ điều kiện đúng quận (cụm không khai `districts` = toàn Hà Nội) và đúng phân khúc (`room` mọi tin, `student` có phòng dưới 5 triệu, `apartment` có phòng Studio / 1 ngủ 1 khách / gác lửng từ 5 triệu) vào `target.listingCodes`; build trả lỗi tin ngoài cụm. Đích mang `groups[]` (nhóm đã vào) để trang bài đăng hiện "Chia sẻ vào".
+   - Một tin có thể vào nhiều cụm trong cùng khung, mỗi cụm một phiên bản nội dung riêng (mở bài, thứ tự ý, CTA), dữ kiện giữ nguyên.
+   - **Ngôn ngữ** theo `language` của cụm (mặc định `vi`). Các kênh khác dùng `vi`.
    - **CTA** chọn theo thứ tự ưu tiên trong `contact`, lùi xuống kênh mà nhóm cho phép. Page dùng `pageContact`.
    - **Quy định nhóm đang pending** (cách ghi liên hệ, link, tiền tố…): dùng mặc định an toàn: không SĐT, không link, CTA "nhắn tin / comment mã T…". `note` của nhóm luôn được tuân theo; nhóm chỉ có link khi công tắc `links.group` bật và `note` cho phép, link để ở comment đầu tiên.
    - **Công tắc link theo kênh** (`config.links`: `page`, `wall`, `threads`, `group`; mặc định đều `false`): mỗi đích mang `links`. Tắt: không có link `homematch.vn` nào (có hay không `https://`, `www.`) ở thân bài lẫn comment, build báo lỗi "kênh này đang tắt link homematch.vn"; CTA trỏ Zalo / comment mã / inbox, `comment` bỏ hoặc chỉ ghi mã tin. Bật: áp luật đặt link dưới đây. Trang chủ hiện công tắc ở Hồ sơ › Lịch & cài đặt.
@@ -183,7 +183,7 @@ Kích hoạt: lịch, hoặc `/hm-prep-now` (có thể chỉ định nhóm, vd `
      - bài Threads có bộ đếm "n / 500 ký tự"
      - bản có `comment`: hộp nhỏ hơn **Comment đầu tiên (ghim lại)** ngay dưới khung nội dung; bản không có comment thì không có hộp
    - Bài nhiều bản có tab **Bản A · B · C** trong thẻ; đổi tab thì đổi nội dung, thứ tự ảnh và thư mục ảnh.
-   - Nút **Copy nội dung**, **Copy comment** (chỉ hiện khi bản đang mở có comment; copy nguyên văn), **Copy thư mục ảnh** (của bản đang mở; dùng với ⌘⇧G trên Mac, dán vào ô đường dẫn trên Windows), link **Mở nhóm / Page / Threads ↗** (chỉ http/https), nút **Góp ý** (xem A8), nút **Sửa kiểu bài này** (điền sẵn vào ô yêu cầu `Kiểu <kiểu>: (bài <slot> số <n>, mã <mã>) `, không đổi tab).
+   - Nút **Copy nội dung**, **Copy comment** (chỉ hiện khi bản đang mở có comment; copy nguyên văn), **Copy thư mục ảnh** (của bản đang mở; dùng với ⌘⇧G trên Mac, dán vào ô đường dẫn trên Windows), link **Mở Page / Threads ↗** (chỉ http/https); bài cụm nhóm có dòng **Chia sẻ vào** với link các nhóm đã vào của cụm, nút **Góp ý** (xem A8), nút **Sửa kiểu bài này** (điền sẵn vào ô yêu cầu `Kiểu <kiểu>: (bài <slot> số <n>, mã <mã>) `, không đổi tab).
    - Ô **Đã đăng** chỉ lưu bằng localStorage, riêng từng khung; tick thì thẻ thu gọn và tiến độ tăng. Không ảnh hưởng việc chọn tin.
    - Cuối khung, thu gọn được: các bài bị bỏ và lý do; các mục pending đang ảnh hưởng tới bài; ghi chú.
 6. **Ghi nhật ký và báo**:
@@ -205,7 +205,7 @@ Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) 
   - Không nói hay ám chỉ tin được ưu tiên hiển thị vì chủ nhà trả tiền.
   - Công tắc link theo kênh (mặc định tắt): tắt thì không link `homematch.vn` ở đâu cả. Bật: Facebook (Page, tường, nhóm) không link trong thân bài, link tin ở comment đầu tiên; Threads được để link trong thân bài.
   - Mức trần "dưới/tầm X triệu" chỉ khi mọi phòng ≤ X; giá che `4xxx` chỉ ở kênh `priceStyle` = `masked`.
-- `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi nhóm tối đa 1 bài mỗi khung.
+- `selection.md`: ≥3 ảnh mỗi tin, mục tiêu 5 ảnh mỗi bài, thứ tự ưu tiên và xoay vòng ở A4.3, mỗi cụm nhóm tối đa 1 bài mỗi khung.
 - `channel-format.md`: định dạng chung (giá, `•`, link nguyên văn, ngôn ngữ); phần riêng từng kênh nằm ở `platforms/`. Claude đề xuất, owner duyệt.
 - `platforms/` (hướng dẫn đăng theo nền tảng, luật Claude theo khi viết; mỗi file các mục Mục tiêu, Link, Số điện thoại, Emoji, Hashtag/tag, Câu mở đầu, Độ dài & định dạng, Lời mời (CTA), Tránh):
   - `facebook-page.md` (`page`): link ở comment đầu tiên, giọng thương hiệu, không emoji, 0–2 hashtag, 1–2 dòng đầu nói khu + giá + hợp với ai.
@@ -250,11 +250,13 @@ Thứ tự ưu tiên: `hard-rules` > hướng dẫn nền tảng (`platforms/`) 
       { "id": "page", "type": "fb-page",     "label": "HomeMatch Page" },
       { "id": "th",   "type": "threads",     "label": "…" }
     ],
-    "groups": [
-      { "name": "…", "url": "https://facebook.com/groups/…", "account": "fb1",
-        "active": true, "districts": ["Cầu Giấy"], "language": "vi",
+    "clusters": [                                  // cụm nhóm = khu vực × phân khúc
+      { "id": "cg-student", "name": "Cầu Giấy · sinh viên, giá rẻ", "account": "fb1",
+        "active": true, "segment": "student",       // room | student (< 5 triệu) | apartment (Studio/1N1K/gác lửng ≥ 5 triệu)
+        "districts": ["Cầu Giấy"], "language": "vi",
         "days": ["mon","tue","wed","thu","fri","sat","sun"], "slots": ["11:00"],
-        "note": "" }
+        "keywords": ["phòng trọ giá rẻ Cầu Giấy"], "note": "",
+        "groups": [ { "name": "…", "url": "https://facebook.com/groups/…", "members": 17738, "interactions": 8, "joined": false } ] }
     ],
     "perSlot": { "fb1": 1, "page": 1, "th": 1 },
     "variants": { "default": 1 },                // vd { "default": 1, "page": 3, "groups": 2 }; tối đa 3
@@ -287,23 +289,23 @@ Chạy lại `/hm-setup` để đổi token hoặc dựng lại lịch và quy�
 
 ### `/hm-config` (mọi thay đổi sau đó)
 
-- **Một trang chủ** `<outputDir>/index.html` cho cả bài đăng và cấu hình, dựng từ template cố định `assets/home/template.html` (`config-cli render-board` và `build.mjs` cùng dựng trang này). Theo house style của board `/vision` (serif, mực đen trên giấy trắng). 4 tab theo thứ tự, cột phải dùng chung:
+- **Một trang chủ** `<outputDir>/index.html` cho cả bài đăng và cấu hình, dựng từ template cố định `assets/home/template.html` (`config-cli render-board` và `build.mjs` cùng dựng trang này). Theo house style của board `/vision` (serif, mực đen trên giấy trắng). 5 tab theo thứ tự (Bài đăng · Kiểu bài · Cụm nhóm · Hằng ngày · Hồ sơ), cột phải dùng chung:
   - **Tab Bài đăng** (mặc định): bài của các khung, xem A4 bước 5.
   - **Tab Kiểu bài**: thư viện đọc từ `content-types.md` của hồ sơ (chưa có thì dùng mẫu). Mỗi kiểu một thẻ thu gọn được (thẻ đầu mở sẵn): tên, Kênh, Số tin mỗi bài, Cách chọn tin, Cấu trúc (danh sách đánh số), Ảnh, Ví dụ hiện trong khung giống bài Facebook (chữ thường, giữ xuống dòng). Thiếu trường thì hiện "—". Nút **Sửa kiểu này** (điền `Kiểu <tên>: `) và **+ Thêm kiểu bài** (điền `Thêm kiểu bài mới: tên …, kênh …, số tin …, cấu trúc …`).
+  - **Tab Cụm nhóm**: mỗi cụm (quận × phân khúc) một thẻ: tên, số tin đang khớp (từ snapshot mới nhất), khung · tài khoản · số nhóm đã vào · bật/tạm ngừng; mở ra có quận, luật tin của phân khúc, ngày, từ khoá để tìm thêm nhóm, ghi chú, và danh sách nhóm nên vào xếp theo tương tác (5 nhóm đầu, phần còn lại thu gọn) với thành viên, tương tác, link ↗ và ô tích **đã vào**. Tích/bỏ tích thêm yêu cầu `Đã vào nhóm <tên> (cụm <tên cụm>)` / `Chưa vào nhóm …` vào ô "Muốn đổi gì?". Cụm tạm ngừng xếp cuối.
   - **Tab Hằng ngày**, những thứ hay sửa:
     - **Hôm nay sẽ soạn**: mỗi khung giờ một ô, số bài và kênh
-    - **Nhóm**: mỗi nhóm một dòng gọn (tên · khung · tài khoản · bật/tạm ngừng), bấm mở thêm quận, ngày, ngôn ngữ, ghi chú; lọc "Hôm nay" (mặc định) / "Tất cả"
     - **Số bài mỗi khung** cho tường cá nhân, Page, Threads
     - **Mục đang chờ quy định**, thu gọn một dòng
   - **Tab Hồ sơ** (ít sửa), mỗi mục thu gọn được, chỉ Persona mở sẵn:
     - Persona
     - Tài khoản & liên hệ
     - Lịch & cài đặt (giờ chạy, tỉ lệ, thư mục, quét nhóm, token chỉ hiện "đã cài")
-  - **Cột phải** (mọi tab): ô "Muốn đổi gì?" (nút gợi ý nhanh: tạm ngừng / bật lại nhóm, thêm nhóm, bỏ một nhóm hôm nay; ô gõ lời thường; danh sách chờ gửi) và "Lần sửa gần nhất" thu gọn; dưới cùng là nút **Báo lỗi / góp ý plugin** (xem A8).
+  - **Cột phải** (mọi tab): ô "Muốn đổi gì?" (nút gợi ý nhanh: tạm ngừng / bật lại cụm, thêm nhóm vào cụm, bỏ một cụm hôm nay; ô gõ lời thường; danh sách chờ gửi) và "Lần sửa gần nhất" thu gọn; dưới cùng là nút **Báo lỗi / góp ý plugin** (xem A8).
 - **Hai chế độ**, trang tự nhận biết khi mở:
   - Mở bằng `lavish-axi` (có `window.lavish`): **Đang sửa cùng Claude**. Nút "Gửi cho Claude sửa" gửi danh sách yêu cầu; "Lần sửa gần nhất" có nút hoàn tác.
   - Mở thẳng file (sau khi build hoặc từ Finder): **Chỉ xem**. Ô yêu cầu vẫn dùng được; nút thành **Copy yêu cầu**, copy `/hm-config <các yêu cầu nối bằng "; ">` để dán vào chat Claude. Ẩn nút hoàn tác; nút Báo lỗi (Form) vẫn còn.
-- Người dùng chú thích lên mục hoặc gõ yêu cầu (vd "tạm ngừng nhóm Cầu Giấy", "đổi 17:30 thành 18:00", "thêm nhóm: <tên> <link>").
+- Người dùng chú thích lên mục hoặc gõ yêu cầu (vd "tạm ngừng cụm Cầu Giấy · sinh viên", "đổi 17:30 thành 18:00", "thêm nhóm vào cụm Cầu Giấy · phòng trọ: <tên> <link>").
 - Claude **sửa ngay**: lưu bản sao vào `history/`, ghi file, dựng lại trang, hiện changelog (vd "Nhóm Cầu Giấy: active true → false"). Có lệnh "hoàn tác lần sửa trước".
 - Đổi giờ chạy thì Claude tạo, xoá hoặc dời scheduled task tương ứng.
 - Đổi token phải qua `/hm-setup`.
@@ -349,19 +351,19 @@ Plugin không chứa token GitHub. Không có đường tạo issue thẳng cho 
 - Unit test, với fixture JSON theo schema API:
   - `diff.mjs`: nhãn phòng, nhãn tin, lần đầu chạy, khoá phòng
   - `download.mjs`: tên thư mục, thứ tự ảnh, quy tắc 5 ảnh cho bài 1 tin và nhiều tin, bỏ bài thiếu ảnh
-  - phần chọn đích của khung giờ: `active`, `days`, `slots`, 1 bài mỗi nhóm
-- Test `render-home.mjs` (4 tab, chọn khung, 2 chế độ, escape, đường dẫn ảnh) và `parseContentTypes`, đảm bảo token không xuất hiện.
+  - phần chọn đích của khung giờ: `active`, `days`, `slots`, 1 bài mỗi cụm; lọc tin theo quận × phân khúc
+- Test `render-home.mjs` (5 tab, chọn khung, 2 chế độ, escape, đường dẫn ảnh) và `parseContentTypes`, đảm bảo token không xuất hiện.
 - End-to-end trên máy owner với token thật:
   - `/hm-setup` → `/hm-config` (sửa vài mục, hoàn tác, đổi giờ và kiểm tra scheduled task)
   - `/hm-prep-now`: dữ kiện mỗi bài khớp API, ảnh đúng quy tắc, copy được nội dung
   - chạy lần 2 để kiểm tra xoay vòng
-  - `/hm-prep-now chỉ nhóm …`
+  - `/hm-prep-now chỉ cụm …`
 
 ## A10. Còn mở
 
 - Kiểu bài và tỉ lệ trộn: owner quy định sau; bản đầu dùng 4 kiểu mẫu.
 - Quy định đăng theo nhóm (liên hệ, link, tiền tố): pending, ghi ở tab Cần tìm hiểu.
-- Danh sách nhóm: owner nhập qua `/hm-config`.
+- Cụm nhóm: mỗi người tự cấu hình qua `/hm-config`; danh sách nhóm trong cụm chỉ là gợi ý, người dùng tự tìm, tham gia rồi tích "đã vào".
 - `apiBaseUrl` production: điền khi có.
 
 ---

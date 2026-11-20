@@ -13,7 +13,7 @@ import { readJsonSafe, readProfile as profile, newestHistory } from './lib/profi
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['config.json', 'persona.md', 'content-types.md'];
-const SKELETON = { apiBaseUrl: '', accounts: [], groups: [] };
+const SKELETON = { apiBaseUrl: '', accounts: [], clusters: [] };
 const NO_HISTORY = 'Chưa có lần sửa nào';
 
 const stamp = (d) => d.toISOString().replace(/:/g, '-');

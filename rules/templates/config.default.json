@@ -5,6 +5,7 @@
   "pageContact": [],
   "library": {},
   "leadScan": { "enabled": false },
+  "clusters": [],
   "perSlot": {},
   "variants": { "default": 1 },
   "links": { "page": false, "wall": false, "threads": false, "group": false },

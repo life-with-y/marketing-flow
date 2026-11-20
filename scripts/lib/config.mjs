@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SEGMENT_KEYS } from './clusters.mjs';
 
 export class ConfigError extends Error {
   constructor(message, field) {
@@ -78,51 +79,77 @@ export function validateConfig(cfg) {
       }
     }
   }
-  if (!Array.isArray(cfg.groups)) {
-    errors.push('groups: phải là danh sách');
+  if (Array.isArray(cfg.groups) && cfg.groups.length) {
+    errors.push('groups: đã thay bằng clusters (cụm nhóm); chuyển nhóm sang clusters[].groups');
+  }
+  if (cfg.clusters !== undefined && !Array.isArray(cfg.clusters)) {
+    errors.push('clusters: phải là danh sách');
   } else {
-    const urls = new Map();
-    cfg.groups.forEach((g, i) => {
-      if (!isObj(g)) {
-        errors.push(`groups[${i}]: phải là object`);
-        return;
+    const seen = new Map();
+    (cfg.clusters || []).forEach((c, i) => {
+      const at = `clusters[${i}]`;
+      if (!isObj(c)) { errors.push(`${at}: phải là object`); return; }
+      if (typeof c.id !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(c.id)) {
+        errors.push(`${at}.id: bắt buộc, chỉ chữ thường, số và "-"`);
+      } else if (seen.has(c.id)) {
+        errors.push(`${at}.id: trùng với clusters[${seen.get(c.id)}]`);
+      } else seen.set(c.id, i);
+      if (typeof c.name !== 'string' || !c.name.trim()) errors.push(`${at}.name: bắt buộc`);
+      if (!ids.has(c.account)) errors.push(`${at}.account: "${c.account}" không có trong accounts`);
+      if (c.segment !== undefined && !SEGMENT_KEYS.includes(c.segment)) errors.push(`${at}.segment: chỉ nhận ${SEGMENT_KEYS.join(', ')}`);
+      if (c.districts !== undefined && (!Array.isArray(c.districts) || c.districts.some((d) => typeof d !== 'string'))) {
+        errors.push(`${at}.districts: phải là danh sách tên quận`);
       }
-      if (typeof g.url !== 'string' || !/^https?:\/\/\S+$/i.test(g.url.trim())) {
-        errors.push(`groups[${i}].url: bắt buộc, phải là link http(s)`);
-      } else {
-        const key = g.url.trim().replace(/\/+$/, '').toLowerCase();
-        if (urls.has(key)) errors.push(`groups[${i}].url: trùng link với groups[${urls.get(key)}]`);
-        else urls.set(key, i);
+      if (!Array.isArray(c.days) || c.days.some((d) => !DAYS.includes(d))) {
+        errors.push(`${at}.days: chỉ nhận ${DAYS.join(', ')}`);
       }
-      if (!ids.has(g.account)) {
-        errors.push(`groups[${i}].account: "${g.account}" không có trong accounts`);
+      if (c.slots !== undefined && !Array.isArray(c.slots)) {
+        errors.push(`${at}.slots: phải là danh sách giờ "HH:MM"`);
+      } else if (c.slots !== undefined) {
+        c.slots.forEach((t, j) => {
+          if (typeof t !== 'string' || !TIME_RE.test(t)) {
+            errors.push(`${at}.slots[${j}]: giờ "${t}" không hợp lệ, dùng "HH:MM" 24 giờ`);
+          } else if (Array.isArray(cfg.schedule) && !cfg.schedule.includes(t)) {
+            errors.push(`${at}.slots[${j}]: giờ "${t}" không nằm trong schedule`);
+          }
+        });
       }
-      if (!Array.isArray(g.days) || g.days.some((d) => !DAYS.includes(d))) {
-        errors.push(`groups[${i}].days: chỉ nhận ${DAYS.join(', ')}`);
+      if (c.keywords !== undefined && (!Array.isArray(c.keywords) || c.keywords.some((k) => typeof k !== 'string'))) {
+        errors.push(`${at}.keywords: phải là danh sách chuỗi`);
       }
-      if (g.slots !== undefined) {
-        if (!Array.isArray(g.slots)) {
-          errors.push(`groups[${i}].slots: phải là danh sách giờ "HH:MM"`);
-        } else {
-          g.slots.forEach((t, j) => {
-            if (typeof t !== 'string' || !TIME_RE.test(t)) {
-              errors.push(`groups[${i}].slots[${j}]: giờ "${t}" không hợp lệ, dùng "HH:MM" 24 giờ`);
-            } else if (Array.isArray(cfg.schedule) && !cfg.schedule.includes(t)) {
-              errors.push(`groups[${i}].slots[${j}]: giờ "${t}" không nằm trong schedule`);
-            }
-          });
-        }
+      if (c.groups !== undefined && !Array.isArray(c.groups)) {
+        errors.push(`${at}.groups: phải là danh sách`);
+      } else if (c.groups !== undefined) {
+        const urls = new Map();
+        c.groups.forEach((g, j) => {
+          const gat = `${at}.groups[${j}]`;
+          if (!isObj(g)) { errors.push(`${gat}: phải là object`); return; }
+          if (typeof g.url !== 'string' || !/^https?:\/\/\S+$/i.test(g.url.trim())) {
+            errors.push(`${gat}.url: bắt buộc, phải là link http(s)`);
+          } else {
+            const key = g.url.trim().replace(/\/+$/, '').toLowerCase();
+            if (urls.has(key)) errors.push(`${gat}.url: trùng link với ${at}.groups[${urls.get(key)}]`);
+            else urls.set(key, j);
+          }
+          if (g.joined !== undefined && typeof g.joined !== 'boolean') errors.push(`${gat}.joined: phải là true hoặc false`);
+          for (const k of ['members', 'interactions']) {
+            if (g[k] !== undefined && !(Number.isInteger(g[k]) && g[k] >= 0)) errors.push(`${gat}.${k}: phải là số nguyên ≥ 0`);
+          }
+        });
       }
     });
   }
   return errors;
 }
 
-const GROUP_DEFAULTS = {
+const CLUSTER_DEFAULTS = {
   active: true,
   language: 'vi',
+  segment: 'room',
   days: DAYS,
   districts: [],
+  keywords: [],
+  groups: [],
   note: '',
 };
 
@@ -162,8 +189,8 @@ export function loadConfig(dir, { root = PLUGIN_ROOT } = {}) {
   const user = readJson(path.join(dir, 'config.json'), 'config.json', 'Chưa có config.json, chạy /hm-setup');
   if (!isObj(user)) throw new ConfigError('config.json không đọc được: phải là object', 'config.json');
   const cfg = merge(def, user);
-  if (Array.isArray(cfg.groups)) {
-    cfg.groups = cfg.groups.map((g) => (isObj(g) ? { ...GROUP_DEFAULTS, slots: [...(cfg.schedule || [])], ...g } : g));
+  if (Array.isArray(cfg.clusters)) {
+    cfg.clusters = cfg.clusters.map((c) => (isObj(c) ? { ...CLUSTER_DEFAULTS, slots: [...(cfg.schedule || [])], ...c } : c));
   }
   const errors = validateConfig(cfg);
   if (errors.length) {

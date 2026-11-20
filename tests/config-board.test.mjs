@@ -9,12 +9,12 @@ import { main } from '../scripts/config-cli.mjs';
 
 const ALL = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const THU = new Date(2026, 10, 19, 9, 12);
-const grp = (o) => ({ name: 'Nhà trọ Hoàng Mai', url: 'https://fb/hm', account: 'fb1', active: true, days: ALL, districts: ['Hoàng Mai'], language: 'vi', note: '', ...o });
+const grp = (o) => ({ id: 'hm-room', name: 'Nhà trọ Hoàng Mai', account: 'fb1', active: true, segment: 'room', days: ALL, districts: ['Hoàng Mai'], language: 'vi', note: '', keywords: [], groups: [], ...o });
 const cfg = (o = {}) => ({
   apiBaseUrl: 'https://api.example',
   schedule: ['17:00'],
   accounts: [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }],
-  groups: [grp()],
+  clusters: [grp()],
   perSlot: {},
   variants: { default: 1 },
   contact: [],
@@ -25,23 +25,34 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hm-cfg-'));
 // home cũng là thư mục tạm: outputDir mặc định "~/HomeMatch-Posts" không bao giờ trỏ vào máy thật.
 const run = async (args, dir, now = THU, fetchImpl) => { const o = []; const code = await main(args, { dir, home: dir, now, out: (s) => o.push(s), fetchImpl }); return { code, o }; };
 
-test('diffConfig: toggle, schedule, added group -> exactly 3 lines', () => {
+test('diffConfig: toggle, schedule, added cluster -> exactly 3 lines', () => {
   const a = cfg();
   const b = cfg({
     schedule: ['17:30'],
-    groups: [grp({ active: false }), grp({ name: 'Hanoi Expats Housing', url: 'https://fb/ex' })],
+    clusters: [grp({ active: false }), grp({ id: 'ex', name: 'Hanoi Expats Housing' })],
   });
   assert.deepEqual(diffConfig(a, b), [
     'Giờ chạy: 17:00 → 17:30',
-    'Nhóm Nhà trọ Hoàng Mai: bật → tạm ngừng',
-    'Nhóm Hanoi Expats Housing: thêm mới',
+    'Cụm Nhà trọ Hoàng Mai: bật → tạm ngừng',
+    'Cụm Hanoi Expats Housing: thêm mới',
+  ]);
+});
+
+test('diffConfig: nhóm trong cụm thêm, đã vào, bỏ; phân khúc', () => {
+  const a = cfg({ clusters: [grp({ groups: [{ name: 'A', url: 'https://fb/a' }, { name: 'B', url: 'https://fb/b' }] })] });
+  const b = cfg({ clusters: [grp({ segment: 'student', groups: [{ name: 'A', url: 'https://fb/a', joined: true }, { name: 'C', url: 'https://fb/c' }] })] });
+  assert.deepEqual(diffConfig(a, b), [
+    'Cụm Nhà trọ Hoàng Mai: phân khúc phòng trọ → sinh viên, giá rẻ',
+    'Cụm Nhà trọ Hoàng Mai: đã vào nhóm A',
+    'Cụm Nhà trọ Hoàng Mai: thêm nhóm C',
+    'Cụm Nhà trọ Hoàng Mai: bỏ nhóm B',
   ]);
 });
 
 test('diffConfig: other fields and identical', () => {
   assert.deepEqual(diffConfig(cfg(), cfg()), []);
   const lines = diffConfig(cfg(), cfg({
-    groups: [grp({ districts: ['Cầu Giấy'], days: ['mon'], language: 'en', note: 'x', slots: ['17:00'] })],
+    clusters: [grp({ districts: ['Cầu Giấy'], days: ['mon'], language: 'en', note: 'x', slots: ['17:00'] })],
     perSlot: { fb1: 2 }, variants: { default: 2 }, contact: ['Zalo'], pageContact: ['P'],
     accounts: [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }, { id: 'th', type: 'threads', label: 'Threads' }],
   }));
@@ -49,7 +60,7 @@ test('diffConfig: other fields and identical', () => {
   for (const s of ['quận Hoàng Mai → Cầu Giấy', 'ngày mọi ngày → T2', 'ngôn ngữ tiếng Việt → tiếng Anh', 'ghi chú — → x', 'khung theo giờ chạy → 17:00', 'FB Minh: — → 2', 'Số bản default: 1 → 2', 'Liên hệ: — → Zalo', 'Liên hệ Page: — → P', 'Tài khoản Threads: thêm mới']) {
     assert.ok(joined.includes(s), s + '\n' + joined);
   }
-  assert.ok(diffConfig(cfg(), cfg({ groups: [] })).includes('Nhóm Nhà trọ Hoàng Mai: bỏ'));
+  assert.ok(diffConfig(cfg(), cfg({ clusters: [] })).includes('Cụm Nhà trọ Hoàng Mai: bỏ'));
   assert.ok(diffConfig(cfg(), cfg({ accounts: [] })).includes('Tài khoản FB Minh: bỏ'));
 });
 
@@ -63,7 +74,7 @@ test('init creates skeleton + templates, never overwrites', async () => {
   const dir = path.join(tmp(), 'p');
   const r = await run(['init'], dir);
   assert.equal(r.code, 0);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'config.json'), 'utf8')), { apiBaseUrl: '', accounts: [], groups: [] });
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'config.json'), 'utf8')), { apiBaseUrl: '', accounts: [], clusters: [] });
   assert.ok(fs.existsSync(path.join(dir, 'persona.md')) && fs.existsSync(path.join(dir, 'content-types.md')));
   fs.writeFileSync(path.join(dir, 'persona.md'), 'mine');
   await run(['init'], dir);
@@ -96,8 +107,8 @@ test('render-board writes the home page at outputDir/index.html with slots, toke
   fs.mkdirSync(slotDir, { recursive: true });
   fs.writeFileSync(path.join(slotDir, 'page-data.json'), JSON.stringify({
     slot: '2026-11-19_1100', generatedAt: THU.toISOString(), outDir: slotDir,
-    posts: [{ n: 1, dir: path.join(slotDir, '01_x_T1'), targetId: 'group:https://fb/hm', postCodes: ['T1'], type: 'Phòng mới', label: 'NEW', variants: [{ key: 'A', dir: path.join(slotDir, '01_x_T1'), text: 'Nội dung bài <b>', files: ['1.jpg'] }] }],
-    targets: [{ id: 'group:https://fb/hm', kind: 'group', account: 'fb1', name: 'Nhà trọ Hoàng Mai', url: 'https://fb/hm' }],
+    posts: [{ n: 1, dir: path.join(slotDir, '01_x_T1'), targetId: 'group:hm-room', postCodes: ['T1'], type: 'Phòng mới', label: 'NEW', variants: [{ key: 'A', dir: path.join(slotDir, '01_x_T1'), text: 'Nội dung bài <b>', files: ['1.jpg'] }] }],
+    targets: [{ id: 'group:hm-room', kind: 'group', account: 'fb1', name: 'Nhà trọ Hoàng Mai', url: 'https://fb/hm' }],
     accounts: [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }], skipped: [], pending: [], notes: [],
   }));
   fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg({ outputDir: out })));
@@ -115,7 +126,7 @@ test('render-board writes the home page at outputDir/index.html with slots, toke
   // no content-types.md in profile -> template library
   assert.ok(html.includes('Phòng nổi bật'));
   // invalid config still renders; default outputDir resolves under home (temp)
-  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apiBaseUrl: '', accounts: [], groups: [] }));
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apiBaseUrl: '', accounts: [], clusters: [] }));
   const r2 = await run(['render-board'], dir);
   const file2 = path.join(dir, 'HomeMatch-Posts', 'index.html');
   assert.deepEqual(r2.o, [file2]);
@@ -129,7 +140,7 @@ test('today prints JSON targets per slot', async () => {
   assert.equal(j.date, '2026-11-19');
   assert.equal(j.slots.length, 1);
   assert.equal(j.slots[0].hhmm, '17:00');
-  assert.deepEqual(j.slots[0].targets.map((t) => t.id), ['group:https://fb/hm', 'wall:fb1:0']);
+  assert.deepEqual(j.slots[0].targets.map((t) => t.id), ['group:hm-room', 'wall:fb1:0']);
   assert.deepEqual(Object.keys(j.slots[0].targets[0]).sort(), ['id', 'kind', 'name']);
 });
 

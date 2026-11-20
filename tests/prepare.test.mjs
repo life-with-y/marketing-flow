@@ -17,7 +17,7 @@ function mkHome(cfgOver = {}) {
   const cfg = {
     apiBaseUrl: 'https://api.example.test',
     accounts: [{ id: 'fb1', type: 'fb-personal', label: 'Cá nhân' }],
-    groups: [{ name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', account: 'fb1', districts: ['Cầu Giấy'] }],
+    clusters: [{ id: 'cg-room', name: 'Cầu Giấy · phòng trọ', account: 'fb1', districts: ['Cầu Giấy'] }],
     ...cfgOver,
   };
   fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(cfg));
@@ -78,7 +78,7 @@ test('network error twice exits 2 and writes no snapshot', async () => {
 });
 
 test('no targets exits 4', async () => {
-  const { home } = mkHome({ groups: [] });
+  const { home } = mkHome({ clusters: [] });
   const r = await runPrepare({ home, now: NOW, fetchImpl: ok });
   assert.equal(r.exitCode, 4);
 });
@@ -129,7 +129,7 @@ test('PRICE_UP ranks equal to UNCHANGED (stable input order)', async () => {
 });
 
 test('--slot qua nửa đêm: dùng ngày hôm qua cho mã khung, thứ, độ trễ', async () => {
-  const { home, dir } = mkHome({ schedule: ['11:00', '23:30'], groups: [{ name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', account: 'fb1', days: ['thu'] }] });
+  const { home, dir } = mkHome({ schedule: ['11:00', '23:30'], clusters: [{ id: 'cg-room', name: 'Cầu Giấy · phòng trọ', account: 'fb1', days: ['thu'] }] });
   const r = await runPrepare({ home, slot: '23:30', now: new Date(2026, 10, 20, 0, 30), fetchImpl: ok });
   assert.equal(r.exitCode, 0, r.message);
   assert.equal(r.slot, '2026-11-19_2330');

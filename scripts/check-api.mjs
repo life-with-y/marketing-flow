@@ -58,7 +58,7 @@ function saveProfile(dir, { token, label, base }) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   fs.chmodSync(dir, 0o700);
   const cfgFile = path.join(dir, 'config.json');
-  let cfg = { apiBaseUrl: '', accounts: [], groups: [] };
+  let cfg = { apiBaseUrl: '', accounts: [], clusters: [] };
   if (fs.existsSync(cfgFile)) {
     try { cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch { throw new Error('config.json không đọc được (sai định dạng)'); }
     if (cfg === null || typeof cfg !== 'object' || Array.isArray(cfg)) throw new Error('config.json không đúng định dạng');

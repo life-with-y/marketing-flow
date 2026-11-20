@@ -29,13 +29,13 @@ function mk({ badImages = false } = {}) {
     apiBaseUrl: 'https://api.example.test',
     outputDir: path.join(home, 'out'),
     accounts: [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }],
-    groups: [{ name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', account: 'fb1' }],
+    clusters: [{ id: 'cg-room', name: 'Cầu Giấy · phòng trọ', account: 'fb1' }],
   }));
   fs.writeFileSync(path.join(dir, 'secrets.json'), JSON.stringify({ token: 'sekret-token' }));
   const img = (i) => ({ url: `${base}/${badImages && i > 0 ? 'bad' : 'ok'}/${i}`, isCover: i === 0 });
   const input = {
     slot: SLOT,
-    targets: [{ id: 'group:https://fb/g1', kind: 'group', account: 'fb1', name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', variants: 1, language: 'vi', links: true }],
+    targets: [{ id: 'group:cg-room', kind: 'group', account: 'fb1', name: 'Cầu Giấy · phòng trọ', url: '', variants: 1, language: 'vi', links: true, listingCodes: ['T1'], groups: [{ name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1' }] }],
     listings: [{ code: 'T1', link: 'https://homematch.vn/t1', label: 'NEW', eligible: true, imageCount: 3, rooms: [{ room: '1', price: 3800000, priceText: '3,8 triệu' }], images: [0, 1, 2].map(img) }],
     library: { approved: [], trends: [], pending: ['Liên hệ nhóm chưa chốt'], errors: ['Trends: lỗi'] },
   };
@@ -64,7 +64,7 @@ test('success: page-data.json + home index.html, no per-slot index, prepared lin
   assert.deepEqual([data.posts[0].type, data.posts[0].label, data.posts[0].postCodes], ['Phòng mới', 'NEW', ['T1']]);
   assert.deepEqual(data.posts[0].variants[0].files, ['1.jpg', '2.jpg', '3.jpg']);
   assert.equal(data.posts[0].variants[0].comment, 'Chi tiết và ảnh: https://homematch.vn/t1');
-  assert.deepEqual(data.targets.map((t) => t.id), ['group:https://fb/g1']);
+  assert.deepEqual(data.targets.map((t) => t.id), ['group:cg-room']);
   assert.deepEqual(data.accounts, [{ id: 'fb1', type: 'fb-personal', label: 'FB Minh' }]);
   assert.deepEqual([data.skipped, data.pending, data.notes], [[], ['Liên hệ nhóm chưa chốt'], ['Trends: lỗi']]);
   assert.ok(!JSON.stringify(data).includes('sekret-token'));
@@ -72,13 +72,13 @@ test('success: page-data.json + home index.html, no per-slot index, prepared lin
   assert.ok(html.includes('Cầu Giấy 3,8 triệu'));
   assert.ok(html.includes('Trends: lỗi'));
   assert.ok(html.includes('Liên hệ nhóm chưa chốt'));
-  assert.ok(html.includes(`src="${SLOT}/01_phong-tro-cau-giay_T1/1.jpg"`));
+  assert.ok(html.includes(`src="${SLOT}/01_cau-giay-phong-tro_T1/1.jpg"`));
   assert.ok(html.includes('Kiểu bài') && html.includes('Phòng nổi bật'));
   assert.ok(!html.includes('sekret-token'));
   const lines = fs.readFileSync(path.join(dir, 'prepared.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(lines.length, 1);
   assert.deepEqual([lines[0].slot, lines[0].account, lines[0].postCodes, lines[0].type], [SLOT, 'fb1', ['T1'], 'Phòng mới']);
-  assert.ok(fs.existsSync(path.join(home, 'out', SLOT, '01_phong-tro-cau-giay_T1', '1.jpg')));
+  assert.ok(fs.existsSync(path.join(home, 'out', SLOT, '01_cau-giay-phong-tro_T1', '1.jpg')));
 });
 
 test('home lists earlier slots too, newest first', async () => {
@@ -110,7 +110,7 @@ test('image failures: exit 6, needsReplacement listed, no index/prepared', async
   const { home, dir } = mk({ badImages: true });
   const r = await runBuild({ home, slot: SLOT, platform: 'test' });
   assert.equal(r.exitCode, 6);
-  assert.ok(r.report.includes('group:https://fb/g1'));
+  assert.ok(r.report.includes('group:cg-room'));
   assert.ok(!fs.existsSync(path.join(home, 'out', SLOT, 'page-data.json')));
   assert.ok(!fs.existsSync(path.join(dir, 'prepared.jsonl')));
 });

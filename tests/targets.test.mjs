@@ -8,7 +8,7 @@ import { appendPrepared, lastPreparedMap } from '../scripts/lib/prepared.mjs';
 
 const THU = new Date(2026, 10, 19, 11, 0); // Thursday, local
 const ALL = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const grp = (o) => ({ name: 'Phòng trọ Cầu Giấy', url: 'https://fb/g1', account: 'fb1', active: true, days: ALL, slots: ['11:00', '17:30'], districts: ['Cầu Giấy'], language: 'vi', note: '', ...o });
+const grp = (o) => ({ id: 'cg-room', name: 'Cầu Giấy · phòng trọ', account: 'fb1', active: true, segment: 'room', days: ALL, slots: ['11:00', '17:30'], districts: ['Cầu Giấy'], language: 'vi', note: '', keywords: [], groups: [], ...o });
 const cfg = (o = {}) => ({
   schedule: ['11:00', '17:30'],
   accounts: [
@@ -16,7 +16,7 @@ const cfg = (o = {}) => ({
     { id: 'pg', type: 'fb-page', label: 'Trang' },
     { id: 'th', type: 'threads', label: 'Threads' },
   ],
-  groups: [grp()],
+  clusters: [grp()],
   perSlot: {},
   variants: { default: 1 },
   contact: ['c1'],
@@ -26,20 +26,23 @@ const cfg = (o = {}) => ({
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hm-'));
 
 test('group with days mon,wed is skipped on Thursday', () => {
-  assert.equal(targetsForSlot(cfg({ groups: [grp({ days: ['mon', 'wed'] })] }), THU, '11:00').length, 0);
+  assert.equal(targetsForSlot(cfg({ clusters: [grp({ days: ['mon', 'wed'] })] }), THU, '11:00').length, 0);
 });
 
 test('inactive group skipped', () => {
-  assert.equal(targetsForSlot(cfg({ groups: [grp({ active: false })] }), THU, '11:00').length, 0);
+  assert.equal(targetsForSlot(cfg({ clusters: [grp({ active: false })] }), THU, '11:00').length, 0);
 });
 
 test('group with slots 17:30 skipped at 11:00', () => {
-  assert.equal(targetsForSlot(cfg({ groups: [grp({ slots: ['17:30'] })] }), THU, '11:00').length, 0);
+  assert.equal(targetsForSlot(cfg({ clusters: [grp({ slots: ['17:30'] })] }), THU, '11:00').length, 0);
 });
 
 test('group target shape', () => {
   const [t] = targetsForSlot(cfg(), THU, '11:00');
-  assert.equal(t.id, 'group:https://fb/g1');
+  assert.equal(t.id, 'group:cg-room');
+  assert.equal(t.url, '');
+  assert.equal(t.segment, 'room');
+  assert.deepEqual(t.groups, []);
   assert.equal(t.kind, 'group');
   assert.equal(t.account, 'fb1');
   assert.equal(t.variants, 1);
@@ -47,7 +50,7 @@ test('group target shape', () => {
 });
 
 test('perSlot threads -> 1 threads target', () => {
-  const ts = targetsForSlot(cfg({ groups: [], perSlot: { th: 1 } }), THU, '11:00');
+  const ts = targetsForSlot(cfg({ clusters: [], perSlot: { th: 1 } }), THU, '11:00');
   assert.equal(ts.length, 1);
   assert.equal(ts[0].kind, 'threads');
   assert.equal(ts[0].id, 'threads:th:0');
@@ -56,7 +59,7 @@ test('perSlot threads -> 1 threads target', () => {
 });
 
 test('perSlot multiple, wall and page, with contact', () => {
-  const ts = targetsForSlot(cfg({ groups: [], perSlot: { fb1: 2, pg: 1 } }), THU, '11:00');
+  const ts = targetsForSlot(cfg({ clusters: [], perSlot: { fb1: 2, pg: 1 } }), THU, '11:00');
   assert.deepEqual(ts.map((t) => t.id), ['wall:fb1:0', 'wall:fb1:1', 'page:pg:0']);
   assert.deepEqual(ts[2].contact, ['p1']);
   assert.deepEqual(ts[0].contact, ['c1']);
@@ -69,11 +72,11 @@ test('variants per kind', () => {
 });
 
 test('onlyGroups accent-insensitive, excludes other targets', () => {
-  const c = cfg({ perSlot: { th: 1 }, groups: [grp(), grp({ name: 'Nhà Đống Đa', url: 'u2' })] });
+  const c = cfg({ perSlot: { th: 1 }, clusters: [grp(), grp({ id: 'dd-room', name: 'Đống Đa · phòng trọ' })] });
   const ts = targetsForSlot(c, THU, '11:00', ['cau giay']);
   assert.equal(ts.length, 1);
-  assert.equal(ts[0].name, 'Phòng trọ Cầu Giấy');
-  assert.equal(targetsForSlot(c, THU, '11:00', ['dong da'])[0].url, 'u2');
+  assert.equal(ts[0].name, 'Cầu Giấy · phòng trọ');
+  assert.equal(targetsForSlot(c, THU, '11:00', ['dong da'])[0].id, 'group:dd-room');
 });
 
 test('lastPreparedMap returns latest and handles missing file', () => {
@@ -88,21 +91,21 @@ test('lastPreparedMap returns latest and handles missing file', () => {
 });
 
 test('hhmm null skips slot filter but keeps active + weekday', () => {
-  const c = cfg({ groups: [
-    grp({ slots: ['17:30'], url: 'a' }),
-    grp({ active: false, url: 'b' }),
-    grp({ days: ['mon'], url: 'c' }),
+  const c = cfg({ clusters: [
+    grp({ slots: ['17:30'], id: 'a' }),
+    grp({ active: false, id: 'b' }),
+    grp({ days: ['mon'], id: 'c' }),
   ] });
-  assert.deepEqual(targetsForSlot(c, THU, null).map((t) => t.url), ['a']);
+  assert.deepEqual(targetsForSlot(c, THU, null).map((t) => t.id), ['group:a']);
 });
 
 test('onlyGroups ignores days/slots', () => {
-  const ts = targetsForSlot(cfg({ groups: [grp({ days: ['mon'], slots: ['17:30'] })] }), THU, '11:00', ['cau giay']);
+  const ts = targetsForSlot(cfg({ clusters: [grp({ days: ['mon'], slots: ['17:30'] })] }), THU, '11:00', ['cau giay']);
   assert.equal(ts.length, 1);
 });
 
 test('onlyGroups skips inactive match', () => {
-  assert.equal(targetsForSlot(cfg({ groups: [grp({ active: false })] }), THU, null, ['cau giay']).length, 0);
+  assert.equal(targetsForSlot(cfg({ clusters: [grp({ active: false })] }), THU, null, ['cau giay']).length, 0);
 });
 
 test('links, priceStyle theo kênh trên từng đích', () => {
@@ -119,4 +122,14 @@ test('thiếu links/priceStyle: tắt link, giá đầy đủ', () => {
   const g = targetsForSlot(cfg({ links: { group: 'yes' }, priceStyle: { group: 'weird' } }), THU, '11:00')[0];
   assert.equal(g.links, false);
   assert.equal(g.priceStyle, 'full');
+});
+
+test('cụm: chỉ nhóm đã vào đi theo đích, phân khúc kèm luật', () => {
+  const c = cfg({ clusters: [grp({ segment: 'student', groups: [
+    { name: 'A', url: 'https://fb/a', joined: true },
+    { name: 'B', url: 'https://fb/b' },
+  ] })] });
+  const [t] = targetsForSlot(c, THU, '11:00');
+  assert.deepEqual(t.groups, [{ name: 'A', url: 'https://fb/a' }]);
+  assert.equal(t.segmentRule, 'Có phòng dưới 5 triệu');
 });

@@ -174,7 +174,7 @@ export function validatePosts(posts, input) {
       err(pi, `${label}: đích "${post.targetId}" không có trong input.`);
     } else if (target.kind === 'group') {
       if (groupSeen.has(post.targetId)) {
-        err(pi, `${label}: nhóm "${post.targetId}" đã có bài khác trong khung này (mỗi nhóm tối đa 1 bài).`);
+        err(pi, `${label}: cụm "${post.targetId}" đã có bài khác trong khung này (mỗi cụm tối đa 1 bài).`);
       }
       groupSeen.add(post.targetId);
     }
@@ -188,7 +188,9 @@ export function validatePosts(posts, input) {
       const l = listings.get(c);
       if (!l) { err(pi, `${label}: mã tin ${c} không có trong input.`); codesOk = false; }
       else if (!l.eligible) { err(pi, `${label}: tin ${c} chưa đủ điều kiện (không đủ ảnh).`); codesOk = false; }
-      else used.push(l);
+      else if (target?.kind === 'group' && Array.isArray(target.listingCodes) && !target.listingCodes.includes(c)) {
+        err(pi, `${label}: tin ${c} không thuộc cụm "${target.name}" (sai quận hoặc phân khúc).`); codesOk = false;
+      } else used.push(l);
     }
     const isBrand = Array.isArray(post.postCodes) && codes.length === 0;
     // Kiểu "Gợi ý 4–5 phòng cùng phân khúc": ảnh chỉ là bìa từng tin.

@@ -74,7 +74,7 @@ test('cli --save overwrites loose-permission file and keeps config fields', asyn
   const dir = path.join(home, '.homematch-marketing');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'secrets.json'), '{"token":"old"}', { mode: 0o644 });
-  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apiBaseUrl: 'old', accounts: [{ id: 'a' }], groups: [] }));
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apiBaseUrl: 'old', accounts: [{ id: 'a' }], clusters: [] }));
   const r = await run(['--base', BASE, '--save'], { home });
   assert.equal(r.code, 0);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'secrets.json'), 'utf8')).token, TOKEN);

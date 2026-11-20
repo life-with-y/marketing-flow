@@ -1,4 +1,4 @@
-// Trang chủ <outputDir>/index.html: 4 tab Bài đăng · Kiểu bài · Hằng ngày · Hồ sơ, cột phải "Muốn đổi gì?".
+// Trang chủ <outputDir>/index.html: 5 tab Bài đăng · Kiểu bài · Cụm nhóm · Hằng ngày · Hồ sơ, cột phải "Muốn đổi gì?".
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,7 @@ import { modeView } from './home-mode.mjs';
 import { readText, lastChange as readLastChange, tokenLabel as readTokenLabel } from './profile.mjs';
 import { expandHome } from './paths.mjs';
 import { platformGuidePaths } from './platforms.mjs';
+import { latestSnapshot } from './snapshot.mjs';
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEMPLATE = path.join(PLUGIN_ROOT, 'assets', 'home', 'template.html');
@@ -130,11 +131,11 @@ function guidesSection(guides) {
 }
 
 export function renderHome({
-  cfg = {}, errors, persona = null, contentTypes = null, pending = [], pendingError = null,
+  cfg = {}, errors, listings = null, persona = null, contentTypes = null, pending = [], pendingError = null,
   today = new Date(), lastChange = null, tokenLabel = null, outputDir, slots = [], badSlots = [], platformGuides = [],
 } = {}) {
   const c = cfg && typeof cfg === 'object' ? cfg : {};
-  const board = boardParts({ cfg: c, persona, pending, pendingError, today, lastChange, tokenLabel, errors });
+  const board = boardParts({ cfg: c, listings, persona, pending, pendingError, today, lastChange, tokenLabel, errors });
   const posts = postsPanel(slots, badSlots, outputDir, c.feedback || {});
   const types = typesPanel(contentTypes);
   const values = {
@@ -159,7 +160,7 @@ export function writeHome({ dir, cfg, errors = [], home, now = new Date(), root 
   const contentTypes = readText(path.join(dir, 'content-types.md')) ?? readText(path.join(root, 'rules', 'templates', 'content-types.example.md'));
   const { slots, bad } = loadSlots(outputDir);
   const html = renderHome({
-    cfg, errors, persona: readText(path.join(dir, 'persona.md')), contentTypes, pending, pendingError,
+    cfg, errors, listings: latestSnapshot(dir, '9999'), persona: readText(path.join(dir, 'persona.md')), contentTypes, pending, pendingError,
     today: now, lastChange: readLastChange(dir, now), tokenLabel: readTokenLabel(dir), outputDir, slots, badSlots: bad,
     platformGuides: Object.entries(platformGuidePaths(dir, root)).map(([kind, p]) => ({ kind, md: readText(p) })),
   });
