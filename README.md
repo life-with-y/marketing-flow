@@ -23,9 +23,9 @@ Không cần tài khoản GitHub.
 
 ## Dùng hằng ngày
 
-- Đến giờ đã hẹn, plugin tự soạn bài. Mở `index.html` trong thư mục kết quả để xem bài, copy nội dung và copy đường dẫn thư mục ảnh.
+- Đến giờ đã hẹn, plugin tự soạn bài. Mở `index.html` trong thư mục kết quả (mặc định `~/HomeMatch-Posts/index.html`): tab **Bài đăng** có bài của khung mới nhất (chọn được 14 khung gần nhất) để copy nội dung và đường dẫn thư mục ảnh; các tab **Kiểu bài**, **Hằng ngày**, **Hồ sơ** cho xem cấu hình.
 - Mỗi bài có một thư mục ảnh riêng, ảnh đặt tên theo thứ tự đăng (`1` là ảnh bìa).
-- `/hm-config`: xem và đổi nhóm, lịch, persona, kiểu bài bằng trang tương tác.
+- `/hm-config`: mở cùng trang đó cùng Claude để đổi nhóm, lịch, persona, kiểu bài. Mở trang thẳng từ thư mục thì là chế độ chỉ xem: gõ yêu cầu, bấm **Copy yêu cầu** rồi dán vào chat Claude.
 - `/hm-prep-now`: soạn ngay, không chờ đến giờ.
 
 ## Lưu ý
@@ -36,7 +36,7 @@ Lịch chạy dùng model mặc định của app Claude; muốn đổi model th
 
 ## Góp ý
 
-Bấm nút **Góp ý** trên bài hoặc **Báo lỗi / góp ý plugin** trong `/hm-config`, điền Form. Owner sẽ xử lý.
+Bấm nút **Góp ý** trên bài hoặc **Báo lỗi / góp ý plugin** ở cột phải trang chủ, điền Form. Owner sẽ xử lý.
 
 ## Giấy phép
 
